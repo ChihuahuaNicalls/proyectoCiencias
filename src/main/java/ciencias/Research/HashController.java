@@ -127,15 +127,15 @@ public class HashController {
 
         switch (hashString) {
             case "Modulo":
-                titleHash.setText("Función de Hash: Módulo");
+                titleHash.setText("Funcion de Hash: Modulo");
                 functionHash.setText("h(k) = k mod m");
                 break;
             case "Cuadrada":
-                titleHash.setText("Función de Hash: Cuadrada");
+                titleHash.setText("Funcion de Hash: Cuadrada");
                 functionHash.setText("h(k) = dig_cen(k^2)");
                 break;
             case "Truncamiento":
-                titleHash.setText("Función de Hash: Truncamiento");
+                titleHash.setText("Funcion de Hash: Truncamiento");
                 functionHash.setText("h(k) = elegir_dig(k)");
                 truncText.setVisible(true);
                 truncButton.setVisible(true);
@@ -143,7 +143,7 @@ public class HashController {
                 truncPositionsSet = false;
                 break;
             case "Plegamiento":
-                titleHash.setText("Función de Hash: Plegamiento");
+                titleHash.setText("Funcion de Hash: Plegamiento");
                 functionHash.setText("h(k) = suma_de_grupos");
                 break;
         }
@@ -240,7 +240,7 @@ public class HashController {
         arrayReady = true;
 
         StringBuilder info = new StringBuilder("Array de tamaño " + tableSize + " creado\n");
-        info.append("Método de colisión: ").append(collisionString).append("\n");
+        info.append("Metodo de colision: ").append(collisionString).append("\n");
         if ("Truncamiento".equals(hashString)) {
             info.append("Posiciones truncadas: ").append(Arrays.toString(truncPositions));
         }
@@ -282,14 +282,14 @@ public class HashController {
             long end = System.nanoTime();
             double ms = (end - start) / 1e6;
 
-            itemsArrayText.setText("Clave " + clave + " insertada en posición " + (pos + 1) +
+            itemsArrayText.setText("Clave " + clave + " insertada en posicion " + (pos + 1) +
                     "\nTiempo: " + String.format("%.3f", ms) + " ms");
 
             actualizarVistaArray();
             newItemArray.clear();
 
         } catch (NumberFormatException e) {
-            itemsArrayText.setText("Ingrese un número válido.");
+            itemsArrayText.setText("Ingrese un numero valido.");
         }
     }
 
@@ -371,7 +371,7 @@ public class HashController {
             int maxValue = Math.max(0, Integer.parseInt(rangeString) - 1);
             digits = String.valueOf(maxValue).length();
         } catch (NumberFormatException e) {
-            arrayLengthText.setText("Rango inválido para truncamiento.");
+            arrayLengthText.setText("Rango invalido para truncamiento.");
             truncButton.setDisable(true);
             truncElegir.setDisable(true);
             truncMaxSelections = 0;
@@ -385,7 +385,7 @@ public class HashController {
 
         if (truncMaxSelections <= 0) {
             truncButton.setDisable(true);
-            arrayLengthText.setText("No hay suficientes dígitos para aplicar truncamiento.");
+            arrayLengthText.setText("No hay suficientes digitos para aplicar truncamiento.");
             truncPositions = null;
             truncPositionsSet = false;
         } else {
@@ -406,14 +406,14 @@ public class HashController {
 
         Integer position = truncElegir.getValue();
         if (position == null) {
-            arrayLengthText.setText("Seleccione una posición para agregar");
+            arrayLengthText.setText("Seleccione una posicion para agregar");
             return;
         }
 
         if (truncPositions != null) {
             for (int pos : truncPositions) {
                 if (pos == position) {
-                    arrayLengthText.setText("La posición " + position + " ya fue seleccionada");
+                    arrayLengthText.setText("La posicion " + position + " ya fue seleccionada");
                     return;
                 }
             }
@@ -440,7 +440,7 @@ public class HashController {
                     " (faltan " + (truncMaxSelections - truncPositions.length) + ")");
         } else {
             arrayLengthText.setText("Posiciones seleccionadas: " + Arrays.toString(truncPositions) +
-                    " (máximo alcanzado). Ahora puede crear el array.");
+                    " (maximo alcanzado). Ahora puede crear el array.");
         }
     }
 
@@ -458,7 +458,7 @@ public class HashController {
                     long end = System.nanoTime();
                     double ms = (end - start) / 1e6;
 
-                    modText.setText("Clave " + clave + " encontrada en posición " + (pos + 1));
+                    modText.setText("Clave " + clave + " encontrada en posicion " + (pos + 1));
                     modOpText.setText("Tiempo: " + String.format("%.3f", ms) + " ms");
 
                     modItem.setDisable(false);
@@ -487,7 +487,7 @@ public class HashController {
             deleteButton.setDisable(true);
 
         } catch (NumberFormatException e) {
-            modText.setText("Ingrese un número válido.");
+            modText.setText("Ingrese un numero valido.");
         }
     }
 
@@ -504,7 +504,7 @@ public class HashController {
             actualizarVistaArray();
 
             modText.setText("Clave modificada: " + oldClave + " → " + newClave);
-            modOpText.setText("Modificación exitosa");
+            modOpText.setText("Modificacion exitosa");
 
             modDeleteItem.clear();
             modDeleteItem.setDisable(false);
@@ -518,7 +518,7 @@ public class HashController {
             newItemArray.clear();
 
         } catch (NumberFormatException e) {
-            modText.setText("Ingrese un número válido.");
+            modText.setText("Ingrese un numero valido.");
         }
     }
 
@@ -534,7 +534,7 @@ public class HashController {
                 table[pos] = -1;
                 actualizarVistaArray();
                 modText.setText("Clave eliminada: " + clave);
-                modOpText.setText("Posición: " + (pos + 1));
+                modOpText.setText("Posicion: " + (pos + 1));
 
                 modDeleteItem.clear();
                 modDeleteItem.setDisable(false);
@@ -553,7 +553,7 @@ public class HashController {
                 break;
         }
 
-        modText.setText("No se encontró la clave para eliminar");
+        modText.setText("No se encontro la clave para eliminar");
         modOpText.setText("");
     }
 
