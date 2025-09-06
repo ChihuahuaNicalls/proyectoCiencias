@@ -13,125 +13,204 @@
 <?import javafx.scene.text.Text?>
 <?import javafx.scene.text.TextFlow?>
 
-<BorderPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="620.0" prefWidth="1080.0" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="ciencias.ResearchController">
+<BorderPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="620.0" prefWidth="1080.0" xmlns="http://javafx.com/javafx/24.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="ciencias.ResearchController">
    <bottom>
-      <ButtonBar prefHeight="78.0" prefWidth="1080.0" BorderPane.alignment="CENTER">
+      <ButtonBar prefHeight="53.0" prefWidth="1080.0" BorderPane.alignment="CENTER">
          <buttons>
-            <Button mnemonicParsing="false" onAction="#menu" prefHeight="13.0" prefWidth="119.0" text="Volver" translateX="-10.0">
+            <Button minWidth="58.0" mnemonicParsing="false" onAction="#menu" prefHeight="37.0" prefWidth="75.0" text="Volver" translateX="-10.0">
                <font>
-                  <Font size="28.0" />
+                  <Font size="18.0" />
                </font>
             </Button>
          </buttons>
       </ButtonBar>
    </bottom>
    <center>
-      <TabPane prefHeight="594.0" prefWidth="1080.0" tabClosingPolicy="UNAVAILABLE" tabMinHeight="60.0" tabMinWidth="150.0" BorderPane.alignment="CENTER">
+      <TabPane prefHeight="200.0" prefWidth="200.0" tabClosingPolicy="UNAVAILABLE" tabMinHeight="40.0" tabMinWidth="200.0" BorderPane.alignment="CENTER">
         <tabs>
-          <Tab closable="false" onSelectionChanged="#restart" text="Secuencial">
+          <Tab onSelectionChanged="#restart" text="Busquedas internas">
             <content>
-              <AnchorPane prefHeight="184.0" prefWidth="1080.0">
+              <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
                      <children>
-                        <MenuButton fx:id="menuButtonSecuencial" layoutX="22.0" layoutY="22.0" mnemonicParsing="false" prefWidth="210.0" text="Elegir">
-                           <items>
-                              <MenuItem mnemonicParsing="false" onAction="#handleSecuencialAction" text="Arreglos" />
-                              <MenuItem mnemonicParsing="false" onAction="#handleSecuencialAction" text="Listas enlazadas" />
-                              <MenuItem mnemonicParsing="false" onAction="#handleSecuencialAction" text="Arboles" />
-                           </items>
-                           <font>
-                              <Font size="20.0" />
-                           </font>
-                        </MenuButton>
+                        <TabPane prefHeight="594.0" prefWidth="1080.0" tabClosingPolicy="UNAVAILABLE" tabMinHeight="60.0" tabMinWidth="150.0">
+                           <tabs>
+                              <Tab closable="false" onSelectionChanged="#restart" text="Secuencial">
+                                 <content>
+                                    <AnchorPane prefHeight="184.0" prefWidth="1080.0">
+                                       <children>
+                                          <MenuButton fx:id="menuButtonSecuencial" layoutX="22.0" layoutY="22.0" mnemonicParsing="false" prefWidth="300.0" text="Elegir">
+                                             <items>
+                                                <MenuItem mnemonicParsing="false" onAction="#handleSecuencialAction" text="Arreglos" />
+                                                <MenuItem mnemonicParsing="false" onAction="#handleSecuencialAction" text="Listas enlazadas" />
+                                                <MenuItem mnemonicParsing="false" onAction="#handleSecuencialAction" text="Arboles" />
+                                             </items>
+                                             <font>
+                                                <Font size="20.0" />
+                                             </font>
+                                          </MenuButton>
+                                       </children>
+                                    </AnchorPane>
+                                 </content>
+                              </Tab>
+                              <Tab closable="false" onSelectionChanged="#restart" text="Indexada">
+                                 <content>
+                                    <AnchorPane prefHeight="180.0" prefWidth="200.0" />
+                                 </content>
+                              </Tab>
+                              <Tab closable="false" onSelectionChanged="#restart" text="Binaria">
+                                 <content>
+                                    <AnchorPane prefHeight="180.0" prefWidth="200.0">
+                                       <children>
+                                          <MenuButton fx:id="menuButtonBinaria" layoutX="22.0" layoutY="22.0" mnemonicParsing="false" prefHeight="38.0" prefWidth="300.0" text="Elegir">
+                                             <items>
+                                                <MenuItem mnemonicParsing="false" onAction="#handleBinariaAction" text="Arreglos" />
+                                                <MenuItem mnemonicParsing="false" onAction="#handleBinariaAction" text="Listas" />
+                                             </items>
+                                             <font>
+                                                <Font size="20.0" />
+                                             </font>
+                                          </MenuButton>
+                                       </children>
+                                    </AnchorPane>
+                                 </content>
+                              </Tab>
+                              <Tab closable="false" onSelectionChanged="#restart" text="Funciones Hash">
+                                 <content>
+                                    <AnchorPane prefHeight="477.0" prefWidth="1080.0">
+                                       <children>
+                                          <MenuButton fx:id="menuButtonHash" layoutX="22.0" layoutY="22.0" mnemonicParsing="false" prefHeight="44.0" prefWidth="300.0" text="Elegir">
+                                             <items>
+                                                <MenuItem mnemonicParsing="false" onAction="#handleHashAction" text="Modulo" />
+                                                <MenuItem mnemonicParsing="false" onAction="#handleHashAction" text="Cuadrada" />
+                                                <MenuItem mnemonicParsing="false" onAction="#handleHashAction" text="Truncamiento" />
+                                                <MenuItem mnemonicParsing="false" onAction="#handleHashAction" text="Plegamiento" />
+                                             </items>
+                                             <font>
+                                                <Font size="20.0" />
+                                             </font>
+                                          </MenuButton>
+                                          <Pane fx:id="paneHash" layoutX="351.0" layoutY="31.0" prefHeight="420.0" prefWidth="700.0" />
+                                          <TextFlow layoutX="21.0" layoutY="95.0" prefHeight="374.0" prefWidth="300.0" textAlignment="CENTER">
+                                             <children>
+                                                <Text fx:id="textHashMenu" strokeType="OUTSIDE" strokeWidth="0.0">
+                                                   <font>
+                                                      <Font size="18.0" />
+                                                   </font>
+                                                </Text>
+                                             </children>
+                                          </TextFlow>
+                                       </children>
+                                    </AnchorPane>
+                                 </content>
+                              </Tab>
+                              <Tab onSelectionChanged="#restart" text="Busquedas por residuos">
+                                 <content>
+                                    <AnchorPane prefHeight="180.0" prefWidth="200.0">
+                                       <children>
+                                          <MenuButton fx:id="menuButtonResiduos" layoutX="22.0" layoutY="22.0" mnemonicParsing="false" prefHeight="31.0" prefWidth="300.0" text="Elegir">
+                                             <items>
+                                                <MenuItem mnemonicParsing="false" onAction="#handleResiduosAction" text="Arboles de busqueda digital" />
+                                                <MenuItem mnemonicParsing="false" onAction="#handleResiduosAction" text="Arboles de busqueda por residuos multiple" />
+                                                <MenuItem mnemonicParsing="false" onAction="#handleResiduosAction" text="Tablas de indices" />
+                                                <MenuItem mnemonicParsing="false" onAction="#handleResiduosAction" text="Arboles de Huffman" />
+                                             </items>
+                                             <font>
+                                                <Font size="20.0" />
+                                             </font>
+                                          </MenuButton>
+                                       </children>
+                                    </AnchorPane>
+                                 </content>
+                              </Tab>
+                              <Tab onSelectionChanged="#restart" text="Busquedas por rangos">
+                                 <content>
+                                    <AnchorPane prefHeight="180.0" prefWidth="200.0">
+                                       <children>
+                                          <MenuButton fx:id="menuButtonRangos" layoutX="22.0" layoutY="22.0" mnemonicParsing="false" prefHeight="44.0" prefWidth="300.0" text="Elegir">
+                                             <items>
+                                                <MenuItem mnemonicParsing="false" onAction="#handleRangosAction" text="Metodos elementales" />
+                                                <MenuItem mnemonicParsing="false" onAction="#handleRangosAction" text="Metodos de la rejilla" />
+                                                <MenuItem mnemonicParsing="false" onAction="#handleRangosAction" text="Arboles 2D" />
+                                             </items>
+                                             <font>
+                                                <Font size="20.0" />
+                                             </font>
+                                          </MenuButton>
+                                       </children>
+                                    </AnchorPane>
+                                 </content>
+                              </Tab>
+                           </tabs>
+                        </TabPane>
                      </children>
                   </AnchorPane>
             </content>
           </Tab>
-          <Tab closable="false" onSelectionChanged="#restart" text="Indexada">
+          <Tab onSelectionChanged="#restart" text="Busquedas externas">
             <content>
-              <AnchorPane prefHeight="180.0" prefWidth="200.0" />
-            </content>
-          </Tab>
-          <Tab closable="false" onSelectionChanged="#restart" text="Binaria">
-              <content>
-                <AnchorPane prefHeight="180.0" prefWidth="200.0">
+              <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
                      <children>
-                        <MenuButton fx:id="menuButtonBinaria" layoutX="22.0" layoutY="22.0" mnemonicParsing="false" prefHeight="38.0" prefWidth="210.0" text="Elegir">
-                           <items>
-                              <MenuItem mnemonicParsing="false" onAction="#handleBinariaAction" text="Arreglos" />
-                              <MenuItem mnemonicParsing="false" onAction="#handleBinariaAction" text="Listas" />
-                           </items>
-                           <font>
-                              <Font size="20.0" />
-                           </font>
-                        </MenuButton>
-                     </children>
-                  </AnchorPane>
-              </content>
-            </Tab>
-          <Tab closable="false" onSelectionChanged="#restart" text="Hash">
-              <content>
-                <AnchorPane prefHeight="180.0" prefWidth="200.0">
-                     <children>
-                        <MenuButton fx:id="menuButtonHash" layoutX="22.0" layoutY="22.0" mnemonicParsing="false" prefHeight="44.0" prefWidth="210.0" text="Elegir">
-                           <items>
-                              <MenuItem mnemonicParsing="false" onAction="#handleHashAction" text="Dispersion" />
-                              <MenuItem mnemonicParsing="false" onAction="#handleHashAction" text="Modulo" />
-                              <MenuItem mnemonicParsing="false" onAction="#handleHashAction" text="Cuadrada" />
-                              <MenuItem mnemonicParsing="false" onAction="#handleHashAction" text="Truncamiento" />
-                              <MenuItem mnemonicParsing="false" onAction="#handleHashAction" text="Plegamiento" />
-                           </items>
-                           <font>
-                              <Font size="20.0" />
-                           </font>
-                        </MenuButton>
-                        <Pane fx:id="paneHash" layoutX="299.0" layoutY="31.0" prefHeight="400.0" prefWidth="750.0" />
-                        <TextFlow layoutX="21.0" layoutY="95.0" prefHeight="349.0" prefWidth="211.0" textAlignment="CENTER">
+                        <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
                            <children>
-                              <Text fx:id="textHashMenu" strokeType="OUTSIDE" strokeWidth="0.0" />
+                              <TabPane prefHeight="594.0" prefWidth="1080.0" tabClosingPolicy="UNAVAILABLE" tabMinHeight="60.0" tabMinWidth="150.0">
+                                 <tabs>
+                                    <Tab closable="false" onSelectionChanged="#restart" text="Secuencial">
+                                       <content>
+                                          <AnchorPane prefHeight="184.0" prefWidth="1080.0" />
+                                       </content>
+                                    </Tab>
+                                    <Tab onSelectionChanged="#restart" text="Binaria">
+                                      <content>
+                                        <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0" />
+                                      </content>
+                                    </Tab>
+                                    <Tab onSelectionChanged="#restart" text="Transferencia de claves">
+                                      <content>
+                                        <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
+                                             <children>
+                                                <MenuButton fx:id="menuButtonClaves" layoutX="22.0" layoutY="22.0" mnemonicParsing="false" prefHeight="44.0" prefWidth="300.0" text="Elegir">
+                                                   <items>
+                                                      <MenuItem mnemonicParsing="false" text="Modulo" />
+                                                      <MenuItem mnemonicParsing="false" text="Cuadrada" />
+                                                      <MenuItem mnemonicParsing="false" text="Truncamiento" />
+                                                      <MenuItem mnemonicParsing="false" text="Plegamiento" />
+                                                      <MenuItem mnemonicParsing="false" text="Transferencia de clave" />
+                                                   </items>
+                                                   <font>
+                                                      <Font size="20.0" />
+                                                   </font>
+                                                </MenuButton>
+                                             </children>
+                                          </AnchorPane>
+                                      </content>
+                                    </Tab>
+                                    <Tab onSelectionChanged="#restart" text="Dinamicas">
+                                      <content>
+                                        <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
+                                             <children>
+                                                <MenuButton fx:id="menuButtonClaves1" layoutX="22.0" layoutY="22.0" mnemonicParsing="false" prefHeight="44.0" prefWidth="300.0" text="Elegir">
+                                                   <items>
+                                                      <MenuItem mnemonicParsing="false" text="Expansiones parciales" />
+                                                      <MenuItem mnemonicParsing="false" text="Expansiones totales" />
+                                                      <MenuItem mnemonicParsing="false" text="Reduccion parcial" />
+                                                      <MenuItem mnemonicParsing="false" text="Reduccion total" />
+                                                   </items>
+                                                   <font>
+                                                      <Font size="20.0" />
+                                                   </font>
+                                                </MenuButton>
+                                             </children>
+                                          </AnchorPane>
+                                      </content>
+                                    </Tab>
+                                 </tabs>
+                              </TabPane>
                            </children>
-                        </TextFlow>
+                        </AnchorPane>
                      </children>
                   </AnchorPane>
-              </content>
+            </content>
           </Tab>
-          <Tab onSelectionChanged="#restart" text="Busquedas por residuos">
-              <content>
-                <AnchorPane prefHeight="180.0" prefWidth="200.0">
-                     <children>
-                        <MenuButton fx:id="menuButtonResiduos" layoutX="22.0" layoutY="22.0" mnemonicParsing="false" prefHeight="31.0" prefWidth="210.0" text="Elegir">
-                           <items>
-                              <MenuItem mnemonicParsing="false" onAction="#handleResiduosAction" text="Arboles de busqueda digital" />
-                              <MenuItem mnemonicParsing="false" onAction="#handleResiduosAction" text="Arboles de busqueda por residuos multiple" />
-                              <MenuItem mnemonicParsing="false" onAction="#handleResiduosAction" text="Tablas de indices" />
-                              <MenuItem mnemonicParsing="false" onAction="#handleResiduosAction" text="Arboles de Huffman" />
-                           </items>
-                           <font>
-                              <Font size="20.0" />
-                           </font>
-                        </MenuButton>
-                     </children>
-                  </AnchorPane>
-              </content>
-          </Tab>
-          <Tab onSelectionChanged="#restart" text="Busquedas por rangos">
-               <content>
-                  <AnchorPane prefHeight="180.0" prefWidth="200.0">
-                     <children>
-                        <MenuButton fx:id="menuButtonRangos" layoutX="22.0" layoutY="22.0" mnemonicParsing="false" prefHeight="44.0" prefWidth="210.0" text="Elegir">
-                           <items>
-                              <MenuItem mnemonicParsing="false" onAction="#handleRangosAction" text="Metodos elementales" />
-                              <MenuItem mnemonicParsing="false" onAction="#handleRangosAction" text="Metodos de la rejilla" />
-                              <MenuItem mnemonicParsing="false" onAction="#handleRangosAction" text="Arboles 2D" />
-                           </items>
-                           <font>
-                              <Font size="20.0" />
-                           </font>
-                        </MenuButton>
-                     </children>
-                  </AnchorPane>
-               </content>
-          </Tab>
-
         </tabs>
       </TabPane>
    </center>

@@ -14,8 +14,4 @@ public class StartController {
     private void toGraphs() throws IOException {
     }
 
-    @FXML
-    private void exit() throws IOException {
-        System.exit(0);
-    }
 }
