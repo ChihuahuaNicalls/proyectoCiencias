@@ -14,7 +14,6 @@ import javafx.scene.control.TextField;
 import javafx.scene.control.TextFormatter;
 import javafx.scene.text.Text;
 import javafx.stage.FileChooser;
-import javafx.stage.Stage;
 import java.io.*;
 
 import java.util.Arrays;
@@ -115,6 +114,12 @@ public class HashController {
             });
         }
 
+        tabPane.getSelectionModel().selectedItemProperty().addListener((observable, oldTab, newTab) -> {
+            if (newTab == tabEliminateMod) {
+                resetModControls();
+            }
+        });
+
         truncText.setVisible(false);
         truncButton.setVisible(false);
         truncElegir.setVisible(false);
@@ -128,15 +133,15 @@ public class HashController {
         switch (hashString) {
             case "Modulo":
                 titleHash.setText("Funcion de Hash: Modulo");
-                functionHash.setText("h(k) = k mod m");
+                functionHash.setText("h(k) = (k mod m) + 1");
                 break;
             case "Cuadrada":
                 titleHash.setText("Funcion de Hash: Cuadrada");
-                functionHash.setText("h(k) = dig_cen(k^2)");
+                functionHash.setText("h(k) = dig_cen(k^2) + 1");
                 break;
             case "Truncamiento":
                 titleHash.setText("Funcion de Hash: Truncamiento");
-                functionHash.setText("h(k) = elegir_dig(k)");
+                functionHash.setText("h(k) = elegir_dig(k) + 1");
                 truncText.setVisible(true);
                 truncButton.setVisible(true);
                 truncElegir.setVisible(true);
@@ -144,7 +149,7 @@ public class HashController {
                 break;
             case "Plegamiento":
                 titleHash.setText("Funcion de Hash: Plegamiento");
-                functionHash.setText("h(k) = suma_de_grupos");
+                functionHash.setText("h(k) = digmensig(k_1 + k_2 + ...) + 1");
                 break;
         }
     }
@@ -265,10 +270,13 @@ public class HashController {
             long start = System.nanoTime();
 
             int pos = aplicarFuncionHash(clave);
-            int originalPos = pos;
             int step = 1;
 
             while (table[pos] != -1) {
+                if (table[pos] == clave) {
+                    itemsArrayText.setText("Error: La clave " + clave + " ya existe.");
+                    return;
+                }
                 pos = siguientePosicion(clave, pos, step);
                 step++;
                 if (step > tableSize) {
@@ -296,7 +304,7 @@ public class HashController {
     private int aplicarFuncionHash(int clave) {
         switch (hashString) {
             case "Modulo":
-                return clave % primeSize;
+                return clave % tableSize;
             case "Cuadrada":
                 int sq = clave * clave;
                 String s = String.valueOf(sq);
@@ -307,7 +315,7 @@ public class HashController {
                 StringBuilder trunc = new StringBuilder();
                 if (truncPositions != null) {
                     for (int pos : truncPositions) {
-                        int idx = pos - 1; // truncPositions son 1-based
+                        int idx = pos - 1;
                         if (idx >= 0 && idx < num.length()) {
                             trunc.append(num.charAt(idx));
                         }
@@ -497,25 +505,33 @@ public class HashController {
             int oldClave = Integer.parseInt(modDeleteItem.getText());
             int newClave = Integer.parseInt(modItem.getText());
 
-            eliminateItem();
+            if (newClave < 0 || newClave >= rangeInt) {
+                modText.setText("Error: La nueva clave debe estar entre 0 y " + (rangeInt - 1));
+                modOpText.setText("Modificacion cancelada.");
+                resetModControls();
+                return;
+            }
 
-            newItemArray.setText(String.valueOf(newClave));
-            addToArray();
-            actualizarVistaArray();
+            if (findItem(newClave) != -1) {
+                modText.setText("Error: La nueva clave " + newClave + " ya existe en el array.");
+                modOpText.setText("Modificacion cancelada.");
+                resetModControls();
+                return;
+            }
 
-            modText.setText("Clave modificada: " + oldClave + " → " + newClave);
-            modOpText.setText("Modificacion exitosa");
+            int pos = findItem(oldClave);
+            if (pos != -1) {
+                table[pos] = newClave;
+                actualizarVistaArray();
 
-            modDeleteItem.clear();
-            modDeleteItem.setDisable(false);
-            searchButton.setDisable(false);
+                modText.setText("Clave modificada: " + oldClave + " -> " + newClave);
+                modOpText.setText("Modificacion exitosa");
+            } else {
+                modText.setText("No se encontro la clave para modificar");
+                modOpText.setText("");
+            }
 
-            modItem.clear();
-            modItem.setDisable(true);
-            modifyButton.setDisable(true);
-            deleteButton.setDisable(true);
-
-            newItemArray.clear();
+            resetModControls();
 
         } catch (NumberFormatException e) {
             modText.setText("Ingrese un numero valido.");
@@ -524,37 +540,52 @@ public class HashController {
 
     @FXML
     private void eliminateItem() {
-        int clave = Integer.parseInt(modDeleteItem.getText());
+        try {
+            int clave = Integer.parseInt(modDeleteItem.getText());
 
+            int pos = findItem(clave);
+            if (pos != -1) {
+                table[pos] = -1;
+                actualizarVistaArray();
+                modText.setText("Clave eliminada: " + clave);
+                modOpText.setText("Posicion: " + (pos + 1));
+            } else {
+                modText.setText("No se encontro la clave para eliminar");
+                modOpText.setText("");
+            }
+
+            resetModControls();
+
+        } catch (NumberFormatException e) {
+            modText.setText("Ingrese un numero valido.");
+        }
+    }
+
+    private int findItem(int clave) {
         int pos = aplicarFuncionHash(clave);
         int step = 1;
 
         while (table[pos] != -1) {
             if (table[pos] == clave) {
-                table[pos] = -1;
-                actualizarVistaArray();
-                modText.setText("Clave eliminada: " + clave);
-                modOpText.setText("Posicion: " + (pos + 1));
-
-                modDeleteItem.clear();
-                modDeleteItem.setDisable(false);
-                searchButton.setDisable(false);
-                modItem.clear();
-                modItem.setDisable(true);
-                modifyButton.setDisable(true);
-                deleteButton.setDisable(true);
-
-                return;
+                return pos;
             }
-
             pos = siguientePosicion(clave, pos, step);
             step++;
-            if (step > tableSize)
+            if (step > tableSize) {
                 break;
+            }
         }
+        return -1;
+    }
 
-        modText.setText("No se encontro la clave para eliminar");
-        modOpText.setText("");
+    private void resetModControls() {
+        modDeleteItem.clear();
+        modDeleteItem.setDisable(false);
+        searchButton.setDisable(false);
+        modItem.clear();
+        modItem.setDisable(true);
+        modifyButton.setDisable(true);
+        deleteButton.setDisable(true);
     }
 
     @FXML

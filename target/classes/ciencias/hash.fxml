@@ -61,6 +61,8 @@
                             <MenuItem mnemonicParsing="false" text="Lineal" />
                             <MenuItem mnemonicParsing="false" text="Cuadratica" />
                               <MenuItem mnemonicParsing="false" text="Doble Hash" />
+                              <MenuItem disable="true" mnemonicParsing="false" text="Anidamiento" />
+                              <MenuItem disable="true" mnemonicParsing="false" text="Encadenamiento" />
                           </items>
                         </MenuButton>
                         <Label layoutX="133.0" layoutY="114.0" text="Elige solucion de colisiones " />
