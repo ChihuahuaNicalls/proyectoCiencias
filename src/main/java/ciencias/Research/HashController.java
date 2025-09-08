@@ -117,6 +117,8 @@ public class HashController {
         tabPane.getSelectionModel().selectedItemProperty().addListener((observable, oldTab, newTab) -> {
             if (newTab == tabEliminateMod) {
                 resetModControls();
+            } else if (newTab == tabView) {
+                actualizarVistaArray();
             }
         });
 

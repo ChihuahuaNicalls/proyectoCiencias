@@ -48,13 +48,17 @@
                                                 <Font size="20.0" />
                                              </font>
                                           </MenuButton>
+                                          <Pane fx:id="paneSecuencial" layoutX="350.0" layoutY="30.0" prefHeight="420.0" prefWidth="700.0" />
                                        </children>
                                     </AnchorPane>
                                  </content>
                               </Tab>
-                              <Tab closable="false" onSelectionChanged="#restart" text="Indexada">
+                              <Tab fx:id="tabIndexada" closable="false" onSelectionChanged="#restart" text="Indexada">
                                  <content>
-                                    <AnchorPane prefHeight="180.0" prefWidth="200.0" />
+                                    <AnchorPane prefHeight="180.0" prefWidth="200.0">
+                                       <children>
+                                          <Pane fx:id="paneIndexada" layoutX="190.0" layoutY="54.0" prefHeight="420.0" prefWidth="700.0" />
+                                       </children></AnchorPane>
                                  </content>
                               </Tab>
                               <Tab closable="false" onSelectionChanged="#restart" text="Binaria">
@@ -70,6 +74,7 @@
                                                 <Font size="20.0" />
                                              </font>
                                           </MenuButton>
+                                          <Pane fx:id="paneBinaria" layoutX="350.0" layoutY="30.0" prefHeight="420.0" prefWidth="700.0" />
                                        </children>
                                     </AnchorPane>
                                  </content>
@@ -89,7 +94,7 @@
                                                 <Font size="20.0" />
                                              </font>
                                           </MenuButton>
-                                          <Pane fx:id="paneHash" layoutX="351.0" layoutY="31.0" prefHeight="420.0" prefWidth="700.0" />
+                                          <Pane fx:id="paneHash" layoutX="350.0" layoutY="30.0" prefHeight="420.0" prefWidth="700.0" />
                                           <TextFlow layoutX="21.0" layoutY="95.0" prefHeight="374.0" prefWidth="300.0" textAlignment="CENTER">
                                              <children>
                                                 <Text fx:id="textHashMenu" strokeType="OUTSIDE" strokeWidth="0.0">
