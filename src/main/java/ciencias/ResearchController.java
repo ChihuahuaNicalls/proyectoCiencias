@@ -35,6 +35,10 @@ public class ResearchController {
     private Pane paneSecuencial;
     @FXML
     private Pane paneIndexada;
+    @FXML
+    private Pane paneArboles;
+    @FXML
+    private Pane paneResiduos;
 
     @FXML
     private Tab tabBinaria;
@@ -52,10 +56,6 @@ public class ResearchController {
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("secuencial.fxml"));
             Parent vista = loader.load();
-
-            SecuencialController secuencialController = loader.getController();
-            secuencialController.setResearchController(this);
-            secuencialController.initData();
 
             paneSecuencial.getChildren().setAll(vista);
             restart();
@@ -80,10 +80,6 @@ public class ResearchController {
                     FXMLLoader loader = new FXMLLoader(getClass().getResource("binaria.fxml"));
                     Parent vista = loader.load();
 
-                    BinariaController binariaController = loader.getController();
-                    binariaController.setResearchController(this);
-                    binariaController.initData();
-
                     paneBinaria.getChildren().setAll(vista);
                 } catch (IOException e) {
                     e.printStackTrace();
@@ -96,11 +92,6 @@ public class ResearchController {
                     restart();
                     FXMLLoader loader = new FXMLLoader(getClass().getResource("secuencial.fxml"));
                     Parent vista = loader.load();
-
-                    SecuencialController secuencialController = loader.getController();
-                    secuencialController.setResearchController(this);
-                    secuencialController.initData();
-
                     paneSecuencial.getChildren().setAll(vista);
                 } catch (IOException e) {
                     e.printStackTrace();
@@ -132,51 +123,6 @@ public class ResearchController {
         }
         if (textHashMenu != null) {
             textHashMenu.setText(null);
-        }
-    }
-
-    @FXML
-    private void handleSecuencialAction(javafx.event.ActionEvent event) {
-        MenuItem source = (MenuItem) event.getSource();
-        String option = source.getText();
-        menuButtonSecuencial.setText(option);
-        try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("secuencial.fxml"));
-            Parent vista = loader.load();
-
-            SecuencialController secuencialController = loader.getController();
-
-            secuencialController.setResearchController(this);
-
-            secuencialController.initData();
-
-            paneSecuencial.getChildren().setAll(vista);
-
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    @FXML
-    private void handleBinariaAction(javafx.event.ActionEvent event) {
-        MenuItem source = (MenuItem) event.getSource();
-        String option = source.getText();
-        menuButtonBinaria.setText(option);
-        menuButtonSecuencial.setText(option);
-        try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("binaria.fxml"));
-            Parent vista = loader.load();
-
-            BinariaController binariaController = loader.getController();
-
-            binariaController.setResearchController(this);
-
-            binariaController.initData();
-
-            paneBinaria.getChildren().setAll(vista);
-
-        } catch (IOException e) {
-            e.printStackTrace();
         }
     }
 

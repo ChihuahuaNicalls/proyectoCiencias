@@ -517,34 +517,12 @@ public class HashController {
                 next = (posInicial + step * step - 1) % tableSize + 1;
                 break;
             case "Doble Hash":
-                int prime = tableSize > 2 ? findPrimeLessThan(tableSize) : 1;
-                int hash2 = 1 + (posInicial % prime);
-                next = (posInicial + step * hash2 - 1) % tableSize + 1;
+                next = aplicarFuncionHash(posInicial + 1);
                 break;
             default:
                 return posInicial;
         }
         return next;
-    }
-
-    private int findPrimeLessThan(int n) {
-        for (int i = n - 1; i >= 2; i--) {
-            if (isPrime(i)) {
-                return i;
-            }
-        }
-        return 2;
-    }
-
-    private boolean isPrime(int n) {
-        if (n <= 1)
-            return false;
-        for (int i = 2; i <= Math.sqrt(n); i++) {
-            if (n % i == 0) {
-                return false;
-            }
-        }
-        return true;
     }
 
     private void findItem(String claveStr, boolean eliminar) {
@@ -581,9 +559,8 @@ public class HashController {
                 }
 
                 if (eliminar) {
-                    // PRIMERO eliminar el elemento, LUEGO guardar el estado
                     table[pos] = null;
-                    saveState(pos); // Guardar estado después de la eliminación
+                    saveState(pos);
                     actualizarVistaArray();
                     itemsArrayText.setText("Clave " + claveStr + " eliminada en pos " + pos +
                             " en " + tiempo + ".");
