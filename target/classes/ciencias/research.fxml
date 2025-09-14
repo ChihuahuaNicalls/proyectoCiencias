@@ -34,47 +34,20 @@
                      <children>
                         <TabPane prefHeight="594.0" prefWidth="1080.0" tabClosingPolicy="UNAVAILABLE" tabMinHeight="60.0" tabMinWidth="150.0">
                            <tabs>
-                              <Tab closable="false" onSelectionChanged="#restart" text="Secuencial">
+                              <Tab fx:id="tabSecuencial" closable="false" text="Secuencial">
                                  <content>
                                     <AnchorPane prefHeight="184.0" prefWidth="1080.0">
                                        <children>
-                                          <MenuButton fx:id="menuButtonSecuencial" layoutX="22.0" layoutY="22.0" mnemonicParsing="false" prefWidth="300.0" text="Elegir">
-                                             <items>
-                                                <MenuItem mnemonicParsing="false" onAction="#handleSecuencialAction" text="Arreglos" />
-                                                <MenuItem mnemonicParsing="false" onAction="#handleSecuencialAction" text="Listas enlazadas" />
-                                                <MenuItem mnemonicParsing="false" onAction="#handleSecuencialAction" text="Arboles" />
-                                             </items>
-                                             <font>
-                                                <Font size="20.0" />
-                                             </font>
-                                          </MenuButton>
-                                          <Pane fx:id="paneSecuencial" layoutX="350.0" layoutY="30.0" prefHeight="420.0" prefWidth="700.0" />
+                                          <Pane fx:id="paneSecuencial" layoutX="175.0" layoutY="15.0" prefHeight="440.0" prefWidth="730.0" />
                                        </children>
                                     </AnchorPane>
                                  </content>
                               </Tab>
-                              <Tab fx:id="tabIndexada" closable="false" onSelectionChanged="#restart" text="Indexada">
+                              <Tab fx:id="tabBinaria" closable="false" text="Binaria">
                                  <content>
                                     <AnchorPane prefHeight="180.0" prefWidth="200.0">
                                        <children>
-                                          <Pane fx:id="paneIndexada" layoutX="190.0" layoutY="54.0" prefHeight="420.0" prefWidth="700.0" />
-                                       </children></AnchorPane>
-                                 </content>
-                              </Tab>
-                              <Tab closable="false" onSelectionChanged="#restart" text="Binaria">
-                                 <content>
-                                    <AnchorPane prefHeight="180.0" prefWidth="200.0">
-                                       <children>
-                                          <MenuButton fx:id="menuButtonBinaria" layoutX="22.0" layoutY="22.0" mnemonicParsing="false" prefHeight="38.0" prefWidth="300.0" text="Elegir">
-                                             <items>
-                                                <MenuItem mnemonicParsing="false" onAction="#handleBinariaAction" text="Arreglos" />
-                                                <MenuItem mnemonicParsing="false" onAction="#handleBinariaAction" text="Listas" />
-                                             </items>
-                                             <font>
-                                                <Font size="20.0" />
-                                             </font>
-                                          </MenuButton>
-                                          <Pane fx:id="paneBinaria" layoutX="350.0" layoutY="30.0" prefHeight="420.0" prefWidth="700.0" />
+                                          <Pane fx:id="paneBinaria" layoutX="175.0" layoutY="15.0" prefHeight="440.0" prefWidth="730.0" />
                                        </children>
                                     </AnchorPane>
                                  </content>
@@ -94,7 +67,7 @@
                                                 <Font size="20.0" />
                                              </font>
                                           </MenuButton>
-                                          <Pane fx:id="paneHash" layoutX="350.0" layoutY="30.0" prefHeight="420.0" prefWidth="700.0" />
+                                          <Pane fx:id="paneHash" layoutX="335.0" layoutY="15.0" prefHeight="440.0" prefWidth="730.0" />
                                           <TextFlow layoutX="21.0" layoutY="95.0" prefHeight="374.0" prefWidth="300.0" textAlignment="CENTER">
                                              <children>
                                                 <Text fx:id="textHashMenu" strokeType="OUTSIDE" strokeWidth="0.0">
@@ -108,13 +81,14 @@
                                     </AnchorPane>
                                  </content>
                               </Tab>
-                              <Tab onSelectionChanged="#restart" text="Busquedas por residuos">
+                              <Tab onSelectionChanged="#restart" text="Busquedas por arboles">
                                  <content>
                                     <AnchorPane prefHeight="180.0" prefWidth="200.0">
                                        <children>
                                           <MenuButton fx:id="menuButtonResiduos" layoutX="22.0" layoutY="22.0" mnemonicParsing="false" prefHeight="31.0" prefWidth="300.0" text="Elegir">
                                              <items>
                                                 <MenuItem mnemonicParsing="false" onAction="#handleResiduosAction" text="Arboles de busqueda digital" />
+                                                <MenuItem mnemonicParsing="false" text="Arboles de busqueda por residuos" />
                                                 <MenuItem mnemonicParsing="false" onAction="#handleResiduosAction" text="Arboles de busqueda por residuos multiple" />
                                                 <MenuItem mnemonicParsing="false" onAction="#handleResiduosAction" text="Tablas de indices" />
                                                 <MenuItem mnemonicParsing="false" onAction="#handleResiduosAction" text="Arboles de Huffman" />

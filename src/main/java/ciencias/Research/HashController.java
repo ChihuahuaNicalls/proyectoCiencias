@@ -1,97 +1,168 @@
 package ciencias.Research;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
+import java.util.ArrayDeque;
+import java.util.Arrays;
+import java.util.Deque;
+import java.util.HashMap;
+import java.util.Map;
+
+import ciencias.ResearchController;
+import javafx.fxml.FXML;
+import javafx.scene.control.Alert;
+import javafx.scene.control.Button;
+import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
 import javafx.scene.control.MenuButton;
 import javafx.scene.control.MenuItem;
-import javafx.scene.control.Tab;
-import javafx.scene.control.TabPane;
-import ciencias.ResearchController;
-import javafx.fxml.FXML;
-import javafx.scene.control.Button;
-import javafx.scene.control.ComboBox;
+import javafx.scene.control.Spinner;
+import javafx.scene.control.SpinnerValueFactory;
 import javafx.scene.control.TextField;
 import javafx.scene.control.TextFormatter;
 import javafx.scene.text.Text;
 import javafx.stage.FileChooser;
-import java.io.*;
-
-import java.util.Arrays;
 
 public class HashController {
+
     @FXML
     private TextField newItemArray;
     @FXML
     private TextField modDeleteItem;
     @FXML
-    private TextField modItem;
-
-    @FXML
     private Label titleHash;
     @FXML
     private Label functionHash;
-
-    @FXML
-    private Text truncText;
     @FXML
     private Text arrayLengthText;
     @FXML
     private Text itemsArrayText;
     @FXML
-    private Text modText;
-    @FXML
     private Text modOpText;
-
-    @FXML
-    private Button truncButton;
-    @FXML
-    private Button insertButton;
-    @FXML
-    private Button reiniciarButton;
     @FXML
     private Button createButton;
     @FXML
+    private Button reiniciarButton;
+    @FXML
+    private Button insertButton;
+    @FXML
     private Button searchButton;
     @FXML
-    private Button modifyButton;
-    @FXML
     private Button deleteButton;
-
     @FXML
-    private ComboBox<Integer> truncElegir;
-
+    private Button undoButton;
+    @FXML
+    private Button redoButton;
+    @FXML
+    private Button defineCollitionsButton;
     @FXML
     private MenuButton collisionHash;
     @FXML
-    private MenuButton rangeHash;
-
-    @FXML
-    private Tab tabEliminateMod;
-    @FXML
-    private Tab tabView;
-
-    @FXML
     private ListView<String> miViewList;
-
     @FXML
-    private TabPane tabPane;
+    private Spinner<Integer> numberDigits;
+    @FXML
+    private Text truncText;
+    @FXML
+    private Button truncButton;
+    @FXML
+    private ComboBox<Integer> truncElegir;
+    @FXML
+    private MenuButton rangeHash;
+    @FXML
+    private Button saveButton; // Botón de guardar
+
+    private int[] truncPositions;
+    private int truncMaxSelections = 0;
+    private boolean truncPositionsSet = false;
 
     private ResearchController researchController;
 
-    private int[] table;
-    private int[] truncPositions;
-
-    private String rangeString;
-    private String collisionString;
-    private String hashString;
-
-    private int primeSize;
+    private String[] table; // Cambiado a String[] para preservar ceros a la izquierda
     private int tableSize;
-    private int truncMaxSelections = 0;
-    private int rangeInt = 0;
+    private String hashString;
+    private String collisionString;
+    private int maxDigits;
+    private String pendingKey = null; // Cambiado a String
 
-    private boolean arrayReady;
-    private boolean truncPositionsSet;
+    private String[] cellColors;
+
+    private final Deque<ActionState> undoStack = new ArrayDeque<>();
+    private final Deque<ActionState> redoStack = new ArrayDeque<>();
+
+    private static class ActionState implements Serializable {
+        private final String[] tableSnapshot; // Cambiado a String[]
+        private final int tableSizeSnapshot;
+        private final int maxDigitsSnapshot;
+        private final String hashStringSnapshot;
+        private final String collisionMethodSnapshot;
+        private final int[] truncPositionsSnapshot;
+        private final boolean truncPositionsSetSnapshot;
+        private final int lastModifiedPosition;
+
+        ActionState(String[] table, int tableSize, int maxDigits, String hashString,
+                String collisionMethod, int[] truncPositions, boolean truncPositionsSet, int lastModifiedPosition) {
+            this.tableSnapshot = table != null ? table.clone() : null;
+            this.tableSizeSnapshot = tableSize;
+            this.maxDigitsSnapshot = maxDigits;
+            this.hashStringSnapshot = hashString;
+            this.collisionMethodSnapshot = collisionMethod;
+            this.truncPositionsSnapshot = truncPositions != null ? truncPositions.clone() : null;
+            this.truncPositionsSetSnapshot = truncPositionsSet;
+            this.lastModifiedPosition = lastModifiedPosition;
+        }
+
+        public String[] getTableSnapshot() {
+            return tableSnapshot;
+        }
+
+        public int getTableSizeSnapshot() {
+            return tableSizeSnapshot;
+        }
+
+        public int getMaxDigitsSnapshot() {
+            return maxDigitsSnapshot;
+        }
+
+        public String getHashStringSnapshot() {
+            return hashStringSnapshot;
+        }
+
+        public String getCollisionMethodSnapshot() {
+            return collisionMethodSnapshot;
+        }
+
+        public int[] getTruncPositionsSnapshot() {
+            return truncPositionsSnapshot;
+        }
+
+        public boolean getTruncPositionsSetSnapshot() {
+            return truncPositionsSetSnapshot;
+        }
+
+        public int getLastModifiedPosition() {
+            return lastModifiedPosition;
+        }
+    }
+
+    private void marcarPosicion(int index, String color) {
+        if (index < 1 || index > tableSize)
+            return;
+        cellColors[index] = color.toUpperCase();
+        miViewList.refresh();
+    }
+
+    private void scrollToPosition(int position) {
+        if (position >= 1 && position <= tableSize) {
+            miViewList.scrollTo(position - 1);
+        }
+    }
 
     @FXML
     private void initialize() {
@@ -99,28 +170,72 @@ public class HashController {
                 new TextFormatter<>(change -> change.getControlNewText().matches("\\d*") ? change : null));
         modDeleteItem.setTextFormatter(
                 new TextFormatter<>(change -> change.getControlNewText().matches("\\d*") ? change : null));
-        modItem.setTextFormatter(
-                new TextFormatter<>(change -> change.getControlNewText().matches("\\d*") ? change : null));
+
+        SpinnerValueFactory<Integer> valueFactory = new SpinnerValueFactory.IntegerSpinnerValueFactory(1, 9, 3);
+        numberDigits.setValueFactory(valueFactory);
+
+        numberDigits.valueProperty().addListener((obs, oldValue, newValue) -> {
+            if ("Truncamiento".equals(hashString)) {
+                truncPositions = null;
+                truncPositionsSet = false;
+                setupTruncationUI();
+            }
+        });
+
+        miViewList.setCellFactory(lv -> new javafx.scene.control.ListCell<String>() {
+            @Override
+            protected void updateItem(String item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setText(null);
+                    setStyle("");
+                } else {
+                    setText(item);
+
+                    int index = getIndex() + 1;
+                    if (index >= 1 && index <= tableSize) {
+                        switch (cellColors[index]) {
+                            case "GRAY":
+                                setStyle("-fx-background-color: lightgray; -fx-text-fill: black;");
+                                break;
+                            case "GREEN":
+                                setStyle("-fx-background-color: lightgreen; -fx-text-fill: black;");
+                                break;
+                            case "RED":
+                                setStyle("-fx-background-color: lightcoral; -fx-text-fill: black;");
+                                break;
+                            case "YELLOW":
+                                setStyle("-fx-background-color: yellow; -fx-text-fill: black;");
+                                break;
+                            default:
+                                setStyle("-fx-background-color: white; -fx-text-fill: black;");
+                                break;
+                        }
+                    } else {
+                        setStyle("-fx-background-color: white; -fx-text-fill: black;");
+                    }
+                }
+            }
+        });
 
         for (MenuItem item : collisionHash.getItems()) {
             item.setOnAction(event -> collisionHash.setText(item.getText()));
         }
+
         for (MenuItem item : rangeHash.getItems()) {
-            item.setOnAction(event -> {
-                rangeHash.setText(item.getText());
-                rangeString = item.getText();
-                if ("Truncamiento".equals(hashString))
-                    enableTrunc();
-            });
+            item.setOnAction(event -> rangeHash.setText(item.getText()));
         }
 
-        tabPane.getSelectionModel().selectedItemProperty().addListener((observable, oldTab, newTab) -> {
-            if (newTab == tabEliminateMod) {
-                resetModControls();
-            } else if (newTab == tabView) {
-                actualizarVistaArray();
-            }
-        });
+        undoButton.setDisable(true);
+        redoButton.setDisable(true);
+        defineCollitionsButton.setDisable(true);
+        searchButton.setDisable(true);
+        deleteButton.setDisable(true);
+        saveButton.setDisable(true);
+
+        insertButton.setDisable(true);
+        newItemArray.setDisable(true);
+        modDeleteItem.setDisable(true);
 
         truncText.setVisible(false);
         truncButton.setVisible(false);
@@ -135,7 +250,7 @@ public class HashController {
         switch (hashString) {
             case "Modulo":
                 titleHash.setText("Funcion de Hash: Modulo");
-                functionHash.setText("h(k) = (k mod m) + 1");
+                functionHash.setText("h(k) = k mod n + 1");
                 break;
             case "Cuadrada":
                 titleHash.setText("Funcion de Hash: Cuadrada");
@@ -144,41 +259,680 @@ public class HashController {
             case "Truncamiento":
                 titleHash.setText("Funcion de Hash: Truncamiento");
                 functionHash.setText("h(k) = elegir_dig(k) + 1");
-                truncText.setVisible(true);
-                truncButton.setVisible(true);
-                truncElegir.setVisible(true);
-                truncPositionsSet = false;
+                setupTruncationUI();
                 break;
             case "Plegamiento":
                 titleHash.setText("Funcion de Hash: Plegamiento");
-                functionHash.setText("h(k) = digmensig(k_1 + k_2 + ...) + 1");
+                functionHash.setText("h(k) = digmensig(k_1 + k_2) + 1");
                 break;
+        }
+    }
+
+    @FXML
+    private void crearArray() {
+        if ("Truncamiento".equals(hashString) && !truncPositionsSet) {
+            arrayLengthText.setText("Debe seleccionar las posiciones para truncar antes de crear el array.");
+            return;
+        }
+        maxDigits = numberDigits.getValue();
+
+        String rangoSeleccionado = rangeHash.getText();
+        if ("Elegir".equalsIgnoreCase(rangoSeleccionado)) {
+            arrayLengthText.setText("Debe seleccionar un rango antes de crear el array.");
+            return;
+        }
+        try {
+            tableSize = Integer.parseInt(rangoSeleccionado);
+        } catch (NumberFormatException e) {
+            arrayLengthText.setText("Error: rango inválido.");
+            return;
+        }
+
+        if ("Truncamiento".equals(hashString) && (truncPositions == null || truncPositions.length == 0)) {
+            arrayLengthText.setText("Error: No se han definido posiciones de truncamiento.");
+            return;
+        }
+
+        // Crear tabla con tamaño tableSize + 1 para índices 1-based
+        table = new String[tableSize + 1]; // Cambiado a String[]
+        cellColors = new String[tableSize + 1];
+        Arrays.fill(table, null); // Inicializar con null
+        Arrays.fill(cellColors, "white");
+
+        saveState(-1); // -1 indica que no hay posición modificada
+
+        createButton.setDisable(true);
+        rangeHash.setDisable(true);
+        numberDigits.setDisable(true);
+        if ("Truncamiento".equals(hashString)) {
+            truncButton.setDisable(true);
+            truncElegir.setDisable(true);
+        }
+        reiniciarButton.setDisable(false);
+        insertButton.setDisable(false);
+        newItemArray.setDisable(false);
+        modDeleteItem.setDisable(false);
+        searchButton.setDisable(false);
+        deleteButton.setDisable(false);
+        saveButton.setDisable(false); // Habilitar guardar después de crear
+
+        undoButton.setDisable(true);
+        redoButton.setDisable(true);
+
+        arrayLengthText.setText("Array de " + tableSize + " posiciones creado. Claves de " + maxDigits + " dígitos.");
+        if ("Truncamiento".equals(hashString)) {
+            arrayLengthText.setText(arrayLengthText.getText() +
+                    "\nPosiciones truncadas: " + Arrays.toString(truncPositions));
+        }
+        actualizarVistaArray();
+    }
+
+    @FXML
+    private void addToArray() {
+        String input = newItemArray.getText();
+        if (input.isEmpty()) {
+            itemsArrayText.setText("Por favor, ingrese una clave.");
+            return;
+        }
+
+        // Validar que sea numérico y tenga exactamente maxDigits dígitos
+        if (!input.matches("\\d{" + maxDigits + "}")) {
+            itemsArrayText.setText("Error: La clave debe tener exactamente " + maxDigits + " dígitos.");
+            return;
+        }
+
+        doInsert(input);
+        newItemArray.clear();
+    }
+
+    private boolean doInsert(String claveStr) {
+        if (claveStr.length() != maxDigits) {
+            itemsArrayText.setText("Error: La clave debe tener " + maxDigits + " dígitos.");
+            return false;
+        }
+
+        int claveInt = Integer.parseInt(claveStr); // Convertir a int para operaciones de hash
+        int pos = aplicarFuncionHash(claveInt);
+        int originalPos = pos;
+        int step = 1;
+
+        while (table[pos] != null) {
+            if (Integer.parseInt(table[pos]) == claveInt) { // Comparar como enteros
+                itemsArrayText.setText("Error: La clave " + claveStr + " ya existe.");
+                return false;
+            }
+
+            if (collisionString == null) {
+                itemsArrayText.setText("¡Colisión detectada en la posición " + pos +
+                        "!\nElija y defina un método de resolución.");
+                pendingKey = claveStr;
+                collisionHash.setDisable(false);
+                defineCollitionsButton.setDisable(false);
+
+                insertButton.setDisable(true);
+                searchButton.setDisable(true);
+                deleteButton.setDisable(true);
+                newItemArray.setDisable(true);
+                modDeleteItem.setDisable(true);
+                undoButton.setDisable(true);
+                redoButton.setDisable(true);
+                rangeHash.setDisable(true);
+
+                return false;
+            }
+
+            pos = siguientePosicion(originalPos, step);
+            step++;
+            if (step > tableSize) {
+                itemsArrayText.setText("Tabla llena. No se pudo insertar " + claveStr + ".");
+                return false;
+            }
+        }
+
+        table[pos] = claveStr; // Almacenar la cadena original
+
+        Arrays.fill(cellColors, "WHITE");
+
+        marcarPosicion(pos, "YELLOW");
+        scrollToPosition(pos);
+
+        saveState(pos);
+
+        itemsArrayText.setText("Clave " + claveStr + " insertada en la posición " + pos + ".");
+        actualizarVistaArray();
+
+        return true;
+    }
+
+    @FXML
+    private void defineCollitions() {
+        String selected = collisionHash.getText();
+        if ("Elegir".equalsIgnoreCase(selected)) {
+            itemsArrayText.setText("Debe seleccionar un método válido.");
+            return;
+        }
+
+        this.collisionString = selected;
+        collisionHash.setDisable(true);
+        defineCollitionsButton.setDisable(true);
+
+        insertButton.setDisable(false);
+        searchButton.setDisable(false);
+        deleteButton.setDisable(false);
+        newItemArray.setDisable(false);
+        modDeleteItem.setDisable(false);
+        undoButton.setDisable(false);
+        redoButton.setDisable(false);
+        rangeHash.setDisable(true);
+
+        itemsArrayText.setText(
+                "Método de colisión '" + collisionString + "' definido.\nIntentando insertar clave pendiente...");
+
+        if (pendingKey != null) {
+            String keyToInsert = pendingKey;
+            pendingKey = null;
+            doInsert(keyToInsert);
+        }
+    }
+
+    private int aplicarFuncionHash(int clave) {
+        switch (hashString) {
+            case "Modulo":
+                return (clave % tableSize) + 1; // Sumar 1 para evitar posición 0
+
+            case "Cuadrada":
+                long sq = (long) clave * clave;
+                String s = String.valueOf(sq);
+
+                // Determinar cuántos dígitos centrales tomar según el tamaño de la tabla
+                int digitos = (int) Math.log10(tableSize) + 1;
+                int digitosCentrales = digitos - 1; // Para 100 (2 dígitos) -> tomar 1 dígito central
+
+                // Ajustar para tablas más grandes
+                if (tableSize >= 1000)
+                    digitosCentrales = digitos - 1;
+
+                int start = (s.length() - digitosCentrales) / 2;
+                if (start < 0)
+                    start = 0;
+
+                String sub = s.substring(start, Math.min(start + digitosCentrales, s.length()));
+                if (sub.isEmpty())
+                    return 1;
+
+                int resultadoCuadrada = Integer.parseInt(sub) % tableSize;
+                return resultadoCuadrada + 1; // Sumar 1 para evitar posición 0
+
+            case "Plegamiento":
+                String claveStr = String.valueOf(clave);
+                int sum = 0;
+
+                // Dividir en segmentos de 2 dígitos
+                for (int i = 0; i < claveStr.length(); i += 2) {
+                    int end = Math.min(i + 2, claveStr.length());
+                    String segmento = claveStr.substring(i, end);
+                    sum += Integer.parseInt(segmento);
+                }
+
+                // Tomar los últimos dígitos según el tamaño de la tabla
+                int digitosPlegamiento = (int) Math.log10(tableSize) + 1;
+                int divisor = (int) Math.pow(10, digitosPlegamiento - 1);
+                int resultadoPlegamiento = sum % divisor;
+
+                return (resultadoPlegamiento % tableSize) + 1; // Sumar 1 para evitar posición 0
+
+            case "Truncamiento":
+                String numStr = String.format("%0" + maxDigits + "d", clave); // Preservar ceros a la izquierda
+                StringBuilder truncatedNum = new StringBuilder();
+
+                if (truncPositions != null) {
+                    for (int pos : truncPositions) {
+                        int idx = pos - 1;
+                        if (idx >= 0 && idx < numStr.length()) {
+                            truncatedNum.append(numStr.charAt(idx));
+                        }
+                    }
+                }
+
+                if (truncatedNum.length() == 0)
+                    return 1;
+
+                int resultadoTruncamiento = Integer.parseInt(truncatedNum.toString());
+                return (resultadoTruncamiento % tableSize) + 1; // Sumar 1 para evitar posición 0
+
+            default:
+                return (clave % tableSize) + 1; // Sumar 1 para evitar posición 0
+        }
+    }
+
+    private int siguientePosicion(int posInicial, int step) {
+        if (collisionString == null)
+            return posInicial;
+        int next;
+        switch (collisionString) {
+            case "Lineal":
+                next = (posInicial + step - 1) % tableSize + 1;
+                break;
+            case "Cuadratica":
+                next = (posInicial + step * step - 1) % tableSize + 1;
+                break;
+            case "Doble Hash":
+                int prime = tableSize > 2 ? findPrimeLessThan(tableSize) : 1;
+                int hash2 = 1 + (posInicial % prime);
+                next = (posInicial + step * hash2 - 1) % tableSize + 1;
+                break;
+            default:
+                return posInicial;
+        }
+        return next;
+    }
+
+    private int findPrimeLessThan(int n) {
+        for (int i = n - 1; i >= 2; i--) {
+            if (isPrime(i)) {
+                return i;
+            }
+        }
+        return 2;
+    }
+
+    private boolean isPrime(int n) {
+        if (n <= 1)
+            return false;
+        for (int i = 2; i <= Math.sqrt(n); i++) {
+            if (n % i == 0) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private void findItem(String claveStr, boolean eliminar) {
+        if (table == null) {
+            itemsArrayText.setText("No hay tabla creada.");
+            return;
+        }
+
+        int clave = Integer.parseInt(claveStr); // Convertir a int para búsqueda
+
+        Arrays.fill(cellColors, "WHITE");
+        miViewList.refresh();
+
+        long inicio = System.nanoTime();
+
+        int pos = aplicarFuncionHash(clave);
+        int originalPos = pos;
+        int step = 1;
+
+        java.util.List<Integer> recorrido = new java.util.ArrayList<>();
+
+        while (table[pos] != null) {
+            recorrido.add(pos);
+
+            if (Integer.parseInt(table[pos]) == clave) { // Comparar como enteros
+                long fin = System.nanoTime();
+                long nanos = fin - inicio;
+
+                String tiempo;
+                if (nanos < 1_000_000) {
+                    tiempo = nanos + " ns";
+                } else {
+                    tiempo = String.format("%.4f ms", nanos / 1_000_000.0);
+                }
+
+                if (eliminar) {
+                    // PRIMERO eliminar el elemento, LUEGO guardar el estado
+                    table[pos] = null;
+                    saveState(pos); // Guardar estado después de la eliminación
+                    actualizarVistaArray();
+                    itemsArrayText.setText("Clave " + claveStr + " eliminada en pos " + pos +
+                            " en " + tiempo + ".");
+                } else {
+                    itemsArrayText.setText("Clave " + claveStr + " encontrada en pos " + pos +
+                            " en " + tiempo + ".");
+                }
+
+                animateSearch(recorrido, true, pos, eliminar);
+                return;
+            }
+
+            if (collisionString == null)
+                break;
+
+            pos = siguientePosicion(originalPos, step);
+            step++;
+            if (step > tableSize)
+                break;
+        }
+
+        long fin = System.nanoTime();
+        long nanos = fin - inicio;
+
+        String tiempo;
+        if (nanos < 1_000_000) {
+            tiempo = nanos + " ns";
+        } else {
+            tiempo = String.format("%.4f ms", nanos / 1_000_000.0);
+        }
+
+        itemsArrayText.setText("Clave " + claveStr + " no encontrada tras " + recorrido.size() +
+                " intentos en " + tiempo + ".");
+        animateSearch(recorrido, false, -1, eliminar);
+    }
+
+    private void animateSearch(java.util.List<Integer> recorrido, boolean found, int foundPos, boolean eliminar) {
+        Arrays.fill(cellColors, "WHITE");
+        miViewList.refresh();
+
+        javafx.animation.Timeline timeline = new javafx.animation.Timeline();
+        javafx.util.Duration delay = javafx.util.Duration.ZERO;
+        javafx.util.Duration step = javafx.util.Duration.seconds(0.5);
+
+        for (int pos : recorrido) {
+            int current = pos;
+            timeline.getKeyFrames().add(new javafx.animation.KeyFrame(delay, e -> {
+                marcarPosicion(current, "GRAY");
+                scrollToPosition(current);
+            }));
+            delay = delay.add(step);
+        }
+
+        timeline.getKeyFrames().add(new javafx.animation.KeyFrame(delay, e -> {
+            if (found) {
+                if (eliminar) {
+                    marcarPosicion(foundPos, "RED");
+                } else {
+                    marcarPosicion(foundPos, "GREEN");
+                }
+                scrollToPosition(foundPos);
+            } else if (!recorrido.isEmpty()) {
+                int last = recorrido.get(recorrido.size() - 1);
+                marcarPosicion(last, "RED");
+                scrollToPosition(last);
+            }
+        }));
+
+        timeline.play();
+    }
+
+    @FXML
+    private void searchItem() {
+        String claveStr = modDeleteItem.getText();
+        if (claveStr.isEmpty()) {
+            itemsArrayText.setText("Ingrese una clave válida.");
+            return;
+        }
+        if (!claveStr.matches("\\d{" + maxDigits + "}")) {
+            itemsArrayText.setText("La clave debe tener " + maxDigits + " dígitos.");
+            return;
+        }
+        findItem(claveStr, false);
+    }
+
+    @FXML
+    private void eliminateItem() {
+        String claveStr = modDeleteItem.getText();
+        if (claveStr.isEmpty()) {
+            itemsArrayText.setText("Ingrese una clave válida.");
+            return;
+        }
+        if (!claveStr.matches("\\d{" + maxDigits + "}")) {
+            itemsArrayText.setText("La clave debe tener " + maxDigits + " dígitos.");
+            return;
+        }
+        findItem(claveStr, true);
+        modDeleteItem.clear();
+    }
+
+    private void saveState(int lastModifiedPosition) {
+        redoStack.clear();
+        undoStack.push(new ActionState(
+                table, tableSize, maxDigits, hashString,
+                collisionString, truncPositions, truncPositionsSet, lastModifiedPosition));
+        updateUndoRedoButtons();
+    }
+
+    @FXML
+    private void undoAction() {
+        if (undoStack.size() <= 1)
+            return;
+
+        ActionState currentState = undoStack.pop();
+        redoStack.push(currentState);
+
+        ActionState previousState = undoStack.peek();
+        applyState(previousState, true); // true = marcar última modificación
+        updateUndoRedoButtons();
+    }
+
+    @FXML
+    private void redoAction() {
+        if (redoStack.isEmpty())
+            return;
+
+        ActionState nextState = redoStack.pop();
+        undoStack.push(nextState);
+
+        applyState(nextState, true); // true = marcar última modificación
+        updateUndoRedoButtons();
+    }
+
+    private void applyState(ActionState state, boolean markLastModified) {
+        this.table = state.getTableSnapshot() != null ? state.getTableSnapshot().clone() : null;
+        this.tableSize = state.getTableSizeSnapshot();
+        this.maxDigits = state.getMaxDigitsSnapshot();
+        this.hashString = state.getHashStringSnapshot();
+        this.collisionString = state.getCollisionMethodSnapshot();
+        this.truncPositions = state.getTruncPositionsSnapshot() != null
+                ? state.getTruncPositionsSnapshot().clone()
+                : null;
+        this.truncPositionsSet = state.getTruncPositionsSetSnapshot();
+
+        // Inicializar colores en blanco
+        if (cellColors == null || cellColors.length != tableSize + 1) {
+            cellColors = new String[tableSize + 1];
+        }
+        Arrays.fill(cellColors, "WHITE");
+
+        // Solo marcar la última posición modificada si se solicita
+        int lastPos = state.getLastModifiedPosition();
+        if (markLastModified && lastPos != -1) {
+            marcarPosicion(lastPos, "GRAY");
+            scrollToPosition(lastPos);
+        }
+
+        handleUIState(state);
+        actualizarVistaArray();
+
+        // Actualizar estado del botón de guardar
+        saveButton.setDisable(table == null);
+    }
+
+    private void handleUIState(ActionState state) {
+        if (state.getCollisionMethodSnapshot() == null) {
+            collisionHash.setDisable(true);
+            collisionHash.setText("Elegir");
+            defineCollitionsButton.setDisable(true);
+            insertButton.setDisable(false);
+            newItemArray.setDisable(false);
+            modDeleteItem.setDisable(false);
+            searchButton.setDisable(false);
+            deleteButton.setDisable(false);
+        } else {
+            collisionHash.setText(state.getCollisionMethodSnapshot());
+            collisionHash.setDisable(true);
+            defineCollitionsButton.setDisable(true);
+            insertButton.setDisable(false);
+            newItemArray.setDisable(false);
+            modDeleteItem.setDisable(false);
+            searchButton.setDisable(false);
+            deleteButton.setDisable(false);
+        }
+    }
+
+    private void updateUndoRedoButtons() {
+        undoButton.setDisable(undoStack.size() <= 1);
+        redoButton.setDisable(redoStack.isEmpty());
+    }
+
+    @FXML
+    private void reiniciar() {
+        undoStack.clear();
+        redoStack.clear();
+
+        table = null;
+        arrayLengthText.setText("Array sin crear");
+        itemsArrayText.setText("No hay elementos en el array");
+        miViewList.getItems().clear();
+
+        collisionString = null;
+        collisionHash.setText("Elegir");
+        pendingKey = null;
+
+        rangeHash.setDisable(false);
+        numberDigits.setDisable(false);
+        createButton.setDisable(false);
+
+        reiniciarButton.setDisable(true);
+        insertButton.setDisable(true);
+        newItemArray.setDisable(true);
+        searchButton.setDisable(true);
+        deleteButton.setDisable(true);
+        modDeleteItem.setDisable(true);
+        collisionHash.setDisable(true);
+        defineCollitionsButton.setDisable(true);
+        undoButton.setDisable(true);
+        redoButton.setDisable(true);
+        saveButton.setDisable(true);
+
+        updateUndoRedoButtons();
+
+        if ("Truncamiento".equalsIgnoreCase(hashString)) {
+            truncElegir.setDisable(false);
+            truncElegir.setVisible(true);
+            truncText.setVisible(true);
+            truncButton.setDisable(false);
+            truncButton.setVisible(true);
+
+            truncPositions = null;
+            truncPositionsSet = false;
+            setupTruncationUI();
+        } else {
+            truncElegir.setDisable(true);
+            truncElegir.setVisible(false);
+            truncText.setVisible(false);
+            truncButton.setDisable(true);
+            truncButton.setVisible(false);
         }
     }
 
     private void actualizarVistaArray() {
-        if (table == null) {
-            miViewList.getItems().clear();
+        miViewList.getItems().clear();
+        if (table == null)
+            return;
+        for (int i = 1; i <= tableSize; i++) {
+            String valor = (table[i] == null) ? "-" : table[i]; // Mostrar la cadena original
+            miViewList.getItems().add("Pos " + i + ": " + valor);
+            if (cellColors != null && i < cellColors.length && cellColors[i] == null) {
+                cellColors[i] = "WHITE";
+            }
+        }
+        miViewList.refresh();
+    }
+
+    private void setupTruncationUI() {
+        if (!"Truncamiento".equals(hashString)) {
+            truncText.setVisible(false);
+            truncButton.setVisible(false);
+            truncElegir.setVisible(false);
             return;
         }
+        truncText.setVisible(true);
+        truncButton.setVisible(true);
+        truncElegir.setVisible(true);
+        truncElegir.getItems().clear();
 
-        miViewList.getItems().clear();
-        for (int i = 0; i < tableSize; i++) {
-            String valor = table[i] == -1 ? "-" : String.valueOf(table[i]);
-            miViewList.getItems().add("Pos " + (i + 1) + ": " + valor);
+        int totalDigits = numberDigits.getValue();
+        truncMaxSelections = totalDigits - 2;
+
+        if (truncMaxSelections <= 0) {
+            arrayLengthText.setText("El número de dígitos debe ser mayor a 2 para usar truncamiento.");
+            truncButton.setDisable(true);
+            truncElegir.setDisable(true);
+            return;
+        } else {
+            truncButton.setDisable(false);
+            truncElegir.setDisable(false);
+        }
+
+        for (int i = 1; i <= totalDigits; i++) {
+            truncElegir.getItems().add(i);
+        }
+
+        if (truncPositions == null || truncPositions.length == 0) {
+            arrayLengthText.setText(
+                    "Selecciona " + truncMaxSelections + " posiciones a truncar (de 1 a " + totalDigits + ").");
+        } else {
+            arrayLengthText.setText("Posiciones seleccionadas: " + Arrays.toString(truncPositions) +
+                    ". Restantes: " + (truncMaxSelections - truncPositions.length));
+        }
+
+        if (createButton.isDisable()) {
+            truncButton.setDisable(true);
+            truncElegir.setDisable(true);
         }
     }
 
-    private int siguientePosicion(int clave, int posActual, int step) {
-        switch (collisionString) {
-            case "Lineal":
-                return (posActual + step) % tableSize;
-            case "Cuadratica":
-                return (posActual + step * step) % tableSize;
-            case "Doble Hash":
-                return aplicarFuncionHash(posActual);
-            default:
-                return posActual;
+    @FXML
+    private void elegirTrunc() {
+        if (!"Truncamiento".equals(hashString) || truncMaxSelections <= 0) {
+            arrayLengthText.setText("El truncamiento no está disponible. Elige un número de dígitos mayor a 2.");
+            return;
+        }
+
+        Integer position = truncElegir.getValue();
+        if (position == null) {
+            arrayLengthText.setText("Por favor, seleccione una posición de la lista.");
+            return;
+        }
+
+        if (truncPositions == null) {
+            truncPositions = new int[0];
+        }
+
+        boolean alreadySelected = false;
+        for (int pos : truncPositions) {
+            if (pos == position) {
+                alreadySelected = true;
+                break;
+            }
+        }
+        if (alreadySelected) {
+            arrayLengthText.setText("La posición " + position + " ya fue seleccionada.");
+            return;
+        }
+
+        if (truncPositions.length >= truncMaxSelections) {
+            arrayLengthText.setText("Ya ha seleccionado el máximo de " + truncMaxSelections + " posiciones.");
+            return;
+        }
+
+        int[] newPositions = Arrays.copyOf(truncPositions, truncPositions.length + 1);
+        newPositions[truncPositions.length] = position;
+        truncPositions = newPositions;
+        Arrays.sort(truncPositions);
+
+        if (truncPositions.length == truncMaxSelections) {
+            truncPositionsSet = true;
+            arrayLengthText
+                    .setText("Posiciones finales: " + Arrays.toString(truncPositions) + ". Ya puede crear el array.");
+            truncButton.setDisable(true);
+            truncElegir.setDisable(true);
+            createButton.setDisable(false);
+        } else {
+            int remaining = truncMaxSelections - truncPositions.length;
+            arrayLengthText
+                    .setText("Seleccionado: " + Arrays.toString(truncPositions) + " (Faltan " + remaining + ").");
         }
     }
 
@@ -187,432 +941,34 @@ public class HashController {
     }
 
     @FXML
-    private void crearArray() {
-        collisionString = collisionHash.getText();
-        rangeString = rangeHash.getText();
-
-        if (!"Truncamiento".equals(hashString)) {
-            if (!"Elegir".equalsIgnoreCase(collisionString) && !"Elegir".equalsIgnoreCase(rangeString)) {
-                iniciarTabla();
-            } else {
-                arrayLengthText.setText("Seleccione todas las opciones para crear el array");
-            }
-        } else {
-            if (!"Elegir".equalsIgnoreCase(collisionString) && !"Elegir".equalsIgnoreCase(rangeString)
-                    && truncPositionsSet) {
-                iniciarTabla();
-            } else {
-                arrayLengthText.setText("Seleccione todas las opciones (incluyendo truncamiento)");
-            }
-        }
-
-        if (rangeString != null && !"Elegir".equalsIgnoreCase(rangeString)) {
-            rangeInt = Integer.parseInt(rangeString);
-        }
-    }
-
-    private int nextPrime(int n) {
-        if (n <= 2)
-            return 2;
-        for (int i = n;; i++) {
-            boolean isPrime = true;
-            for (int j = 2; j * j <= i; j++) {
-                if (i % j == 0) {
-                    isPrime = false;
-                    break;
-                }
-            }
-            if (isPrime)
-                return i;
-        }
-    }
-
-    private void iniciarTabla() {
-        tableSize = Integer.parseInt(rangeString);
-        primeSize = nextPrime(tableSize);
-        table = new int[tableSize];
-        Arrays.fill(table, -1);
-
-        collisionHash.setDisable(true);
-        rangeHash.setDisable(true);
-        truncElegir.setDisable(true);
-        createButton.setDisable(true);
-
-        reiniciarButton.setDisable(false);
-        insertButton.setDisable(false);
-        newItemArray.setDisable(false);
-        tabEliminateMod.setDisable(false);
-        tabView.setDisable(false);
-
-        arrayReady = true;
-
-        StringBuilder info = new StringBuilder("Array de tamaño " + tableSize + " creado\n");
-        info.append("Metodo de colision: ").append(collisionString).append("\n");
-        if ("Truncamiento".equals(hashString)) {
-            info.append("Posiciones truncadas: ").append(Arrays.toString(truncPositions));
-        }
-        arrayLengthText.setText(info.toString());
-        itemsArrayText.setText("No hay elementos en el array");
-    }
-
-    @FXML
-    private void addToArray() {
-        if (!arrayReady) {
-            itemsArrayText.setText("Primero cree el array.");
-            return;
-        }
-
-        try {
-            int clave = Integer.parseInt(newItemArray.getText());
-            if (clave < 0 || clave >= rangeInt) {
-                itemsArrayText.setText("La clave debe estar entre 0 y " + (rangeInt - 1));
-                return;
-            }
-
-            long start = System.nanoTime();
-
-            int pos = aplicarFuncionHash(clave);
-            int step = 1;
-
-            while (table[pos] != -1) {
-                if (table[pos] == clave) {
-                    itemsArrayText.setText("Error: La clave " + clave + " ya existe.");
-                    return;
-                }
-                pos = siguientePosicion(clave, pos, step);
-                step++;
-                if (step > tableSize) {
-                    itemsArrayText.setText("No hay espacio para insertar la clave: " + clave);
-                    return;
-                }
-            }
-
-            table[pos] = clave;
-
-            long end = System.nanoTime();
-            double ms = (end - start) / 1e6;
-
-            itemsArrayText.setText("Clave " + clave + " insertada en posicion " + (pos + 1) +
-                    "\nTiempo: " + String.format("%.3f", ms) + " ms");
-
-            actualizarVistaArray();
-            newItemArray.clear();
-
-        } catch (NumberFormatException e) {
-            itemsArrayText.setText("Ingrese un numero valido.");
-        }
-    }
-
-    private int aplicarFuncionHash(int clave) {
-        switch (hashString) {
-            case "Modulo":
-                return clave % tableSize;
-            case "Cuadrada":
-                int sq = clave * clave;
-                String s = String.valueOf(sq);
-                int mid = s.length() / 2;
-                return Character.getNumericValue(s.charAt(mid)) % tableSize;
-            case "Truncamiento":
-                String num = String.valueOf(clave);
-                StringBuilder trunc = new StringBuilder();
-                if (truncPositions != null) {
-                    for (int pos : truncPositions) {
-                        int idx = pos - 1;
-                        if (idx >= 0 && idx < num.length()) {
-                            trunc.append(num.charAt(idx));
-                        }
-                    }
-                }
-                if (trunc.length() == 0)
-                    return 0;
-                return Integer.parseInt(trunc.toString()) % tableSize;
-            case "Plegamiento":
-                String claveStr = String.valueOf(clave);
-                int sum = 0;
-                for (char c : claveStr.toCharArray())
-                    sum += Character.getNumericValue(c);
-                return sum % tableSize;
-            default:
-                return clave % tableSize;
-        }
-    }
-
-    @FXML
-    private void reiniciar() {
-        table = null;
-        tableSize = 0;
-        rangeInt = 0;
-        arrayReady = false;
-        collisionString = null;
-        rangeString = null;
-        truncPositions = null;
-        truncPositionsSet = false;
-
-        collisionHash.setDisable(false);
-        collisionHash.setText("Elegir");
-        rangeHash.setDisable(false);
-        rangeHash.setText("Elegir");
-        truncElegir.setDisable(true);
-        truncElegir.setVisible(false);
-        createButton.setDisable(false);
-
-        insertButton.setDisable(true);
-        newItemArray.setDisable(true);
-        reiniciarButton.setDisable(true);
-
-        arrayLengthText.setText("Array sin crear");
-        itemsArrayText.setText("No hay elementos en el array");
-    }
-
-    @FXML
-    private void enableTrunc() {
-        if (!"Truncamiento".equals(hashString))
-            return;
-
-        truncText.setVisible(true);
-        truncText.setDisable(false);
-        truncButton.setDisable(false);
-        truncElegir.setVisible(true);
-        truncElegir.setDisable(false);
-        truncElegir.getItems().clear();
-
-        int digits = 0;
-        try {
-            int maxValue = Math.max(0, Integer.parseInt(rangeString) - 1);
-            digits = String.valueOf(maxValue).length();
-        } catch (NumberFormatException e) {
-            arrayLengthText.setText("Rango invalido para truncamiento.");
-            truncButton.setDisable(true);
-            truncElegir.setDisable(true);
-            truncMaxSelections = 0;
-            return;
-        }
-
-        for (int i = 1; i <= digits; i++)
-            truncElegir.getItems().add(i);
-
-        truncMaxSelections = Math.max(0, digits - 2);
-
-        if (truncMaxSelections <= 0) {
-            truncButton.setDisable(true);
-            arrayLengthText.setText("No hay suficientes digitos para aplicar truncamiento.");
-            truncPositions = null;
-            truncPositionsSet = false;
-        } else {
-            truncButton.setDisable(false);
-            arrayLengthText.setText("Seleccione exactamente " + truncMaxSelections +
-                    " posiciones para truncamiento (entre 1 y " + digits + ").");
-            truncPositions = null;
-            truncPositionsSet = false;
-        }
-    }
-
-    @FXML
-    private void elegirTrunc() {
-        if (truncMaxSelections <= 0) {
-            arrayLengthText.setText("No se pueden seleccionar posiciones para truncamiento en este rango.");
-            return;
-        }
-
-        Integer position = truncElegir.getValue();
-        if (position == null) {
-            arrayLengthText.setText("Seleccione una posicion para agregar");
-            return;
-        }
-
-        if (truncPositions != null) {
-            for (int pos : truncPositions) {
-                if (pos == position) {
-                    arrayLengthText.setText("La posicion " + position + " ya fue seleccionada");
-                    return;
-                }
-            }
-        }
-
-        int current = truncPositions == null ? 0 : truncPositions.length;
-        if (current >= truncMaxSelections) {
-            arrayLengthText.setText("Solo puede seleccionar exactamente " + truncMaxSelections + " posiciones.");
-            return;
-        }
-
-        if (truncPositions == null) {
-            truncPositions = new int[] { position };
-        } else {
-            int[] newTruncPositions = Arrays.copyOf(truncPositions, truncPositions.length + 1);
-            newTruncPositions[truncPositions.length] = position;
-            truncPositions = newTruncPositions;
-        }
-
-        truncPositionsSet = (truncPositions.length == truncMaxSelections);
-
-        if (!truncPositionsSet) {
-            arrayLengthText.setText("Posiciones seleccionadas: " + Arrays.toString(truncPositions) +
-                    " (faltan " + (truncMaxSelections - truncPositions.length) + ")");
-        } else {
-            arrayLengthText.setText("Posiciones seleccionadas: " + Arrays.toString(truncPositions) +
-                    " (maximo alcanzado). Ahora puede crear el array.");
-        }
-    }
-
-    @FXML
-    private void searchItem() {
-        try {
-            int clave = Integer.parseInt(modDeleteItem.getText());
-            long start = System.nanoTime();
-
-            int pos = aplicarFuncionHash(clave);
-            int step = 1;
-
-            while (table[pos] != -1) {
-                if (table[pos] == clave) {
-                    long end = System.nanoTime();
-                    double ms = (end - start) / 1e6;
-
-                    modText.setText("Clave " + clave + " encontrada en posicion " + (pos + 1));
-                    modOpText.setText("Tiempo: " + String.format("%.3f", ms) + " ms");
-
-                    modItem.setDisable(false);
-                    modifyButton.setDisable(false);
-                    deleteButton.setDisable(false);
-
-                    modDeleteItem.setDisable(true);
-                    searchButton.setDisable(true);
-                    return;
-                }
-
-                pos = siguientePosicion(clave, pos, step);
-                step++;
-                if (step > tableSize)
-                    break;
-            }
-
-            long end = System.nanoTime();
-            double ms = (end - start) / 1e6;
-
-            modText.setText("No se encuentra el elemento");
-            modOpText.setText("Tiempo: " + String.format("%.3f", ms) + " ms");
-
-            modItem.setDisable(true);
-            modifyButton.setDisable(true);
-            deleteButton.setDisable(true);
-
-        } catch (NumberFormatException e) {
-            modText.setText("Ingrese un numero valido.");
-        }
-    }
-
-    @FXML
-    private void modifyItem() {
-        try {
-            int oldClave = Integer.parseInt(modDeleteItem.getText());
-            int newClave = Integer.parseInt(modItem.getText());
-
-            if (newClave < 0 || newClave >= rangeInt) {
-                modText.setText("Error: La nueva clave debe estar entre 0 y " + (rangeInt - 1));
-                modOpText.setText("Modificacion cancelada.");
-                resetModControls();
-                return;
-            }
-
-            if (findItem(newClave) != -1) {
-                modText.setText("Error: La nueva clave " + newClave + " ya existe en el array.");
-                modOpText.setText("Modificacion cancelada.");
-                resetModControls();
-                return;
-            }
-
-            int pos = findItem(oldClave);
-            if (pos != -1) {
-                table[pos] = newClave;
-                actualizarVistaArray();
-
-                modText.setText("Clave modificada: " + oldClave + " -> " + newClave);
-                modOpText.setText("Modificacion exitosa");
-            } else {
-                modText.setText("No se encontro la clave para modificar");
-                modOpText.setText("");
-            }
-
-            resetModControls();
-
-        } catch (NumberFormatException e) {
-            modText.setText("Ingrese un numero valido.");
-        }
-    }
-
-    @FXML
-    private void eliminateItem() {
-        try {
-            int clave = Integer.parseInt(modDeleteItem.getText());
-
-            int pos = findItem(clave);
-            if (pos != -1) {
-                table[pos] = -1;
-                actualizarVistaArray();
-                modText.setText("Clave eliminada: " + clave);
-                modOpText.setText("Posicion: " + (pos + 1));
-            } else {
-                modText.setText("No se encontro la clave para eliminar");
-                modOpText.setText("");
-            }
-
-            resetModControls();
-
-        } catch (NumberFormatException e) {
-            modText.setText("Ingrese un numero valido.");
-        }
-    }
-
-    private int findItem(int clave) {
-        int pos = aplicarFuncionHash(clave);
-        int step = 1;
-
-        while (table[pos] != -1) {
-            if (table[pos] == clave) {
-                return pos;
-            }
-            pos = siguientePosicion(clave, pos, step);
-            step++;
-            if (step > tableSize) {
-                break;
-            }
-        }
-        return -1;
-    }
-
-    private void resetModControls() {
-        modDeleteItem.clear();
-        modDeleteItem.setDisable(false);
-        searchButton.setDisable(false);
-        modItem.clear();
-        modItem.setDisable(true);
-        modifyButton.setDisable(true);
-        deleteButton.setDisable(true);
-    }
-
-    @FXML
     private void saveArray() {
         if (table == null) {
-            itemsArrayText.setText("No hay array para guardar.");
+            itemsArrayText.setText("No hay estructura creada para guardar.");
+            return;
+        }
+
+        if (undoStack.isEmpty()) {
+            itemsArrayText.setText("No hay estado para guardar.");
             return;
         }
 
         FileChooser fileChooser = new FileChooser();
-        fileChooser.setTitle("Guardar Array");
-        fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Archivo de texto", "*.txt"));
-        File file = fileChooser.showSaveDialog(tabPane.getScene().getWindow());
+        fileChooser.setTitle("Guardar Estado del Hash");
+        fileChooser.setInitialDirectory(new File("src/main/resources/docs"));
+        fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Archivo de estado Hash", "*.hsh"));
+        File file = fileChooser.showSaveDialog(miViewList.getScene().getWindow());
 
         if (file != null) {
-            try (BufferedWriter writer = new BufferedWriter(new FileWriter(file))) {
-                writer.write(tableSize + "," + primeSize);
-                writer.newLine();
-                for (int valor : table) {
-                    writer.write(String.valueOf(valor));
-                    writer.newLine();
-                }
-                itemsArrayText.setText("Array guardado en: " + file.getAbsolutePath());
+            try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(file))) {
+                Map<String, Object> saveData = new HashMap<>();
+                saveData.put("hashFunction", this.hashString);
+                saveData.put("state", undoStack.peek());
+
+                oos.writeObject(saveData);
+                itemsArrayText.setText("Estado guardado en: " + file.getName());
             } catch (IOException e) {
                 itemsArrayText.setText("Error al guardar el archivo: " + e.getMessage());
+                e.printStackTrace();
             }
         }
     }
@@ -620,37 +976,78 @@ public class HashController {
     @FXML
     private void loadArray() {
         FileChooser fileChooser = new FileChooser();
-        fileChooser.setTitle("Cargar Array");
-        fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Archivo de texto", "*.txt"));
-        File file = fileChooser.showOpenDialog(tabPane.getScene().getWindow());
+        fileChooser.setTitle("Cargar Estado del Hash");
+        fileChooser.setInitialDirectory(new File("src/main/resources/docs"));
+        fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Archivo de estado Hash", "*.hsh"));
+        File file = fileChooser.showOpenDialog(miViewList.getScene().getWindow());
 
         if (file != null) {
-            try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
-                String[] firstLine = reader.readLine().split(",");
-                tableSize = Integer.parseInt(firstLine[0]);
-                primeSize = Integer.parseInt(firstLine[1]);
+            try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(file))) {
+                Object loadedData = ois.readObject();
 
-                table = new int[tableSize];
-                for (int i = 0; i < tableSize; i++) {
-                    table[i] = Integer.parseInt(reader.readLine());
+                if (loadedData instanceof Map) {
+                    @SuppressWarnings("unchecked")
+                    Map<String, Object> saveData = (Map<String, Object>) loadedData;
+                    String savedHashFunction = (String) saveData.get("hashFunction");
+                    ActionState loadedState = (ActionState) saveData.get("state");
+
+                    if (!savedHashFunction.equals(this.hashString)) {
+                        Alert alert = new Alert(Alert.AlertType.ERROR);
+                        alert.setTitle("Error de Carga");
+                        alert.setHeaderText("Función hash incompatible");
+                        alert.setContentText("El archivo fue guardado con la función hash: " + savedHashFunction +
+                                "\nPero actualmente está seleccionada: " + this.hashString +
+                                "\n\nSeleccione la función hash correcta antes de cargar el archivo.");
+                        alert.showAndWait();
+
+                        itemsArrayText.setText("Error: Función hash incompatible");
+                        return;
+                    }
+
+                    // Reiniciar método de colisión
+                    collisionString = null;
+                    collisionHash.setText("Elegir");
+                    pendingKey = null;
+
+                    undoStack.clear();
+                    redoStack.clear();
+                    undoStack.push(loadedState);
+
+                    applyState(loadedState, false);
+                    updateUndoRedoButtons();
+
+                    if (table != null) {
+                        createButton.setDisable(true);
+                        rangeHash.setDisable(true);
+                        numberDigits.setDisable(true);
+                        reiniciarButton.setDisable(false);
+                        insertButton.setDisable(false);
+                        newItemArray.setDisable(false);
+                        modDeleteItem.setDisable(false);
+                        searchButton.setDisable(false);
+                        deleteButton.setDisable(false);
+                        saveButton.setDisable(false);
+
+                        if ("Truncamiento".equals(hashString)) {
+                            truncButton.setDisable(true);
+                            truncElegir.setDisable(true);
+                        }
+
+                        undoButton.setDisable(true);
+                        redoButton.setDisable(true);
+                    }
+
+                    itemsArrayText.setText("Estado cargado desde: " + file.getName());
                 }
+            } catch (IOException | ClassNotFoundException e) {
+                Alert alert = new Alert(Alert.AlertType.ERROR);
+                alert.setTitle("Error de Carga");
+                alert.setHeaderText("No se pudo cargar el archivo");
+                alert.setContentText("El archivo seleccionado no es válido o está corrupto: " + e.getMessage());
+                alert.showAndWait();
 
-                collisionHash.setDisable(true);
-                rangeHash.setDisable(true);
-                truncElegir.setDisable(true);
-                createButton.setDisable(true);
-
-                reiniciarButton.setDisable(false);
-                insertButton.setDisable(false);
-                newItemArray.setDisable(false);
-                tabEliminateMod.setDisable(false);
-                tabView.setDisable(false);
-
-                arrayReady = true;
-                actualizarVistaArray();
-                itemsArrayText.setText("Array cargado desde: " + file.getAbsolutePath());
-            } catch (IOException | NumberFormatException e) {
-                itemsArrayText.setText("Error al cargar el archivo: " + e.getMessage());
+                itemsArrayText.setText("Archivo no valido o corrupto");
+                e.printStackTrace();
             }
         }
     }
