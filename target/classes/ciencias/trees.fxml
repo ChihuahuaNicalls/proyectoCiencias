@@ -10,28 +10,28 @@
 <?import javafx.scene.text.Text?>
 <?import javafx.scene.text.TextFlow?>
 
-<Pane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="440.0" prefWidth="730.0" xmlns="http://javafx.com/javafx/24.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="ciencias.Research.SecuencialController">
+<Pane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="440.0" prefWidth="730.0" xmlns="http://javafx.com/javafx/24.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="ciencias.Research.TreesController">
    <children>
       <Button fx:id="insertButton" layoutX="287.0" layoutY="106.0" mnemonicParsing="false" onAction="#insertTree" text="Insertar" />
-      <Button fx:id="reiniciarButton" disable="true" layoutX="156.0" layoutY="374.0" mnemonicParsing="false" onAction="#reiniciar" text="Reiniciar Arbol">
+      <Button fx:id="reiniciarButton" disable="true" layoutX="156.0" layoutY="374.0" mnemonicParsing="false" onAction="#restartTree" text="Reiniciar Arbol">
          <font>
             <Font size="14.0" />
          </font></Button>
       <TextFlow layoutX="27.0" layoutY="140.0" prefHeight="25.0" prefWidth="377.0" textAlignment="CENTER">
          <children>
-            <Text fx:id="arrayLengthText" strokeType="OUTSIDE" strokeWidth="0.0" text="Array sin crear" />
+            <Text fx:id="treeLengthText" strokeType="OUTSIDE" strokeWidth="0.0" text="Array sin crear" />
          </children>
       </TextFlow>
       <Label layoutX="20.0" layoutY="171.0" text="Buscar o eliminar clave" />
-      <TextField fx:id="newItemArray" disable="true" layoutX="154.0" layoutY="106.0" prefHeight="25.0" prefWidth="112.0" />
+      <TextField fx:id="newItemTree" disable="true" layoutX="154.0" layoutY="106.0" prefHeight="25.0" prefWidth="112.0" />
       <TextFlow layoutX="22.0" layoutY="220.0" prefHeight="25.0" prefWidth="377.0" textAlignment="CENTER">
          <children>
             <Text fx:id="itemsTreeText" strokeType="OUTSIDE" strokeWidth="0.0" text="No hay elementos en el array" wrappingWidth="154.8046875" />
          </children>
       </TextFlow>
-      <TextFlow layoutX="232.0" layoutY="14.0" prefHeight="35.0" prefWidth="246.0" textAlignment="CENTER">
+      <TextFlow layoutX="252.0" layoutY="14.0" prefHeight="35.0" prefWidth="246.0" textAlignment="CENTER">
          <children>
-            <Label text="Arbol digital">
+            <Label fx:id="treesTitle" text="Arbol">
                <font>
                   <Font size="23.0" />
                </font>
@@ -40,32 +40,32 @@
       </TextFlow>
       <TextFlow layoutX="33.0" layoutY="56.0" prefHeight="33.0" prefWidth="684.0" textAlignment="CENTER">
          <children>
-            <Label text="Uso de alfabeto americano desde a=1 hasta z=27">
+            <Label fx:id="treesDescription" text="Descripcion" textAlignment="CENTER">
                <font>
-                  <Font name="System Bold" size="20.0" />
+                  <Font name="System Bold" size="13.0" />
                </font>
             </Label>
          </children>
       </TextFlow>
       <TextField fx:id="modDeleteItem" disable="true" layoutX="154.0" layoutY="167.0" prefHeight="25.0" prefWidth="112.0" />
-      <Button fx:id="searchButton" disable="true" layoutX="287.0" layoutY="167.0" mnemonicParsing="false" onAction="#searchItem" text="Buscar" />
-      <Button fx:id="deleteButton" disable="true" layoutX="346.0" layoutY="167.0" mnemonicParsing="false" onAction="#eliminateItem" text="Eliminar" />
+      <Button fx:id="searchButton" layoutX="287.0" layoutY="167.0" mnemonicParsing="false" onAction="#searchTree" text="Buscar" />
+      <Button fx:id="deleteButton" layoutX="346.0" layoutY="167.0" mnemonicParsing="false" onAction="#deleteTree" text="Eliminar" />
       <Label layoutX="70.0" layoutY="110.0" text="Insertar clave" />
       <Button fx:id="undoButton" disable="true" layoutX="55.0" layoutY="268.0" mnemonicParsing="false" onAction="#undoAction" text="Deshacer cambio" />
       <Button fx:id="redoButton" disable="true" layoutX="262.0" layoutY="268.0" mnemonicParsing="false" onAction="#redoAction" text="Rehacer cambio" />
-      <Button fx:id="saveButton" layoutX="80.0" layoutY="318.0" mnemonicParsing="false" onAction="#saveTree" prefHeight="30.0" prefWidth="85.0" text="Guardar...">
+      <Button fx:id="saveButton" disable="true" layoutX="80.0" layoutY="318.0" mnemonicParsing="false" onAction="#saveTree" prefHeight="30.0" prefWidth="85.0" text="Guardar...">
          <font>
             <Font size="14.0" />
          </font>
       </Button>
-      <Button fx:id="loadButton" layoutX="262.0" layoutY="318.0" mnemonicParsing="false" onAction="#loadTree" prefHeight="30.0" prefWidth="85.0" text="Cargar...">
+      <Button fx:id="loadButton" disable="true" layoutX="262.0" layoutY="318.0" mnemonicParsing="false" onAction="#loadTree" prefHeight="30.0" prefWidth="85.0" text="Cargar...">
          <font>
             <Font size="14.0" />
          </font>
       </Button>
       <ScrollPane fx:id="treePane" layoutX="410.0" layoutY="103.0" prefHeight="327.0" prefWidth="315.0">
         <content>
-          <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="200.0" prefWidth="200.0" />
+          <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="326.0" prefWidth="314.0" />
         </content>
       </ScrollPane>
    </children>

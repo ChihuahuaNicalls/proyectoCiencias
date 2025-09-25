@@ -111,7 +111,8 @@ public class SecuencialController {
     }
 
     private void marcarPosicion(int index, String color) {
-        if (index < 0 || index >= arraySize) return;
+        if (index < 0 || index >= arraySize)
+            return;
         cellColors[index] = color.toUpperCase();
         miViewList.refresh();
     }
@@ -258,17 +259,28 @@ public class SecuencialController {
             }
         }
 
-        array[currentIndex] = input;
-        int insertedIndex = currentIndex;
+        // 1. Buscar la posición ordenada donde insertar
+        int pos = 0;
+        while (pos < currentIndex && array[pos].compareTo(input) < 0) {
+            pos++;
+        }
+
+        // 2. Desplazar a la derecha desde el final hasta pos
+        for (int i = currentIndex; i > pos; i--) {
+            array[i] = array[i - 1];
+        }
+
+        // 3. Insertar en la posición encontrada
+        array[pos] = input;
         currentIndex++;
 
         Arrays.fill(cellColors, "WHITE");
-        marcarPosicion(insertedIndex, "YELLOW");
-        scrollToPosition(insertedIndex);
+        marcarPosicion(pos, "YELLOW");
+        scrollToPosition(pos);
 
-        saveState(insertedIndex);
+        saveState(pos);
 
-        itemsArrayText.setText("Clave " + input + " insertada en la posición " + insertedIndex + ".");
+        itemsArrayText.setText("Clave " + input + " insertada en la posición " + pos + " (ordenada).");
         actualizarVistaArray();
     }
 
@@ -403,7 +415,8 @@ public class SecuencialController {
 
     @FXML
     private void undoAction() {
-        if (undoStack.size() <= 1) return;
+        if (undoStack.size() <= 1)
+            return;
 
         ActionState currentState = undoStack.pop();
         redoStack.push(currentState);
@@ -415,7 +428,8 @@ public class SecuencialController {
 
     @FXML
     private void redoAction() {
-        if (redoStack.isEmpty()) return;
+        if (redoStack.isEmpty())
+            return;
 
         ActionState nextState = redoStack.pop();
         undoStack.push(nextState);
@@ -483,7 +497,8 @@ public class SecuencialController {
 
     private void actualizarVistaArray() {
         miViewList.getItems().clear();
-        if (array == null) return;
+        if (array == null)
+            return;
         for (int i = 0; i < arraySize; i++) {
             String valor = (array[i] == null) ? "-" : array[i];
             miViewList.getItems().add("Pos " + i + ": " + valor);
@@ -525,6 +540,7 @@ public class SecuencialController {
                 e.printStackTrace();
             }
         }
+        reiniciar();
     }
 
     @FXML

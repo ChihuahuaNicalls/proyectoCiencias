@@ -85,19 +85,19 @@
                                  <content>
                                     <AnchorPane prefHeight="180.0" prefWidth="200.0">
                                        <children>
-                                          <MenuButton fx:id="menuButtonResiduos" layoutX="22.0" layoutY="22.0" mnemonicParsing="false" prefHeight="31.0" prefWidth="300.0" text="Elegir">
+                                          <MenuButton fx:id="menuButtonTrees" layoutX="22.0" layoutY="22.0" mnemonicParsing="false" prefHeight="31.0" prefWidth="300.0" text="Elegir">
                                              <items>
-                                                <MenuItem mnemonicParsing="false" onAction="#handleResiduosAction" text="Arboles de busqueda digital" />
-                                                <MenuItem mnemonicParsing="false" text="Arboles de busqueda por residuos" />
-                                                <MenuItem mnemonicParsing="false" onAction="#handleResiduosAction" text="Arboles de busqueda por residuos multiple" />
-                                                <MenuItem mnemonicParsing="false" onAction="#handleResiduosAction" text="Tablas de indices" />
-                                                <MenuItem mnemonicParsing="false" onAction="#handleResiduosAction" text="Arboles de Huffman" />
+                                                <MenuItem mnemonicParsing="false" onAction="#handleTreesAction" text="Arboles de busqueda digital" />
+                                                <MenuItem mnemonicParsing="false" onAction="#handleTreesAction" text="Arboles de busqueda por residuos" />
+                                                <MenuItem mnemonicParsing="false" onAction="#handleTreesAction" text="Arboles de busqueda por residuos multiple" />
+                                                <MenuItem disable="true" mnemonicParsing="false" onAction="#handleTreesAction" text="Tablas de indices" />
+                                                <MenuItem mnemonicParsing="false" onAction="#handleTreesAction" text="Arboles de Huffman" />
                                              </items>
                                              <font>
                                                 <Font size="20.0" />
                                              </font>
                                           </MenuButton>
-                                          <Pane fx:id="paneArboles" layoutX="335.0" layoutY="15.0" prefHeight="440.0" prefWidth="730.0" />
+                                          <Pane fx:id="paneTrees" layoutX="335.0" layoutY="15.0" prefHeight="440.0" prefWidth="730.0" />
                                        </children>
                                     </AnchorPane>
                                  </content>
@@ -106,11 +106,11 @@
                                  <content>
                                     <AnchorPane prefHeight="180.0" prefWidth="200.0">
                                        <children>
-                                          <MenuButton fx:id="menuButtonRangos" layoutX="22.0" layoutY="22.0" mnemonicParsing="false" prefHeight="44.0" prefWidth="300.0" text="Elegir">
+                                          <MenuButton fx:id="menuButtonResiduos" layoutX="22.0" layoutY="22.0" mnemonicParsing="false" prefHeight="44.0" prefWidth="300.0" text="Elegir">
                                              <items>
-                                                <MenuItem mnemonicParsing="false" onAction="#handleRangosAction" text="Metodos elementales" />
-                                                <MenuItem mnemonicParsing="false" onAction="#handleRangosAction" text="Metodos de la rejilla" />
-                                                <MenuItem mnemonicParsing="false" onAction="#handleRangosAction" text="Arboles 2D" />
+                                                <MenuItem mnemonicParsing="false" onAction="#handleResiduosAction" text="Metodos elementales" />
+                                                <MenuItem mnemonicParsing="false" onAction="#handleResiduosAction" text="Metodos de la rejilla" />
+                                                <MenuItem mnemonicParsing="false" onAction="#handleResiduosAction" text="Arboles 2D" />
                                              </items>
                                              <font>
                                                 <Font size="20.0" />

@@ -76,7 +76,7 @@ public class HashController {
     @FXML
     private MenuButton rangeHash;
     @FXML
-    private Button saveButton; // Botón de guardar
+    private Button saveButton;
 
     private int[] truncPositions;
     private int truncMaxSelections = 0;
@@ -84,12 +84,12 @@ public class HashController {
 
     private ResearchController researchController;
 
-    private String[] table; // Cambiado a String[] para preservar ceros a la izquierda
+    private String[] table;
     private int tableSize;
     private String hashString;
     private String collisionString;
     private int maxDigits;
-    private String pendingKey = null; // Cambiado a String
+    private String pendingKey = null;
 
     private String[] cellColors;
 
@@ -97,7 +97,7 @@ public class HashController {
     private final Deque<ActionState> redoStack = new ArrayDeque<>();
 
     private static class ActionState implements Serializable {
-        private final String[] tableSnapshot; // Cambiado a String[]
+        private final String[] tableSnapshot;
         private final int tableSizeSnapshot;
         private final int maxDigitsSnapshot;
         private final String hashStringSnapshot;
@@ -438,7 +438,7 @@ public class HashController {
     private int aplicarFuncionHash(int clave) {
         switch (hashString) {
             case "Modulo":
-                return (clave % tableSize) + 1; // Sumar 1 para evitar posición 0
+                return (clave % tableSize) + 1;
 
             case "Cuadrada":
                 long sq = (long) clave * clave;
@@ -931,7 +931,7 @@ public class HashController {
 
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Guardar Estado del Hash");
-        fileChooser.setInitialDirectory(new File("src/main/resources/docs"));
+        fileChooser.setInitialDirectory(new File(System.getProperty("user.home") + "/Documents"));
         fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Archivo de estado Hash", "*.hsh"));
         File file = fileChooser.showSaveDialog(miViewList.getScene().getWindow());
 
@@ -948,13 +948,14 @@ public class HashController {
                 e.printStackTrace();
             }
         }
+        reiniciar();
     }
 
     @FXML
     private void loadArray() {
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Cargar Estado del Hash");
-        fileChooser.setInitialDirectory(new File("src/main/resources/docs"));
+        fileChooser.setInitialDirectory(new File(System.getProperty("user.home") + "/Documents"));
         fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Archivo de estado Hash", "*.hsh"));
         File file = fileChooser.showOpenDialog(miViewList.getScene().getWindow());
 

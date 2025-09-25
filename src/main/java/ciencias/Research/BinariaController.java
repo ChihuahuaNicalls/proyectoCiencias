@@ -587,6 +587,7 @@ public class BinariaController {
                 e.printStackTrace();
             }
         }
+        reiniciar();
     }
 
     @FXML

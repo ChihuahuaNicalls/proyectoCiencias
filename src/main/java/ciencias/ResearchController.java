@@ -25,7 +25,7 @@ public class ResearchController {
     @FXML
     private MenuButton menuButtonResiduos;
     @FXML
-    private MenuButton menuButtonRangos;
+    private MenuButton menuButtonTrees;
 
     @FXML
     private Pane paneHash;
@@ -36,7 +36,7 @@ public class ResearchController {
     @FXML
     private Pane paneIndexada;
     @FXML
-    private Pane paneArboles;
+    private Pane paneTrees;
     @FXML
     private Pane paneResiduos;
 
@@ -68,7 +68,7 @@ public class ResearchController {
                 menuButtonBinaria,
                 menuButtonHash,
                 menuButtonResiduos,
-                menuButtonRangos);
+                menuButtonTrees);
         panes = Arrays.asList(
                 paneHash,
                 paneBinaria,
@@ -156,15 +156,32 @@ public class ResearchController {
     }
 
     @FXML
-    private void handleRangosAction(javafx.event.ActionEvent event) {
+    private void handleTreesAction(javafx.event.ActionEvent event) {
         MenuItem source = (MenuItem) event.getSource();
         String option = source.getText();
-        menuButtonRangos.setText(option);
+        menuButtonTrees.setText(option);
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("trees.fxml"));
+            Parent vista = loader.load();
+
+            TreesController treesController = loader.getController();
+            treesController.setResearchController(this);
+            treesController.initData();
+            paneTrees.getChildren().setAll(vista);
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     @FXML
     public String getHashString() {
         return menuButtonHash.getText();
+    }
+
+    @FXML
+    public String getTreesString() {
+        return menuButtonTrees.getText();
     }
 
 }
