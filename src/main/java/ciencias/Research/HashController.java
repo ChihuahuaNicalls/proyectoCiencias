@@ -8,10 +8,14 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Deque;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import ciencias.ResearchController;
 import javafx.fxml.FXML;
@@ -83,6 +87,7 @@ public class HashController {
     private boolean truncPositionsSet = false;
 
     private ResearchController researchController;
+    private final List<String> insertedKeys = new ArrayList<>();
 
     private String[] table;
     private int tableSize;
@@ -105,9 +110,11 @@ public class HashController {
         private final int[] truncPositionsSnapshot;
         private final boolean truncPositionsSetSnapshot;
         private final int lastModifiedPosition;
+        private final List<String> insertedKeysSnapshot;
 
         ActionState(String[] table, int tableSize, int maxDigits, String hashString,
-                String collisionMethod, int[] truncPositions, boolean truncPositionsSet, int lastModifiedPosition) {
+                String collisionMethod, int[] truncPositions, boolean truncPositionsSet,
+                int lastModifiedPosition, List<String> insertedKeys) {
             this.tableSnapshot = table != null ? table.clone() : null;
             this.tableSizeSnapshot = tableSize;
             this.maxDigitsSnapshot = maxDigits;
@@ -116,6 +123,7 @@ public class HashController {
             this.truncPositionsSnapshot = truncPositions != null ? truncPositions.clone() : null;
             this.truncPositionsSetSnapshot = truncPositionsSet;
             this.lastModifiedPosition = lastModifiedPosition;
+            this.insertedKeysSnapshot = new ArrayList<>(insertedKeys);
         }
 
         public String[] getTableSnapshot() {
@@ -149,6 +157,11 @@ public class HashController {
         public int getLastModifiedPosition() {
             return lastModifiedPosition;
         }
+
+        public List<String> getInsertedKeysSnapshot() {
+            return insertedKeysSnapshot;
+        }
+
     }
 
     private void marcarPosicion(int index, String color) {
@@ -342,22 +355,33 @@ public class HashController {
         }
 
         doInsert(input);
+        
         newItemArray.clear();
     }
 
     private boolean doInsert(String claveStr) {
-        if (claveStr.length() != maxDigits) {
-            itemsArrayText.setText("Error: La clave debe tener " + maxDigits + " dígitos.");
+        int claveInt;
+        try {
+            claveInt = Integer.parseInt(claveStr);
+        } catch (NumberFormatException e) {
+            itemsArrayText.setText("Error: La clave debe ser numérica.");
             return false;
         }
 
-        int claveInt = Integer.parseInt(claveStr); // Convertir a int para operaciones de hash
+        // Verificar si la tabla está realmente llena
+        if (insertedKeys.size() >= tableSize) {
+            itemsArrayText.setText("Tabla llena. No se pudo insertar " + claveStr + ".");
+            return false;
+        }
+
         int pos = aplicarFuncionHash(claveInt);
-        int originalPos = pos;
         int step = 1;
+        int intentos = 0;
+        Set<Integer> posicionesVisitadas = new HashSet<>();
+        boolean usarAuxiliar = false;
 
         while (table[pos] != null) {
-            if (Integer.parseInt(table[pos]) == claveInt) { // Comparar como enteros
+            if (Integer.parseInt(table[pos]) == claveInt) {
                 itemsArrayText.setText("Error: La clave " + claveStr + " ya existe.");
                 return false;
             }
@@ -366,8 +390,6 @@ public class HashController {
                 itemsArrayText.setText("¡Colisión detectada en la posición " + pos +
                         "!\nElija y defina un método de resolución.");
                 pendingKey = claveStr;
-                collisionHash.setDisable(false);
-                defineCollitionsButton.setDisable(false);
 
                 insertButton.setDisable(true);
                 searchButton.setDisable(true);
@@ -378,29 +400,57 @@ public class HashController {
                 redoButton.setDisable(true);
                 rangeHash.setDisable(true);
 
+                collisionHash.setDisable(false);
+                defineCollitionsButton.setDisable(false);
+
                 return false;
             }
 
-            pos = siguientePosicion(originalPos, step);
+            posicionesVisitadas.add(pos);
+
+            int nextPos;
+            if (usarAuxiliar) {
+                nextPos = siguientePosicionAuxiliar(pos, step, claveInt);
+            } else {
+                nextPos = siguientePosicion(pos, step, claveInt);
+                if (posicionesVisitadas.contains(nextPos)) {
+                    usarAuxiliar = true;
+                    nextPos = siguientePosicionAuxiliar(pos, step, claveInt);
+                }
+            }
+
+            pos = nextPos;
             step++;
-            if (step > tableSize) {
-                itemsArrayText.setText("Tabla llena. No se pudo insertar " + claveStr + ".");
-                return false;
+            intentos++;
+
+            // Aumentar el límite de intentos a tableSize * 2
+            if (intentos >= tableSize * 2) {
+                // Verificar una última vez si la tabla está realmente llena
+                int ocupadas = 0;
+                for (int i = 1; i <= tableSize; i++) {
+                    if (table[i] != null)
+                        ocupadas++;
+                }
+                if (ocupadas >= tableSize) {
+                    itemsArrayText.setText("Tabla llena. No se pudo insertar " + claveStr + ".");
+                    return false;
+                } else {
+                    // Forzar el uso del método auxiliar si hay espacio libre
+                    usarAuxiliar = true;
+                    // Reiniciar el contador de intentos para dar más oportunidades
+                    intentos = tableSize;
+                }
             }
         }
 
-        table[pos] = claveStr; // Almacenar la cadena original
-
+        table[pos] = claveStr;
+        insertedKeys.add(claveStr);
+        saveState(pos);
+        actualizarVistaArray();
         Arrays.fill(cellColors, "WHITE");
-
         marcarPosicion(pos, "YELLOW");
         scrollToPosition(pos);
-
-        saveState(pos);
-
-        itemsArrayText.setText("Clave " + claveStr + " insertada en la posición " + pos + ".");
-        actualizarVistaArray();
-
+        itemsArrayText.setText("Clave " + claveStr + " insertada en pos " + pos + ".");
         return true;
     }
 
@@ -444,11 +494,9 @@ public class HashController {
                 long sq = (long) clave * clave;
                 String s = String.valueOf(sq);
 
-                // Determinar cuántos dígitos centrales tomar según el tamaño de la tabla
                 int digitos = (int) Math.log10(tableSize) + 1;
-                int digitosCentrales = digitos - 1; // Para 100 (2 dígitos) -> tomar 1 dígito central
+                int digitosCentrales = digitos - 1;
 
-                // Ajustar para tablas más grandes
                 if (tableSize >= 1000)
                     digitosCentrales = digitos - 1;
 
@@ -461,28 +509,26 @@ public class HashController {
                     return 1;
 
                 int resultadoCuadrada = Integer.parseInt(sub) % tableSize;
-                return resultadoCuadrada + 1; // Sumar 1 para evitar posición 0
+                return resultadoCuadrada + 1;
 
             case "Plegamiento":
                 String claveStr = String.valueOf(clave);
                 int sum = 0;
 
-                // Dividir en segmentos de 2 dígitos
                 for (int i = 0; i < claveStr.length(); i += 2) {
                     int end = Math.min(i + 2, claveStr.length());
                     String segmento = claveStr.substring(i, end);
                     sum += Integer.parseInt(segmento);
                 }
 
-                // Tomar los últimos dígitos según el tamaño de la tabla
                 int digitosPlegamiento = (int) Math.log10(tableSize) + 1;
                 int divisor = (int) Math.pow(10, digitosPlegamiento - 1);
                 int resultadoPlegamiento = sum % divisor;
 
-                return (resultadoPlegamiento % tableSize) + 1; // Sumar 1 para evitar posición 0
+                return (resultadoPlegamiento % tableSize) + 1;
 
             case "Truncamiento":
-                String numStr = String.format("%0" + maxDigits + "d", clave); // Preservar ceros a la izquierda
+                String numStr = String.format("%0" + maxDigits + "d", clave);
                 StringBuilder truncatedNum = new StringBuilder();
 
                 if (truncPositions != null) {
@@ -498,30 +544,49 @@ public class HashController {
                     return 1;
 
                 int resultadoTruncamiento = Integer.parseInt(truncatedNum.toString());
-                return (resultadoTruncamiento % tableSize) + 1; // Sumar 1 para evitar posición 0
+                return (resultadoTruncamiento % tableSize) + 1;
 
             default:
-                return (clave % tableSize) + 1; // Sumar 1 para evitar posición 0
+                return (clave % tableSize) + 1;
         }
     }
 
-    private int siguientePosicion(int posInicial, int step) {
+    private int siguientePosicion(int posActual, int step, int claveInt) {
         if (collisionString == null)
-            return posInicial;
+            return posActual;
+
         int next;
         switch (collisionString) {
             case "Lineal":
-                next = (posInicial + step - 1) % tableSize + 1;
+                next = ((posActual - 1) + 1) % tableSize + 1;
                 break;
+
             case "Cuadratica":
-                next = (posInicial + step * step - 1) % tableSize + 1;
+                next = ((posActual - 1) + (step * step)) % tableSize + 1;
                 break;
+
             case "Doble Hash":
-                next = aplicarFuncionHash(posInicial + 1);
+                // Reaplicar la función hash sobre la posición actual
+                int nuevo = aplicarFuncionHash(posActual);
+
+                // Normalizar al rango [1..tableSize]
+                nuevo = ((nuevo - 1) % tableSize + tableSize) % tableSize + 1;
+
+                // Si no cambia, avanzar al siguiente linealmente para evitar bucles
+                if (nuevo == posActual) {
+                    nuevo = (posActual % tableSize) + 1;
+                }
+                next = nuevo;
                 break;
+
             default:
-                return posInicial;
+                next = posActual;
         }
+        return next;
+    }
+
+    private int siguientePosicionAuxiliar(int posActual, int step, int claveInt) {
+        int next = (posActual % tableSize) + 1;
         return next;
     }
 
@@ -531,8 +596,7 @@ public class HashController {
             return;
         }
 
-        int clave = Integer.parseInt(claveStr); // Convertir a int para búsqueda
-
+        int clave = Integer.parseInt(claveStr);
         Arrays.fill(cellColors, "WHITE");
         miViewList.refresh();
 
@@ -541,32 +605,28 @@ public class HashController {
         int pos = aplicarFuncionHash(clave);
         int originalPos = pos;
         int step = 1;
-
-        java.util.List<Integer> recorrido = new java.util.ArrayList<>();
+        List<Integer> recorrido = new ArrayList<>();
+        Set<Integer> posicionesVisitadas = new HashSet<>();
+        boolean usarAuxiliar = false;
 
         while (table[pos] != null) {
             recorrido.add(pos);
+            posicionesVisitadas.add(pos);
 
-            if (Integer.parseInt(table[pos]) == clave) { // Comparar como enteros
+            if (Integer.parseInt(table[pos]) == clave) {
                 long fin = System.nanoTime();
                 long nanos = fin - inicio;
-
-                String tiempo;
-                if (nanos < 1_000_000) {
-                    tiempo = nanos + " ns";
-                } else {
-                    tiempo = String.format("%.4f ms", nanos / 1_000_000.0);
-                }
+                String tiempo = nanos < 1_000_000 ? nanos + " ns"
+                        : String.format("%.4f ms", nanos / 1_000_000.0);
 
                 if (eliminar) {
                     table[pos] = null;
+                    insertedKeys.remove(claveStr);
                     saveState(pos);
                     actualizarVistaArray();
-                    itemsArrayText.setText("Clave " + claveStr + " eliminada en pos " + pos +
-                            " en " + tiempo + ".");
+                    itemsArrayText.setText("Clave " + claveStr + " eliminada en pos " + pos + " en " + tiempo + ".");
                 } else {
-                    itemsArrayText.setText("Clave " + claveStr + " encontrada en pos " + pos +
-                            " en " + tiempo + ".");
+                    itemsArrayText.setText("Clave " + claveStr + " encontrada en pos " + pos + " en " + tiempo + ".");
                 }
 
                 animateSearch(recorrido, true, pos, eliminar);
@@ -576,21 +636,34 @@ public class HashController {
             if (collisionString == null)
                 break;
 
-            pos = siguientePosicion(originalPos, step);
+            int nextPos;
+            if (usarAuxiliar) {
+                nextPos = siguientePosicionAuxiliar(pos, step, clave);
+            } else {
+                if ("Doble Hash".equals(collisionString)) {
+                    nextPos = siguientePosicion(pos, step, clave);
+                } else {
+                    nextPos = siguientePosicion(originalPos, step, clave);
+                }
+                if (posicionesVisitadas.contains(nextPos)) {
+                    usarAuxiliar = true;
+                    nextPos = siguientePosicionAuxiliar(pos, step, clave);
+                }
+            }
+
+            pos = nextPos;
             step++;
-            if (step > tableSize)
+
+            // Aumentar el límite de intentos a tableSize * 2
+            if (step > tableSize * 2) {
                 break;
+            }
         }
 
         long fin = System.nanoTime();
         long nanos = fin - inicio;
-
-        String tiempo;
-        if (nanos < 1_000_000) {
-            tiempo = nanos + " ns";
-        } else {
-            tiempo = String.format("%.4f ms", nanos / 1_000_000.0);
-        }
+        String tiempo = nanos < 1_000_000 ? nanos + " ns"
+                : String.format("%.4f ms", nanos / 1_000_000.0);
 
         itemsArrayText.setText("Clave " + claveStr + " no encontrada tras " + recorrido.size() +
                 " intentos en " + tiempo + ".");
@@ -665,8 +738,39 @@ public class HashController {
         redoStack.clear();
         undoStack.push(new ActionState(
                 table, tableSize, maxDigits, hashString,
-                collisionString, truncPositions, truncPositionsSet, lastModifiedPosition));
+                collisionString, truncPositions, truncPositionsSet,
+                lastModifiedPosition, insertedKeys));
         updateUndoRedoButtons();
+    }
+
+    private void applyState(ActionState state, boolean markLastModified) {
+        this.table = state.getTableSnapshot() != null ? state.getTableSnapshot().clone() : null;
+        this.tableSize = state.getTableSizeSnapshot();
+        this.maxDigits = state.getMaxDigitsSnapshot();
+        this.hashString = state.getHashStringSnapshot();
+        this.collisionString = state.getCollisionMethodSnapshot();
+        this.truncPositions = state.getTruncPositionsSnapshot() != null
+                ? state.getTruncPositionsSnapshot().clone()
+                : null;
+        this.truncPositionsSet = state.getTruncPositionsSetSnapshot();
+
+        insertedKeys.clear();
+        insertedKeys.addAll(state.getInsertedKeysSnapshot());
+
+        if (cellColors == null || cellColors.length != tableSize + 1) {
+            cellColors = new String[tableSize + 1];
+        }
+        Arrays.fill(cellColors, "WHITE");
+
+        int lastPos = state.getLastModifiedPosition();
+        if (markLastModified && lastPos != -1) {
+            marcarPosicion(lastPos, "GRAY");
+            scrollToPosition(lastPos);
+        }
+
+        handleUIState(state);
+        actualizarVistaArray();
+        saveButton.setDisable(table == null);
     }
 
     @FXML
@@ -692,37 +796,6 @@ public class HashController {
 
         applyState(nextState, true); // true = marcar última modificación
         updateUndoRedoButtons();
-    }
-
-    private void applyState(ActionState state, boolean markLastModified) {
-        this.table = state.getTableSnapshot() != null ? state.getTableSnapshot().clone() : null;
-        this.tableSize = state.getTableSizeSnapshot();
-        this.maxDigits = state.getMaxDigitsSnapshot();
-        this.hashString = state.getHashStringSnapshot();
-        this.collisionString = state.getCollisionMethodSnapshot();
-        this.truncPositions = state.getTruncPositionsSnapshot() != null
-                ? state.getTruncPositionsSnapshot().clone()
-                : null;
-        this.truncPositionsSet = state.getTruncPositionsSetSnapshot();
-
-        // Inicializar colores en blanco
-        if (cellColors == null || cellColors.length != tableSize + 1) {
-            cellColors = new String[tableSize + 1];
-        }
-        Arrays.fill(cellColors, "WHITE");
-
-        // Solo marcar la última posición modificada si se solicita
-        int lastPos = state.getLastModifiedPosition();
-        if (markLastModified && lastPos != -1) {
-            marcarPosicion(lastPos, "GRAY");
-            scrollToPosition(lastPos);
-        }
-
-        handleUIState(state);
-        actualizarVistaArray();
-
-        // Actualizar estado del botón de guardar
-        saveButton.setDisable(table == null);
     }
 
     private void handleUIState(ActionState state) {
@@ -756,6 +829,7 @@ public class HashController {
     private void reiniciar() {
         undoStack.clear();
         redoStack.clear();
+        insertedKeys.clear();
 
         table = null;
         arrayLengthText.setText("Array sin crear");
@@ -977,12 +1051,10 @@ public class HashController {
                                 "\nPero actualmente está seleccionada: " + this.hashString +
                                 "\n\nSeleccione la función hash correcta antes de cargar el archivo.");
                         alert.showAndWait();
-
                         itemsArrayText.setText("Error: Función hash incompatible");
                         return;
                     }
 
-                    // Reiniciar método de colisión
                     collisionString = null;
                     collisionHash.setText("Elegir");
                     pendingKey = null;
@@ -993,6 +1065,14 @@ public class HashController {
 
                     applyState(loadedState, false);
                     updateUndoRedoButtons();
+
+                    insertedKeys.clear();
+                    if (table != null) {
+                        for (String key : table) {
+                            if (key != null)
+                                insertedKeys.add(key);
+                        }
+                    }
 
                     if (table != null) {
                         createButton.setDisable(true);
@@ -1023,7 +1103,6 @@ public class HashController {
                 alert.setHeaderText("No se pudo cargar el archivo");
                 alert.setContentText("El archivo seleccionado no es válido o está corrupto: " + e.getMessage());
                 alert.showAndWait();
-
                 itemsArrayText.setText("Archivo no valido o corrupto");
                 e.printStackTrace();
             }

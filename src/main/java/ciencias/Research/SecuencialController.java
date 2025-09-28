@@ -259,29 +259,32 @@ public class SecuencialController {
             }
         }
 
-        // 1. Buscar la posición ordenada donde insertar
-        int pos = 0;
-        while (pos < currentIndex && array[pos].compareTo(input) < 0) {
-            pos++;
+        // Encontrar la posición correcta para mantener el orden
+        int posicionInsercion = 0;
+        while (posicionInsercion < currentIndex
+                && Integer.parseInt(array[posicionInsercion]) < Integer.parseInt(input)) {
+            posicionInsercion++;
         }
 
-        // 2. Desplazar a la derecha desde el final hasta pos
-        for (int i = currentIndex; i > pos; i--) {
+        // Desplazar elementos a la derecha para hacer espacio
+        for (int i = currentIndex; i > posicionInsercion; i--) {
             array[i] = array[i - 1];
         }
 
-        // 3. Insertar en la posición encontrada
-        array[pos] = input;
+        // Insertar en la posición correcta
+        array[posicionInsercion] = input;
         currentIndex++;
 
+        // Actualizar interfaz
         Arrays.fill(cellColors, "WHITE");
-        marcarPosicion(pos, "YELLOW");
-        scrollToPosition(pos);
+        marcarPosicion(posicionInsercion, "YELLOW");
+        scrollToPosition(posicionInsercion);
 
-        saveState(pos);
+        saveState(posicionInsercion);
 
-        itemsArrayText.setText("Clave " + input + " insertada en la posición " + pos + " (ordenada).");
+        itemsArrayText.setText("Clave " + input + " insertada en posición " + (posicionInsercion + 1) + " (ordenada).");
         actualizarVistaArray();
+        newItemArray.clear();
     }
 
     private void findItem(String claveStr, boolean eliminar) {
@@ -299,8 +302,9 @@ public class SecuencialController {
         boolean encontrado = false;
         int posicionEncontrada = -1;
 
+        // Búsqueda secuencial desde la primera posición
         for (int i = 0; i < currentIndex; i++) {
-            recorrido.add(i);
+            recorrido.add(i); // Añadir cada posición visitada al recorrido
             if (claveStr.equals(array[i])) {
                 encontrado = true;
                 posicionEncontrada = i;
@@ -320,23 +324,25 @@ public class SecuencialController {
 
         if (encontrado) {
             if (eliminar) {
-                // Eliminar el elemento desplazando los siguientes
+                // Eliminar el elemento y mantener el orden
                 for (int i = posicionEncontrada; i < currentIndex - 1; i++) {
                     array[i] = array[i + 1];
                 }
                 array[currentIndex - 1] = null;
                 currentIndex--;
+
                 saveState(posicionEncontrada);
                 actualizarVistaArray();
-                itemsArrayText.setText("Clave " + claveStr + " eliminada en pos " + posicionEncontrada +
-                        " en " + tiempo + ".");
+
+                itemsArrayText.setText("Clave " + claveStr + " eliminada en pos " + (posicionEncontrada + 1) +
+                        " en " + tiempo + ". Array reordenado.");
             } else {
-                itemsArrayText.setText("Clave " + claveStr + " encontrada en pos " + posicionEncontrada +
+                itemsArrayText.setText("Clave " + claveStr + " encontrada en pos " + (posicionEncontrada + 1) +
                         " en " + tiempo + ".");
             }
         } else {
             itemsArrayText.setText("Clave " + claveStr + " no encontrada tras " + recorrido.size() +
-                    " intentos en " + tiempo + ".");
+                    " comparaciones en " + tiempo + ".");
         }
 
         animateSearch(recorrido, encontrado, posicionEncontrada, eliminar);
@@ -363,6 +369,8 @@ public class SecuencialController {
             if (found) {
                 if (eliminar) {
                     marcarPosicion(foundPos, "RED");
+                    // Mostrar que el elemento fue eliminado
+                    itemsArrayText.setText("Elemento eliminado. Array reorganizado.");
                 } else {
                     marcarPosicion(foundPos, "GREEN");
                 }
@@ -474,6 +482,7 @@ public class SecuencialController {
         redoStack.clear();
 
         array = null;
+        currentIndex = 0;
         arrayLengthText.setText("Array sin crear");
         itemsArrayText.setText("No hay elementos en el array");
         miViewList.getItems().clear();
@@ -492,16 +501,18 @@ public class SecuencialController {
         redoButton.setDisable(true);
         saveButton.setDisable(true);
 
-        updateUndoRedoButtons();
+        newItemArray.clear();
+        modDeleteItem.clear();
     }
 
     private void actualizarVistaArray() {
         miViewList.getItems().clear();
         if (array == null)
             return;
+
         for (int i = 0; i < arraySize; i++) {
             String valor = (array[i] == null) ? "-" : array[i];
-            miViewList.getItems().add("Pos " + i + ": " + valor);
+            miViewList.getItems().add("Pos " + (i + 1) + ": " + valor);
             if (cellColors != null && i < cellColors.length && cellColors[i] == null) {
                 cellColors[i] = "WHITE";
             }

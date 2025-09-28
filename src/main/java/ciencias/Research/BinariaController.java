@@ -403,7 +403,7 @@ public class BinariaController {
         for (int pos : recorrido) {
             int current = pos;
             timeline.getKeyFrames().add(new javafx.animation.KeyFrame(delay, e -> {
-                marcarPosicion(current, "BLUE");
+                marcarPosicion(current, "GRAY");
                 scrollToPosition(current);
             }));
             delay = delay.add(step);
