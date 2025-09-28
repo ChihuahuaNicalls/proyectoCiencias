@@ -11,6 +11,7 @@ import javafx.scene.Parent;
 import javafx.scene.control.MenuButton;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.Tab;
+import javafx.scene.control.TabPane;
 import javafx.scene.layout.Pane;
 import javafx.scene.text.Text;
 
@@ -44,6 +45,11 @@ public class ResearchController {
     private Tab tabBinaria;
     @FXML
     private Tab tabSecuencial;
+
+    @FXML
+    private TabPane tabPaneInternal;
+    @FXML
+    private TabPane tabPaneExternal;
 
     @FXML
     private Text textHashMenu;
@@ -124,6 +130,36 @@ public class ResearchController {
         if (textHashMenu != null) {
             textHashMenu.setText(null);
         }
+    }
+
+    @FXML
+    private void internal() {
+        restart();
+
+        try {
+            if (paneSecuencial == null) {
+                System.err.println("Error: paneSecuencial es null");
+                return;
+            }
+
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("secuencial.fxml"));
+            Parent vista = loader.load();
+
+            paneSecuencial.getChildren().clear();
+            paneSecuencial.getChildren().add(vista);
+
+            tabPaneInternal.getSelectionModel().select(0);
+
+        } catch (IOException e) {
+            System.err.println("Error cargando secuencial.fxml: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    @FXML
+    private void external() {
+        restart();
+        tabPaneExternal.getSelectionModel().select(0);
     }
 
     @FXML

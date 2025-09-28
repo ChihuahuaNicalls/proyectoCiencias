@@ -28,11 +28,11 @@
    <center>
       <TabPane prefHeight="200.0" prefWidth="200.0" tabClosingPolicy="UNAVAILABLE" tabMinHeight="40.0" tabMinWidth="200.0" BorderPane.alignment="CENTER">
         <tabs>
-          <Tab onSelectionChanged="#restart" text="Busquedas internas">
+          <Tab onSelectionChanged="#internal" text="Busquedas internas">
             <content>
               <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
                      <children>
-                        <TabPane prefHeight="594.0" prefWidth="1080.0" tabClosingPolicy="UNAVAILABLE" tabMinHeight="60.0" tabMinWidth="150.0">
+                        <TabPane fx:id="tabPaneInternal" prefHeight="594.0" prefWidth="1080.0" tabClosingPolicy="UNAVAILABLE" tabMinHeight="60.0" tabMinWidth="150.0">
                            <tabs>
                               <Tab fx:id="tabSecuencial" closable="false" text="Secuencial">
                                  <content>
@@ -127,13 +127,13 @@
                   </AnchorPane>
             </content>
           </Tab>
-          <Tab onSelectionChanged="#restart" text="Busquedas externas">
+          <Tab onSelectionChanged="#external" text="Busquedas externas">
             <content>
               <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
                      <children>
                         <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
                            <children>
-                              <TabPane prefHeight="594.0" prefWidth="1080.0" tabClosingPolicy="UNAVAILABLE" tabMinHeight="60.0" tabMinWidth="150.0">
+                              <TabPane fx:id="tabPaneExternal" prefHeight="594.0" prefWidth="1080.0" tabClosingPolicy="UNAVAILABLE" tabMinHeight="60.0" tabMinWidth="150.0">
                                  <tabs>
                                     <Tab closable="false" onSelectionChanged="#restart" text="Secuencial">
                                        <content>
