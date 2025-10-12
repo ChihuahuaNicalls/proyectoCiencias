@@ -5,6 +5,7 @@ import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.PriorityQueue;
@@ -170,7 +171,7 @@ public class TreesController {
     }
 
     private class HuffmanNode implements Comparable<HuffmanNode> {
-        Character letter;
+        Character letter; // Solo para nodos hoja
         double frequency;
         HuffmanNode left;
         HuffmanNode right;
@@ -178,7 +179,9 @@ public class TreesController {
         double x, y;
         Circle circle;
         int insertionOrder;
+        String nodeType; // "leaf" o "link"
 
+        // Constructor para nodos hoja
         HuffmanNode(Character letter, double frequency, int insertionOrder) {
             this.letter = letter;
             this.frequency = frequency;
@@ -186,32 +189,47 @@ public class TreesController {
             this.left = null;
             this.right = null;
             this.path = new ArrayList<>();
+            this.nodeType = "leaf";
+        }
+
+        // Constructor para nodos de enlace
+        HuffmanNode(HuffmanNode left, HuffmanNode right, double frequency, int insertionOrder) {
+            this.letter = null;
+            this.frequency = frequency;
+            this.insertionOrder = insertionOrder;
+            this.left = left;
+            this.right = right;
+            this.path = new ArrayList<>();
+            this.nodeType = "link";
         }
 
         @Override
-        public int compareTo(HuffmanNode other) {
-            if (Math.abs(this.frequency - other.frequency) > 1e-9) {
-                return Double.compare(this.frequency, other.frequency);
-            }
-
-            if (this.isLeaf() && !other.isLeaf()) {
-                return -1;
-            }
-            if (!this.isLeaf() && other.isLeaf()) {
-                return 1;
-            }
-
-            return Integer.compare(this.insertionOrder, other.insertionOrder);
-        }
+public int compareTo(HuffmanNode other) {
+    // Primero por frecuencia (menor frecuencia primero)
+    int freqCompare = Double.compare(this.frequency, other.frequency);
+    if (freqCompare != 0) {
+        return freqCompare;
+    }
+    // Para frecuencias iguales, por orden de inserción (MAYOR orden primero)
+    // Esto asegura que los nodos más recientes se combinen primero
+    return Integer.compare(other.insertionOrder, this.insertionOrder);
+}
 
         public boolean isLeaf() {
-            return left == null && right == null;
+            return "leaf".equals(nodeType);
         }
 
         @Override
         public String toString() {
             if (isLeaf()) {
                 return letter + ":" + String.format("%.3f", frequency);
+            }
+            return String.format("%.3f", frequency);
+        }
+
+        public String getDisplayText() {
+            if (isLeaf()) {
+                return String.valueOf(letter);
             }
             return String.format("%.3f", frequency);
         }
@@ -576,6 +594,7 @@ public class TreesController {
                 notificationText.setText("Para Huffman, ingrese un mensaje.");
                 return;
             }
+            debugHuffmanProcess(message);
 
             buildHuffmanTree(message);
             updateItemsText();
@@ -1151,9 +1170,13 @@ public class TreesController {
     private HuffmanNode cloneHuffmanTree(HuffmanNode original) {
         if (original == null)
             return null;
-        HuffmanNode clone = new HuffmanNode(original.letter, original.frequency, original.insertionOrder);
-        clone.left = cloneHuffmanTree(original.left);
-        clone.right = cloneHuffmanTree(original.right);
+        HuffmanNode clone;
+        if (original.isLeaf()) {
+            clone = new HuffmanNode(original.letter, original.frequency, original.insertionOrder);
+        } else {
+            clone = new HuffmanNode(cloneHuffmanTree(original.left), cloneHuffmanTree(original.right),
+                    original.frequency, original.insertionOrder);
+        }
         clone.path = new ArrayList<>(original.path);
         return clone;
     }
@@ -1268,12 +1291,15 @@ public class TreesController {
             return null;
         }
 
+        // Tomar solo el primer carácter
         char c = input.charAt(0);
 
+        // Convertir a mayúsculas si es minúscula
         if (c >= 'a' && c <= 'z') {
             c = Character.toUpperCase(c);
         }
 
+        // Solo permitir letras A-Z
         if (c < 'A' || c > 'Z') {
             return null;
         }
@@ -1390,62 +1416,245 @@ public class TreesController {
     }
 
     private void buildHuffmanTree(String message) {
-        if (message == null || message.isEmpty()) {
-            notificationText.setText("Mensaje vacío para construir árbol de Huffman.");
-            return;
+    if (message == null || message.isEmpty()) {
+        notificationText.setText("Mensaje vacío para construir árbol de Huffman.");
+        return;
+    }
+
+    // Paso 1: Invertir el mensaje
+    String reversedMessage = new StringBuilder(message).reverse().toString();
+    huffmanMessage = reversedMessage;
+
+    // Paso 2: Calcular frecuencias
+    Map<Character, Integer> charCount = new HashMap<>();
+    int totalChars = 0;
+
+    for (char c : reversedMessage.toCharArray()) {
+        char upperChar = Character.toUpperCase(c);
+        if (upperChar >= 'A' && upperChar <= 'Z') {
+            charCount.put(upperChar, charCount.getOrDefault(upperChar, 0) + 1);
+            totalChars++;
         }
+    }
 
+    if (charCount.isEmpty()) {
+        notificationText.setText("El mensaje no contiene letras válidas (A-Z).");
+        huffmanRoot = null;
+        huffmanCodes.clear();
+        updateTreeVisualization();
+        return;
+    }
+
+    // Paso 3: Crear lista manteniendo orden de aparición en el mensaje invertido
+    List<HuffmanNode> nodes = new ArrayList<>();
+    int insertionOrder = 0;
+
+    for (char c : reversedMessage.toCharArray()) {
+        char upperChar = Character.toUpperCase(c);
+        if (upperChar >= 'A' && upperChar <= 'Z' && 
+            !containsNodeWithLetter(nodes, upperChar)) {
+            double frequency = (double) charCount.get(upperChar) / totalChars;
+            nodes.add(new HuffmanNode(upperChar, frequency, insertionOrder++));
+        }
+    }
+
+    // Paso 4: Ordenar por frecuencia descendente y orden de inserción ascendente
+    // Esto coloca los nodos con mayor frecuencia al inicio y para iguales, los más antiguos primero
+    nodes.sort((a, b) -> {
+        int freqCompare = Double.compare(b.frequency, a.frequency);
+        if (freqCompare != 0) {
+            return freqCompare;
+        }
+        return Integer.compare(a.insertionOrder, b.insertionOrder);
+    });
+
+    System.out.println("Lista inicial ordenada: " + nodesToString(nodes));
+
+    // Paso 5: Construir árbol tomando siempre los dos últimos
+    int currentInsertionOrder = insertionOrder;
+    while (nodes.size() > 1) {
+        // Tomar los dos últimos elementos (menores frecuencias y más recientes para iguales)
+        int lastIndex = nodes.size() - 1;
+        HuffmanNode right = nodes.get(lastIndex);
+        HuffmanNode left = nodes.get(lastIndex - 1);
+
+        System.out.println("Combinando: " + nodeToString(left) + " + " + nodeToString(right));
+
+        // Remover los dos últimos
+        nodes.remove(lastIndex);
+        nodes.remove(lastIndex - 1);
+
+        // Crear nuevo nodo padre
+        double combinedFrequency = left.frequency + right.frequency;
+        HuffmanNode parent = new HuffmanNode(left, right, combinedFrequency, currentInsertionOrder++);
+
+        // Insertar el nuevo nodo manteniendo el orden descendente
+        int insertIndex = 0;
+        boolean found = false;
+        
+        // Buscar la posición correcta para insertar
+        for (int i = 0; i < nodes.size(); i++) {
+            HuffmanNode current = nodes.get(i);
+            if (current.frequency > combinedFrequency) {
+                continue;
+            } else if (current.frequency == combinedFrequency) {
+                // Para frecuencias iguales, insertar antes de nodos con menor orden de inserción
+                if (current.insertionOrder < parent.insertionOrder) {
+                    insertIndex = i;
+                    found = true;
+                    break;
+                }
+            } else {
+                // current.frequency < combinedFrequency
+                insertIndex = i;
+                found = true;
+                break;
+            }
+        }
+        
+        if (!found) {
+            insertIndex = nodes.size();
+        }
+        
+        nodes.add(insertIndex, parent);
+        System.out.println("Lista después de inserción: " + nodesToString(nodes));
+    }
+
+    huffmanRoot = nodes.isEmpty() ? null : nodes.get(0);
+    
+    huffmanCodes.clear();
+    generateHuffmanCodes(huffmanRoot, "");
+
+    showHuffmanTreeInfo();
+}
+
+    private String nodesToString(List<HuffmanNode> nodes) {
+        StringBuilder sb = new StringBuilder("[");
+        for (int i = 0; i < nodes.size(); i++) {
+            sb.append(nodeToString(nodes.get(i)));
+            if (i < nodes.size() - 1)
+                sb.append(", ");
+        }
+        sb.append("]");
+        return sb.toString();
+    }
+
+    private void debugHuffmanProcess(String message) {
+        System.out.println("=== DEBUG HUFFMAN PARA: " + message + " ===");
+
+        // Paso 1: Invertir el mensaje
         String reversedMessage = new StringBuilder(message).reverse().toString();
+        System.out.println("Mensaje invertido: " + reversedMessage);
 
+        // Paso 2: Calcular frecuencias
         Map<Character, Integer> charCount = new HashMap<>();
-        int totalChars = reversedMessage.length();
+        int totalChars = 0;
 
         for (char c : reversedMessage.toCharArray()) {
-            if (c >= 'a' && c <= 'z') {
-                c = Character.toUpperCase(c);
-            }
-            if (c >= 'A' && c <= 'Z') {
-                charCount.put(c, charCount.getOrDefault(c, 0) + 1);
+            char upperChar = Character.toUpperCase(c);
+            if (upperChar >= 'A' && upperChar <= 'Z') {
+                charCount.put(upperChar, charCount.getOrDefault(upperChar, 0) + 1);
+                totalChars++;
             }
         }
 
-        PriorityQueue<HuffmanNode> queue = new PriorityQueue<>();
+        System.out.println("Conteo de caracteres: " + charCount);
+        System.out.println("Total de caracteres válidos: " + totalChars);
+
+        // Paso 3: Crear lista manualmente
+        List<HuffmanNode> nodes = new ArrayList<>();
         int insertionOrder = 0;
 
-        Map<Character, Boolean> processed = new HashMap<>();
-        for (int i = 0; i < reversedMessage.length(); i++) {
-            char c = reversedMessage.charAt(i);
-            if (c >= 'a' && c <= 'z') {
-                c = Character.toUpperCase(c);
-            }
-            if (c >= 'A' && c <= 'Z' && !processed.containsKey(c)) {
-                int count = charCount.get(c);
-                double frequency = (double) count / totalChars;
-                queue.offer(new HuffmanNode(c, frequency, insertionOrder++));
-                processed.put(c, true);
+        for (char c : reversedMessage.toCharArray()) {
+            char upperChar = Character.toUpperCase(c);
+            if (upperChar >= 'A' && upperChar <= 'Z' &&
+                    !containsNodeWithLetter(nodes, upperChar)) {
+                double frequency = (double) charCount.get(upperChar) / totalChars;
+                nodes.add(new HuffmanNode(upperChar, frequency, insertionOrder++));
+                System.out.println("Agregado nodo: " + upperChar + " - Frecuencia: " + frequency + " - Orden: "
+                        + (insertionOrder - 1));
             }
         }
 
-        int internalNodeCounter = 0;
-        while (queue.size() > 1) {
-            HuffmanNode left = queue.poll();
-            HuffmanNode right = queue.poll();
+        System.out.println("Lista inicial: " + nodes);
 
-            HuffmanNode parent = new HuffmanNode(null, left.frequency + right.frequency, insertionOrder++);
-            parent.left = left;
-            parent.right = right;
+        // Paso 4: Construir árbol paso a paso
+        int step = 1;
+        while (nodes.size() > 1) {
+            System.out.println("\n--- Paso " + step + " ---");
+            System.out.println("Lista actual: " + nodes);
 
-            queue.offer(parent);
-            internalNodeCounter++;
+            // Tomar los dos últimos
+            int lastIndex = nodes.size() - 1;
+            HuffmanNode right = nodes.get(lastIndex);
+            HuffmanNode left = nodes.get(lastIndex - 1);
+
+            System.out.println("Combinando: " + left + " + " + right);
+
+            nodes.remove(lastIndex);
+            nodes.remove(lastIndex - 1);
+
+            double combinedFrequency = left.frequency + right.frequency;
+            HuffmanNode parent = new HuffmanNode(left, right, combinedFrequency, insertionOrder++);
+
+            System.out.println("Nuevo nodo: " + parent);
+
+            // Insertar en posición ordenada
+            boolean inserted = false;
+            for (int i = nodes.size() - 1; i >= 0; i--) {
+                if (nodes.get(i).frequency >= combinedFrequency) {
+                    nodes.add(i + 1, parent);
+                    inserted = true;
+                    System.out.println("Insertado en posición: " + (i + 1));
+                    break;
+                }
+            }
+            if (!inserted) {
+                nodes.add(0, parent);
+                System.out.println("Insertado al inicio");
+            }
+
+            step++;
         }
 
-        huffmanRoot = queue.poll();
-        huffmanMessage = reversedMessage;
+        if (!nodes.isEmpty()) {
+            System.out.println("\n=== ESTRUCTURA FINAL ===");
+            String structure = getHuffmanTreeStructure(nodes.get(0));
+            System.out.println("Estructura: " + structure);
 
-        huffmanCodes.clear();
-        generateHuffmanCodes(huffmanRoot, "");
+            // Generar códigos para verificación
+            Map<Character, String> codes = new HashMap<>();
+            generateHuffmanCodesDebug(nodes.get(0), "", codes);
+            System.out.println("Códigos: " + codes);
+        }
+    }
 
-        showHuffmanTreeInfo();
+    private void generateHuffmanCodesDebug(HuffmanNode node, String code, Map<Character, String> codes) {
+        if (node == null)
+            return;
+        if (node.isLeaf()) {
+            codes.put(node.letter, code);
+            return;
+        }
+        generateHuffmanCodesDebug(node.left, code + "0", codes);
+        generateHuffmanCodesDebug(node.right, code + "1", codes);
+    }
+
+    private String nodeToString(HuffmanNode node) {
+        if (node.isLeaf()) {
+            return node.letter + ":" + String.format("%.3f", node.frequency);
+        } else {
+            return "Node:" + String.format("%.3f", node.frequency);
+        }
+    }
+
+    private boolean containsNodeWithLetter(List<HuffmanNode> nodes, char letter) {
+        for (HuffmanNode node : nodes) {
+            if (node.isLeaf() && node.letter != null && node.letter == letter) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private String getHuffmanTreeStructure(HuffmanNode node) {
@@ -1456,48 +1665,10 @@ public class TreesController {
             return String.valueOf(node.letter);
         }
 
-        String leftStr = getHuffmanTreeStructure(node.left);
-        String rightStr = getHuffmanTreeStructure(node.right);
+        String leftStructure = getHuffmanTreeStructure(node.left);
+        String rightStructure = getHuffmanTreeStructure(node.right);
 
-        return formatNodeStructure(leftStr, rightStr, getTreeDepth(node));
-    }
-
-    private String formatNodeStructure(String left, String right, int depth) {
-        if (depth == getTreeDepth(huffmanRoot)) {
-            return "{" + left + "+" + right + "}";
-        }
-
-        if (depth >= getTreeDepth(huffmanRoot) - 2) {
-            return "(" + left + "+" + right + ")";
-        }
-
-        return "[" + left + "+" + right + "]";
-    }
-
-    private int getTreeDepth(HuffmanNode node) {
-        if (node == null)
-            return 0;
-        return 1 + Math.max(getTreeDepth(node.left), getTreeDepth(node.right));
-    }
-
-    private void showHuffmanTreeInfo() {
-        StringBuilder info = new StringBuilder();
-        info.append("Árbol de Huffman - Mensaje invertido: ").append(huffmanMessage).append("\n");
-        info.append("Estructura: ").append(getHuffmanTreeStructure(huffmanRoot)).append("\n");
-
-        Map<Character, Double> frequencies = calculateFrequencies(huffmanMessage);
-
-        info.append("Frecuencias: ");
-        for (Map.Entry<Character, Double> entry : frequencies.entrySet()) {
-            info.append(entry.getKey()).append(":").append(String.format("%.3f", entry.getValue())).append(" ");
-        }
-
-        info.append("\nCódigos Huffman: ");
-        for (Map.Entry<Character, String> entry : huffmanCodes.entrySet()) {
-            info.append(entry.getKey()).append(":").append(entry.getValue()).append(" ");
-        }
-
-        notificationText.setText(info.toString());
+        return "(" + leftStructure + "+" + rightStructure + ")";
     }
 
     private void generateHuffmanCodes(HuffmanNode node, String code) {
@@ -1511,6 +1682,29 @@ public class TreesController {
 
         generateHuffmanCodes(node.left, code + "0");
         generateHuffmanCodes(node.right, code + "1");
+    }
+
+    private void showHuffmanTreeInfo() {
+        StringBuilder info = new StringBuilder();
+        info.append("Árbol de Huffman - Mensaje invertido: ").append(huffmanMessage).append("\n");
+
+        if (huffmanRoot != null) {
+            String structure = getHuffmanTreeStructure(huffmanRoot);
+            info.append("Estructura: ").append(structure).append("\n");
+        }
+
+        Map<Character, Double> frequencies = calculateFrequencies(huffmanMessage);
+        info.append("Frecuencias: ");
+        for (Map.Entry<Character, Double> entry : frequencies.entrySet()) {
+            info.append(entry.getKey()).append(":").append(String.format("%.3f", entry.getValue())).append(" ");
+        }
+
+        info.append("\nCódigos Huffman: ");
+        for (Map.Entry<Character, String> entry : huffmanCodes.entrySet()) {
+            info.append(entry.getKey()).append(":").append(entry.getValue()).append(" ");
+        }
+
+        notificationText.setText(info.toString());
     }
 
     private void updateTreeVisualization() {
@@ -1955,21 +2149,23 @@ public class TreesController {
         node.x = x;
         node.y = y;
 
+        // Colores uniformes con los otros árboles
         Color nodeColor, strokeColor;
         if (node.isLeaf()) {
+            nodeColor = Color.WHITE;
+            strokeColor = Color.BLACK;
+        } else {
+            nodeColor = Color.LIGHTGRAY;
+            strokeColor = Color.BLACK;
+        }
+
+        // Resaltado para búsqueda (verde)
+        if (isSearchInProgress && currentSearchPath.contains(node)) {
             nodeColor = Color.LIGHTGREEN;
             strokeColor = Color.DARKGREEN;
-        } else {
-            nodeColor = Color.LIGHTBLUE;
-            strokeColor = Color.DARKBLUE;
         }
 
-        if (isSearchInProgress && currentSearchPath.contains(node)) {
-            nodeColor = Color.GOLD;
-            strokeColor = Color.ORANGE;
-        }
-
-        double nodeRadius = node.isLeaf() ? 18 : 22;
+        double nodeRadius = 20;
         Circle circle = new Circle(x, y, nodeRadius);
         circle.setFill(nodeColor);
         circle.setStroke(strokeColor);
@@ -1977,22 +2173,11 @@ public class TreesController {
         canvas.getChildren().add(circle);
         node.circle = circle;
 
-        String text;
-        if (node.isLeaf()) {
-            text = String.valueOf(node.letter);
-        } else {
-            text = String.format("%.2f", node.frequency);
-        }
-
-        Text nodeText = new Text(x - (node.isLeaf() ? 5 : 8), y + 5, text);
-        nodeText.setStyle("-fx-font-size: " + (node.isLeaf() ? "11" : "10") + "px; -fx-font-weight: bold;");
+        // Mostrar solo letras en nodos hoja, frecuencias en nodos de enlace
+        String text = node.getDisplayText();
+        Text nodeText = new Text(x - (text.length() * 3), y + 5, text);
+        nodeText.setStyle("-fx-font-size: " + (node.isLeaf() ? "12" : "10") + "px; -fx-font-weight: bold;");
         canvas.getChildren().add(nodeText);
-
-        if (node.isLeaf()) {
-            Text freqText = new Text(x - 8, y + 20, String.format("%.2f", node.frequency));
-            freqText.setStyle("-fx-font-size: 9px; -fx-fill: #666;");
-            canvas.getChildren().add(freqText);
-        }
 
         double childY = y + 80;
         double childWidth = levelWidth * 0.6;
@@ -2001,14 +2186,17 @@ public class TreesController {
             double leftX = x - levelWidth / 2;
             double leftWidth = drawHuffmanTree(canvas, node.left, leftX, childY, childWidth);
 
-            Line line = new Line(x, y + nodeRadius, leftX, childY - (node.left.isLeaf() ? 18 : 22));
-            line.setStroke(Color.BLUE);
+            // Línea negra en lugar de azul
+            Line line = new Line(x, y + nodeRadius, leftX, childY - 20);
+            line.setStroke(Color.BLACK);
             line.setStrokeWidth(1.5);
             canvas.getChildren().add(line);
 
-            Text edgeText = new Text((x + leftX) / 2 - 3, (y + childY) / 2, "0");
-            edgeText.setFill(Color.BLUE);
-            edgeText.setStyle("-fx-font-weight: bold; -fx-font-size: 10px;");
+            // Etiqueta de frecuencia en negro
+            Text edgeText = new Text((x + leftX) / 2 - 8, (y + childY) / 2,
+                    String.format("%.3f", node.left.frequency));
+            edgeText.setFill(Color.BLACK);
+            edgeText.setStyle("-fx-font-weight: bold; -fx-font-size: 9px;");
             canvas.getChildren().add(edgeText);
         }
 
@@ -2016,14 +2204,17 @@ public class TreesController {
             double rightX = x + levelWidth / 2;
             double rightWidth = drawHuffmanTree(canvas, node.right, rightX, childY, childWidth);
 
-            Line line = new Line(x, y + nodeRadius, rightX, childY - (node.right.isLeaf() ? 18 : 22));
-            line.setStroke(Color.RED);
+            // Línea negra en lugar de roja
+            Line line = new Line(x, y + nodeRadius, rightX, childY - 20);
+            line.setStroke(Color.BLACK);
             line.setStrokeWidth(1.5);
             canvas.getChildren().add(line);
 
-            Text edgeText = new Text((x + rightX) / 2 - 3, (y + childY) / 2, "1");
-            edgeText.setFill(Color.RED);
-            edgeText.setStyle("-fx-font-weight: bold; -fx-font-size: 10px;");
+            // Etiqueta de frecuencia en negro
+            Text edgeText = new Text((x + rightX) / 2 - 8, (y + childY) / 2,
+                    String.format("%.3f", node.right.frequency));
+            edgeText.setFill(Color.BLACK);
+            edgeText.setStyle("-fx-font-weight: bold; -fx-font-size: 9px;");
             canvas.getChildren().add(edgeText);
         }
 

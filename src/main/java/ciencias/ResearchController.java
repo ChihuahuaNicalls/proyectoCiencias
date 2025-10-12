@@ -29,17 +29,21 @@ public class ResearchController {
     private MenuButton menuButtonTrees;
 
     @FXML
-    private Pane paneHash;
+    private Pane paneHashInt;
     @FXML
-    private Pane paneBinaria;
+    private Pane paneBinariaInt;
     @FXML
-    private Pane paneSecuencial;
+    private Pane paneSecuencialInt;
     @FXML
-    private Pane paneIndexada;
+    private Pane paneHashExt;
+    @FXML
+    private Pane paneBinariaExt;
+    @FXML
+    private Pane paneSecuencialExt;
+    @FXML
+    private Pane paneDynamic;
     @FXML
     private Pane paneTrees;
-    @FXML
-    private Pane paneResiduos;
 
     @FXML
     private Tab tabBinaria;
@@ -63,7 +67,7 @@ public class ResearchController {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("secuencial.fxml"));
             Parent vista = loader.load();
 
-            paneSecuencial.getChildren().setAll(vista);
+            paneSecuencialInt.getChildren().setAll(vista);
             restart();
         } catch (IOException e) {
             e.printStackTrace();
@@ -76,9 +80,14 @@ public class ResearchController {
                 menuButtonResiduos,
                 menuButtonTrees);
         panes = Arrays.asList(
-                paneHash,
-                paneBinaria,
-                paneSecuencial);
+                paneHashInt,
+                paneBinariaInt,
+                paneSecuencialInt,
+                paneHashExt,
+                paneBinariaExt,
+                paneSecuencialExt,
+                paneDynamic,
+                paneTrees);
         tabBinaria.setOnSelectionChanged(event -> {
             if (tabBinaria.isSelected()) {
                 try {
@@ -86,7 +95,7 @@ public class ResearchController {
                     FXMLLoader loader = new FXMLLoader(getClass().getResource("binaria.fxml"));
                     Parent vista = loader.load();
 
-                    paneBinaria.getChildren().setAll(vista);
+                    paneBinariaInt.getChildren().setAll(vista);
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
@@ -98,7 +107,7 @@ public class ResearchController {
                     restart();
                     FXMLLoader loader = new FXMLLoader(getClass().getResource("secuencial.fxml"));
                     Parent vista = loader.load();
-                    paneSecuencial.getChildren().setAll(vista);
+                    paneSecuencialInt.getChildren().setAll(vista);
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
@@ -137,7 +146,7 @@ public class ResearchController {
         restart();
 
         try {
-            if (paneSecuencial == null) {
+            if (paneSecuencialInt == null) {
                 System.err.println("Error: paneSecuencial es null");
                 return;
             }
@@ -145,8 +154,8 @@ public class ResearchController {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("secuencial.fxml"));
             Parent vista = loader.load();
 
-            paneSecuencial.getChildren().clear();
-            paneSecuencial.getChildren().add(vista);
+            paneSecuencialInt.getChildren().clear();
+            paneSecuencialInt.getChildren().add(vista);
 
             tabPaneInternal.getSelectionModel().select(0);
 
@@ -160,6 +169,10 @@ public class ResearchController {
     private void external() {
         restart();
         tabPaneExternal.getSelectionModel().select(0);
+    }
+
+    @FXML
+    private void index(){
     }
 
     @FXML
@@ -177,7 +190,7 @@ public class ResearchController {
 
             hashController.initData();
 
-            paneHash.getChildren().setAll(vista);
+            paneHashInt.getChildren().setAll(vista);
 
         } catch (IOException e) {
             e.printStackTrace();

@@ -38,7 +38,7 @@
                                  <content>
                                     <AnchorPane prefHeight="184.0" prefWidth="1080.0">
                                        <children>
-                                          <Pane fx:id="paneSecuencial" layoutX="175.0" layoutY="15.0" prefHeight="440.0" prefWidth="730.0" />
+                                          <Pane fx:id="paneSecuencialInt" layoutX="175.0" layoutY="15.0" prefHeight="440.0" prefWidth="730.0" />
                                        </children>
                                     </AnchorPane>
                                  </content>
@@ -47,7 +47,7 @@
                                  <content>
                                     <AnchorPane prefHeight="180.0" prefWidth="200.0">
                                        <children>
-                                          <Pane fx:id="paneBinaria" layoutX="175.0" layoutY="15.0" prefHeight="440.0" prefWidth="730.0" />
+                                          <Pane fx:id="paneBinariaInt" layoutX="175.0" layoutY="15.0" prefHeight="440.0" prefWidth="730.0" />
                                        </children>
                                     </AnchorPane>
                                  </content>
@@ -67,7 +67,7 @@
                                                 <Font size="20.0" />
                                              </font>
                                           </MenuButton>
-                                          <Pane fx:id="paneHash" layoutX="335.0" layoutY="15.0" prefHeight="440.0" prefWidth="730.0" />
+                                          <Pane fx:id="paneHashInt" layoutX="335.0" layoutY="15.0" prefHeight="440.0" prefWidth="730.0" />
                                           <TextFlow layoutX="21.0" layoutY="95.0" prefHeight="374.0" prefWidth="300.0" textAlignment="CENTER">
                                              <children>
                                                 <Text fx:id="textHashMenu" strokeType="OUTSIDE" strokeWidth="0.0">
@@ -90,7 +90,6 @@
                                                 <MenuItem mnemonicParsing="false" onAction="#handleTreesAction" text="Arboles de busqueda digital" />
                                                 <MenuItem mnemonicParsing="false" onAction="#handleTreesAction" text="Arboles de busqueda por residuos" />
                                                 <MenuItem mnemonicParsing="false" onAction="#handleTreesAction" text="Arboles de busqueda por residuos multiple" />
-                                                <MenuItem disable="true" mnemonicParsing="false" onAction="#handleTreesAction" text="Tablas de indices" />
                                                 <MenuItem mnemonicParsing="false" onAction="#handleTreesAction" text="Arboles de Huffman" />
                                              </items>
                                              <font>
@@ -98,25 +97,6 @@
                                              </font>
                                           </MenuButton>
                                           <Pane fx:id="paneTrees" layoutX="335.0" layoutY="15.0" prefHeight="440.0" prefWidth="730.0" />
-                                       </children>
-                                    </AnchorPane>
-                                 </content>
-                              </Tab>
-                              <Tab onSelectionChanged="#restart" text="Busquedas por rangos">
-                                 <content>
-                                    <AnchorPane prefHeight="180.0" prefWidth="200.0">
-                                       <children>
-                                          <MenuButton fx:id="menuButtonResiduos" layoutX="22.0" layoutY="22.0" mnemonicParsing="false" prefHeight="44.0" prefWidth="300.0" text="Elegir">
-                                             <items>
-                                                <MenuItem mnemonicParsing="false" onAction="#handleResiduosAction" text="Metodos elementales" />
-                                                <MenuItem mnemonicParsing="false" onAction="#handleResiduosAction" text="Metodos de la rejilla" />
-                                                <MenuItem mnemonicParsing="false" onAction="#handleResiduosAction" text="Arboles 2D" />
-                                             </items>
-                                             <font>
-                                                <Font size="20.0" />
-                                             </font>
-                                          </MenuButton>
-                                          <Pane fx:id="paneResiduos" layoutX="335.0" layoutY="15.0" prefHeight="440.0" prefWidth="730.0" />
                                        </children>
                                     </AnchorPane>
                                  </content>
@@ -137,15 +117,21 @@
                                  <tabs>
                                     <Tab closable="false" onSelectionChanged="#restart" text="Secuencial">
                                        <content>
-                                          <AnchorPane prefHeight="184.0" prefWidth="1080.0" />
+                                          <AnchorPane prefHeight="184.0" prefWidth="1080.0">
+                                             <children>
+                                                <Pane fx:id="paneSecuencialExt" layoutX="175.0" layoutY="15.0" prefHeight="440.0" prefWidth="730.0" />
+                                             </children></AnchorPane>
                                        </content>
                                     </Tab>
                                     <Tab onSelectionChanged="#restart" text="Binaria">
                                       <content>
-                                        <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0" />
+                                        <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
+                                             <children>
+                                                <Pane fx:id="paneBinariaExt" layoutX="175.0" layoutY="15.0" prefHeight="440.0" prefWidth="730.0" />
+                                             </children></AnchorPane>
                                       </content>
                                     </Tab>
-                                    <Tab onSelectionChanged="#restart" text="Transferencia de claves">
+                                    <Tab onSelectionChanged="#restart" text="Funciones Hash">
                                       <content>
                                         <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
                                              <children>
@@ -161,6 +147,7 @@
                                                       <Font size="20.0" />
                                                    </font>
                                                 </MenuButton>
+                                                <Pane fx:id="paneHashExt" layoutX="335.0" layoutY="15.0" prefHeight="440.0" prefWidth="730.0" />
                                              </children>
                                           </AnchorPane>
                                       </content>
@@ -173,13 +160,14 @@
                                                    <items>
                                                       <MenuItem mnemonicParsing="false" text="Expansiones parciales" />
                                                       <MenuItem mnemonicParsing="false" text="Expansiones totales" />
-                                                      <MenuItem mnemonicParsing="false" text="Reduccion parcial" />
-                                                      <MenuItem mnemonicParsing="false" text="Reduccion total" />
+                                                      <MenuItem mnemonicParsing="false" text="Reducciones parciales" />
+                                                      <MenuItem mnemonicParsing="false" text="Reducciones totales" />
                                                    </items>
                                                    <font>
                                                       <Font size="20.0" />
                                                    </font>
                                                 </MenuButton>
+                                                <Pane fx:id="paneDynamic" layoutX="335.0" layoutY="15.0" prefHeight="440.0" prefWidth="730.0" />
                                              </children>
                                           </AnchorPane>
                                       </content>
@@ -192,6 +180,62 @@
                   </AnchorPane>
             </content>
           </Tab>
+            <Tab disable="true" onSelectionChanged="#index" text="Indices">
+               <content>
+                  <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
+                     <children>
+                        <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
+                           <children>
+                              <TabPane fx:id="tabPaneExternal1" prefHeight="594.0" prefWidth="1080.0" tabClosingPolicy="UNAVAILABLE" tabMinHeight="60.0" tabMinWidth="150.0">
+                                 <tabs>
+                                    <Tab closable="false" onSelectionChanged="#restart" text="Mononivel">
+                                       <content>
+                                          <AnchorPane prefHeight="184.0" prefWidth="1080.0">
+                                             <children>
+                                                <MenuButton fx:id="menuButtonClaves11" layoutX="22.0" layoutY="22.0" mnemonicParsing="false" prefHeight="44.0" prefWidth="300.0" text="Elegir">
+                                                   <items>
+                                                      <MenuItem mnemonicParsing="false" text="Primaria" />
+                                                      <MenuItem mnemonicParsing="false" text="Secundaria" />
+                                                      <MenuItem mnemonicParsing="false" text="Agrupamiento" />
+                                                      <MenuItem mnemonicParsing="false" text="Denso" />
+                                                      <MenuItem mnemonicParsing="false" text="No denso" />
+                                                   </items>
+                                                   <font>
+                                                      <Font size="20.0" />
+                                                   </font>
+                                                </MenuButton>
+                                             </children>
+                                          </AnchorPane>
+                                       </content>
+                                    </Tab>
+                                    <Tab onSelectionChanged="#restart" text="Multinivel">
+                                       <content>
+                                          <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
+                                             <children>
+                                                <MenuButton fx:id="menuButtonClaves111" layoutX="22.0" layoutY="22.0" mnemonicParsing="false" prefHeight="44.0" prefWidth="300.0" text="Elegir">
+                                                   <items>
+                                                      <MenuItem mnemonicParsing="false" text="Primaria" />
+                                                      <MenuItem mnemonicParsing="false" text="Secundaria" />
+                                                      <MenuItem mnemonicParsing="false" text="Agrupamiento" />
+                                                      <MenuItem mnemonicParsing="false" text="Denso" />
+                                                      <MenuItem mnemonicParsing="false" text="No denso" />
+                                                   </items>
+                                                   <font>
+                                                      <Font size="20.0" />
+                                                   </font>
+                                                </MenuButton>
+                                             </children>
+                                          </AnchorPane>
+                                       </content>
+                                    </Tab>
+                                 </tabs>
+                              </TabPane>
+                           </children>
+                        </AnchorPane>
+                     </children>
+                  </AnchorPane>
+               </content>
+            </Tab>
         </tabs>
       </TabPane>
    </center>
