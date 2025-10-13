@@ -10,7 +10,7 @@
 <?import javafx.scene.text.Text?>
 <?import javafx.scene.text.TextFlow?>
 
-<Pane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="440.0" prefWidth="730.0" xmlns="http://javafx.com/javafx/24.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="ciencias.Research.TreesController">
+<Pane fx:id="principalPane" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="440.0" prefWidth="730.0" xmlns="http://javafx.com/javafx/24.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="ciencias.Research.TreesController">
    <children>
       <Button fx:id="insertButton" layoutX="234.0" layoutY="106.0" mnemonicParsing="false" onAction="#insertTree" text="Insertar" />
       <Button fx:id="reiniciarButton" disable="true" layoutX="123.0" layoutY="400.0" mnemonicParsing="false" onAction="#restartTree" text="Reiniciar Arbol">
@@ -73,5 +73,6 @@
             <Text fx:id="notificationText" strokeType="OUTSIDE" strokeWidth="0.0" />
          </children>
       </TextFlow>
+      <Button layoutX="360.0" layoutY="120.0" mnemonicParsing="false" text="Button" />
    </children>
 </Pane>

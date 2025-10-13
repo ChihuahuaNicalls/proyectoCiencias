@@ -1,32 +1,43 @@
 package ciencias.Research;
 
 import ciencias.ResearchController;
+import java.io.*;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.PriorityQueue;
 
-import ciencias.ResearchController;
 import javafx.scene.shape.Rectangle;
 import javafx.animation.FillTransition;
 import javafx.animation.PauseTransition;
 import javafx.animation.SequentialTransition;
 import javafx.animation.Timeline;
 import javafx.fxml.FXML;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
+import javafx.geometry.Rectangle2D;
+import javafx.print.PrinterJob;
+import javafx.scene.Scene;
+import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TextField;
 import javafx.scene.input.ScrollEvent;
+import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import javafx.scene.shape.Line;
 import javafx.scene.text.Text;
+import javafx.stage.FileChooser;
+import javafx.stage.Modality;
+import javafx.stage.Screen;
+import javafx.stage.Stage;
 import javafx.util.Duration;
 
 public class TreesController {
@@ -62,6 +73,8 @@ public class TreesController {
     private Text notificationText;
     @FXML
     private ScrollPane treePane;
+    @FXML
+    private Pane principalPane;
 
     private String treeString;
     private ResearchController researchController;
@@ -97,7 +110,8 @@ public class TreesController {
     private List<Object> currentSearchPath = new ArrayList<>();
     private boolean isSearchInProgress = false;
 
-    private class TreeState {
+    private class TreeState implements Serializable {
+        private static final long serialVersionUID = 1L;
         DigitalNode digitalState;
         ResidueNode residueState;
         MultipleResidueNode multipleResidueState;
@@ -120,13 +134,14 @@ public class TreesController {
         }
     }
 
-    private class DigitalNode {
+    private class DigitalNode implements Serializable {
+        private static final long serialVersionUID = 1L;
         Character letter;
         DigitalNode left;
         DigitalNode right;
         List<Integer> path;
-        double x, y;
-        Circle circle;
+        transient double x, y;
+        transient Circle circle;
 
         DigitalNode(Character letter) {
             this.letter = letter;
@@ -136,14 +151,15 @@ public class TreesController {
         }
     }
 
-    private class ResidueNode {
+    private class ResidueNode implements Serializable {
+        private static final long serialVersionUID = 1L;
         boolean isLink;
         Character letter;
         ResidueNode left;
         ResidueNode right;
         List<Integer> path;
-        double x, y;
-        Circle circle;
+        transient double x, y;
+        transient Circle circle;
 
         ResidueNode(boolean isLink, Character letter) {
             this.isLink = isLink;
@@ -154,13 +170,14 @@ public class TreesController {
         }
     }
 
-    private class MultipleResidueNode {
+    private class MultipleResidueNode implements Serializable {
+        private static final long serialVersionUID = 1L;
         boolean isLink;
         Character letter;
         MultipleResidueNode[] children;
         List<Integer> path;
-        double x, y;
-        Circle circle;
+        transient double x, y;
+        transient Circle circle;
 
         MultipleResidueNode(boolean isLink, Character letter) {
             this.isLink = isLink;
@@ -170,18 +187,21 @@ public class TreesController {
         }
     }
 
-    private class HuffmanNode implements Comparable<HuffmanNode> {
-        Character letter; // Solo para nodos hoja
+    private class HuffmanNode implements Serializable, Comparable<HuffmanNode> {
+        private static final long serialVersionUID = 1L;
+        Character letter;
         double frequency;
         HuffmanNode left;
         HuffmanNode right;
-        List<Integer> path;
-        double x, y;
-        Circle circle;
+        transient List<Integer> path;
+        transient double x, y;
+        transient Circle circle;
         int insertionOrder;
-        String nodeType; // "leaf" o "link"
+        String nodeType;
 
-        // Constructor para nodos hoja
+        private int numerator;
+        private int denominator;
+
         HuffmanNode(Character letter, double frequency, int insertionOrder) {
             this.letter = letter;
             this.frequency = frequency;
@@ -190,9 +210,12 @@ public class TreesController {
             this.right = null;
             this.path = new ArrayList<>();
             this.nodeType = "leaf";
+
+            double[] fraction = decimalToFraction(frequency);
+            this.numerator = (int) fraction[0];
+            this.denominator = (int) fraction[1];
         }
 
-        // Constructor para nodos de enlace
         HuffmanNode(HuffmanNode left, HuffmanNode right, double frequency, int insertionOrder) {
             this.letter = null;
             this.frequency = frequency;
@@ -201,19 +224,20 @@ public class TreesController {
             this.right = right;
             this.path = new ArrayList<>();
             this.nodeType = "link";
+
+            double[] fraction = decimalToFraction(frequency);
+            this.numerator = (int) fraction[0];
+            this.denominator = (int) fraction[1];
         }
 
         @Override
-public int compareTo(HuffmanNode other) {
-    // Primero por frecuencia (menor frecuencia primero)
-    int freqCompare = Double.compare(this.frequency, other.frequency);
-    if (freqCompare != 0) {
-        return freqCompare;
-    }
-    // Para frecuencias iguales, por orden de inserción (MAYOR orden primero)
-    // Esto asegura que los nodos más recientes se combinen primero
-    return Integer.compare(other.insertionOrder, this.insertionOrder);
-}
+        public int compareTo(HuffmanNode other) {
+            int freqCompare = Double.compare(this.frequency, other.frequency);
+            if (freqCompare != 0) {
+                return freqCompare;
+            }
+            return Integer.compare(other.insertionOrder, this.insertionOrder);
+        }
 
         public boolean isLeaf() {
             return "leaf".equals(nodeType);
@@ -222,16 +246,31 @@ public int compareTo(HuffmanNode other) {
         @Override
         public String toString() {
             if (isLeaf()) {
-                return letter + ":" + String.format("%.3f", frequency);
+                return letter + ":" + getFractionString();
             }
-            return String.format("%.3f", frequency);
+            return getFractionString();
         }
 
         public String getDisplayText() {
             if (isLeaf()) {
                 return String.valueOf(letter);
             }
-            return String.format("%.3f", frequency);
+            return getFractionString();
+        }
+
+        public String getFractionString() {
+            if (denominator == 1) {
+                return String.valueOf(numerator);
+            }
+            return numerator + "/" + denominator;
+        }
+
+        public int getNumerator() {
+            return numerator;
+        }
+
+        public int getDenominator() {
+            return denominator;
         }
     }
 
@@ -250,11 +289,18 @@ public int compareTo(HuffmanNode other) {
         setupZoomAndScroll();
         setupKeyboardPan();
 
-        initializeMultipleResidueTree();
-
         PauseTransition initialFocus = new PauseTransition(Duration.millis(300));
         initialFocus.setOnFinished(e -> focusOnRootWithDelay());
         initialFocus.play();
+    }
+
+    private void setupTextFieldRestrictions() {
+
+        newItemTree.textProperty().addListener((observable, oldValue, newValue) -> {
+            if (newValue.length() > 1) {
+                newItemTree.setText(oldValue);
+            }
+        });
     }
 
     private void initializeMultipleResidueTree() {
@@ -288,6 +334,8 @@ public int compareTo(HuffmanNode other) {
         residueInsertionOrder.clear();
         multipleResidueInsertionOrder.clear();
 
+        configureTextFieldForTreeType();
+
         switch (treeString) {
             case "Arboles de busqueda digital":
                 treesTitle.setText("Arboles de busqueda digital");
@@ -305,7 +353,8 @@ public int compareTo(HuffmanNode other) {
                 treesTitle.setText("Arboles de busqueda por residuos multiple");
                 treesDescription.setText(
                         "En cada nivel se toman varios bits de la clave a la vez: el nodo se bifurca en tantas ramas como combinaciones de esos bits.");
-                initializeMultipleResidueTree();
+
+                multipleResidueRoot = new MultipleResidueNode(true, null);
                 break;
             case "Tablas de indices":
                 treesTitle.setText("Tablas de indices");
@@ -328,6 +377,19 @@ public int compareTo(HuffmanNode other) {
         updateItemsText();
 
         focusOnRootWithDelay();
+    }
+
+    private void configureTextFieldForTreeType() {
+        if (treeString.equals("Arboles de Huffman")) {
+            newItemTree.textProperty().addListener((observable, oldValue, newValue) -> {
+            });
+        } else {
+            newItemTree.textProperty().addListener((observable, oldValue, newValue) -> {
+                if (newValue.length() > 1) {
+                    newItemTree.setText(oldValue);
+                }
+            });
+        }
     }
 
     public void setResearchController(ResearchController researchController) {
@@ -382,16 +444,12 @@ public int compareTo(HuffmanNode other) {
                     sb.append("Huffman - Ingrese un mensaje para construir el árbol");
                 } else {
                     sb.append("Huffman Mensaje: ").append(huffmanMessage);
-                    sb.append(" | Estructura: ").append(getHuffmanTreeStructure(huffmanRoot));
-                    sb.append(" | Códigos: ");
-                    for (Map.Entry<Character, String> entry : huffmanCodes.entrySet()) {
-                        sb.append(entry.getKey()).append(":").append(entry.getValue()).append(" ");
-                    }
-
-                    sb.append(" | Frecuencias: ");
+                    sb.append("\nEstructura: ").append(getHuffmanTreeStructure(huffmanRoot));
+                    sb.append("\nFrecuencias: ");
                     Map<Character, Double> freqMap = calculateFrequencies(huffmanMessage);
                     for (Map.Entry<Character, Double> entry : freqMap.entrySet()) {
-                        sb.append(entry.getKey()).append(":").append(String.format("%.2f", entry.getValue()))
+                        double[] fraction = decimalToFraction(entry.getValue());
+                        sb.append(entry.getKey()).append(": ").append((int) fraction[0] + "/" + (int) fraction[1])
                                 .append(" ");
                     }
                 }
@@ -416,6 +474,34 @@ public int compareTo(HuffmanNode other) {
         }
 
         return frequencies;
+    }
+
+    private double[] decimalToFraction(double decimal) {
+        double tolerance = 1.0E-6;
+        double numerator = 1;
+        double denominator = 1;
+        double error = decimal;
+
+        for (double d = 1; d <= 1000; d++) {
+            double n = Math.round(decimal * d);
+            double currentError = Math.abs(decimal - n / d);
+
+            if (currentError < error && currentError < tolerance) {
+                numerator = n;
+                denominator = d;
+                error = currentError;
+            }
+        }
+
+        int gcd = findGCD((int) numerator, (int) denominator);
+        return new double[] { numerator / gcd, denominator / gcd };
+    }
+
+    private int findGCD(int a, int b) {
+        if (b == 0) {
+            return a;
+        }
+        return findGCD(b, a % b);
     }
 
     private void rebuildDigitalTree() {
@@ -545,7 +631,7 @@ public int compareTo(HuffmanNode other) {
             return false;
 
         if (multipleResidueRoot == null) {
-            initializeMultipleResidueTree();
+            multipleResidueRoot = new MultipleResidueNode(true, null);
         }
 
         return insertMultipleResidueData(multipleResidueRoot, letter, binary, 0);
@@ -553,14 +639,18 @@ public int compareTo(HuffmanNode other) {
 
     private boolean insertMultipleResidueData(MultipleResidueNode node, Character letter, String binary, int index) {
         if (index >= binary.length()) {
+
             if (node.isLink && node.letter == null) {
+
                 node.isLink = false;
                 node.letter = letter;
                 return true;
-            } else if (node.letter != null && !node.letter.equals(letter)) {
+            } else if (node.letter != null && node.letter.equals(letter)) {
+
                 return false;
             }
-            return node.letter != null && node.letter.equals(letter);
+
+            return false;
         }
 
         int bitsToTake;
@@ -594,12 +684,15 @@ public int compareTo(HuffmanNode other) {
                 notificationText.setText("Para Huffman, ingrese un mensaje.");
                 return;
             }
-            debugHuffmanProcess(message);
 
             buildHuffmanTree(message);
             updateItemsText();
             saveState();
             updateTreeVisualization();
+
+            if (saveButton.isDisabled()) {
+                saveButton.setDisable(false);
+            }
 
             newItemTree.clear();
             return;
@@ -661,6 +754,10 @@ public int compareTo(HuffmanNode other) {
             updateItemsText();
             saveState();
             updateTreeVisualization();
+
+            if (saveButton.isDisabled()) {
+                saveButton.setDisable(false);
+            }
 
             searchButton.setDisable(false);
             deleteButton.setDisable(false);
@@ -1291,15 +1388,12 @@ public int compareTo(HuffmanNode other) {
             return null;
         }
 
-        // Tomar solo el primer carácter
         char c = input.charAt(0);
 
-        // Convertir a mayúsculas si es minúscula
         if (c >= 'a' && c <= 'z') {
             c = Character.toUpperCase(c);
         }
 
-        // Solo permitir letras A-Z
         if (c < 'A' || c > 'Z') {
             return null;
         }
@@ -1416,141 +1510,17 @@ public int compareTo(HuffmanNode other) {
     }
 
     private void buildHuffmanTree(String message) {
-    if (message == null || message.isEmpty()) {
-        notificationText.setText("Mensaje vacío para construir árbol de Huffman.");
-        return;
-    }
-
-    // Paso 1: Invertir el mensaje
-    String reversedMessage = new StringBuilder(message).reverse().toString();
-    huffmanMessage = reversedMessage;
-
-    // Paso 2: Calcular frecuencias
-    Map<Character, Integer> charCount = new HashMap<>();
-    int totalChars = 0;
-
-    for (char c : reversedMessage.toCharArray()) {
-        char upperChar = Character.toUpperCase(c);
-        if (upperChar >= 'A' && upperChar <= 'Z') {
-            charCount.put(upperChar, charCount.getOrDefault(upperChar, 0) + 1);
-            totalChars++;
+        if (message == null || message.isEmpty()) {
+            notificationText.setText("Mensaje vacío para construir árbol de Huffman.");
+            return;
         }
-    }
 
-    if (charCount.isEmpty()) {
-        notificationText.setText("El mensaje no contiene letras válidas (A-Z).");
-        huffmanRoot = null;
-        huffmanCodes.clear();
-        updateTreeVisualization();
-        return;
-    }
+        huffmanMessage = message;
 
-    // Paso 3: Crear lista manteniendo orden de aparición en el mensaje invertido
-    List<HuffmanNode> nodes = new ArrayList<>();
-    int insertionOrder = 0;
-
-    for (char c : reversedMessage.toCharArray()) {
-        char upperChar = Character.toUpperCase(c);
-        if (upperChar >= 'A' && upperChar <= 'Z' && 
-            !containsNodeWithLetter(nodes, upperChar)) {
-            double frequency = (double) charCount.get(upperChar) / totalChars;
-            nodes.add(new HuffmanNode(upperChar, frequency, insertionOrder++));
-        }
-    }
-
-    // Paso 4: Ordenar por frecuencia descendente y orden de inserción ascendente
-    // Esto coloca los nodos con mayor frecuencia al inicio y para iguales, los más antiguos primero
-    nodes.sort((a, b) -> {
-        int freqCompare = Double.compare(b.frequency, a.frequency);
-        if (freqCompare != 0) {
-            return freqCompare;
-        }
-        return Integer.compare(a.insertionOrder, b.insertionOrder);
-    });
-
-    System.out.println("Lista inicial ordenada: " + nodesToString(nodes));
-
-    // Paso 5: Construir árbol tomando siempre los dos últimos
-    int currentInsertionOrder = insertionOrder;
-    while (nodes.size() > 1) {
-        // Tomar los dos últimos elementos (menores frecuencias y más recientes para iguales)
-        int lastIndex = nodes.size() - 1;
-        HuffmanNode right = nodes.get(lastIndex);
-        HuffmanNode left = nodes.get(lastIndex - 1);
-
-        System.out.println("Combinando: " + nodeToString(left) + " + " + nodeToString(right));
-
-        // Remover los dos últimos
-        nodes.remove(lastIndex);
-        nodes.remove(lastIndex - 1);
-
-        // Crear nuevo nodo padre
-        double combinedFrequency = left.frequency + right.frequency;
-        HuffmanNode parent = new HuffmanNode(left, right, combinedFrequency, currentInsertionOrder++);
-
-        // Insertar el nuevo nodo manteniendo el orden descendente
-        int insertIndex = 0;
-        boolean found = false;
-        
-        // Buscar la posición correcta para insertar
-        for (int i = 0; i < nodes.size(); i++) {
-            HuffmanNode current = nodes.get(i);
-            if (current.frequency > combinedFrequency) {
-                continue;
-            } else if (current.frequency == combinedFrequency) {
-                // Para frecuencias iguales, insertar antes de nodos con menor orden de inserción
-                if (current.insertionOrder < parent.insertionOrder) {
-                    insertIndex = i;
-                    found = true;
-                    break;
-                }
-            } else {
-                // current.frequency < combinedFrequency
-                insertIndex = i;
-                found = true;
-                break;
-            }
-        }
-        
-        if (!found) {
-            insertIndex = nodes.size();
-        }
-        
-        nodes.add(insertIndex, parent);
-        System.out.println("Lista después de inserción: " + nodesToString(nodes));
-    }
-
-    huffmanRoot = nodes.isEmpty() ? null : nodes.get(0);
-    
-    huffmanCodes.clear();
-    generateHuffmanCodes(huffmanRoot, "");
-
-    showHuffmanTreeInfo();
-}
-
-    private String nodesToString(List<HuffmanNode> nodes) {
-        StringBuilder sb = new StringBuilder("[");
-        for (int i = 0; i < nodes.size(); i++) {
-            sb.append(nodeToString(nodes.get(i)));
-            if (i < nodes.size() - 1)
-                sb.append(", ");
-        }
-        sb.append("]");
-        return sb.toString();
-    }
-
-    private void debugHuffmanProcess(String message) {
-        System.out.println("=== DEBUG HUFFMAN PARA: " + message + " ===");
-
-        // Paso 1: Invertir el mensaje
-        String reversedMessage = new StringBuilder(message).reverse().toString();
-        System.out.println("Mensaje invertido: " + reversedMessage);
-
-        // Paso 2: Calcular frecuencias
         Map<Character, Integer> charCount = new HashMap<>();
         int totalChars = 0;
 
-        for (char c : reversedMessage.toCharArray()) {
+        for (char c : message.toCharArray()) {
             char upperChar = Character.toUpperCase(c);
             if (upperChar >= 'A' && upperChar <= 'Z') {
                 charCount.put(upperChar, charCount.getOrDefault(upperChar, 0) + 1);
@@ -1558,103 +1528,55 @@ public int compareTo(HuffmanNode other) {
             }
         }
 
-        System.out.println("Conteo de caracteres: " + charCount);
-        System.out.println("Total de caracteres válidos: " + totalChars);
+        if (charCount.isEmpty()) {
+            notificationText.setText("El mensaje no contiene letras válidas (A-Z).");
+            huffmanRoot = null;
+            huffmanCodes.clear();
+            updateTreeVisualization();
+            return;
+        }
 
-        // Paso 3: Crear lista manualmente
-        List<HuffmanNode> nodes = new ArrayList<>();
+        LinkedList<HuffmanNode> queue = new LinkedList<>();
         int insertionOrder = 0;
 
-        for (char c : reversedMessage.toCharArray()) {
+        for (char c : message.toCharArray()) {
             char upperChar = Character.toUpperCase(c);
-            if (upperChar >= 'A' && upperChar <= 'Z' &&
-                    !containsNodeWithLetter(nodes, upperChar)) {
-                double frequency = (double) charCount.get(upperChar) / totalChars;
-                nodes.add(new HuffmanNode(upperChar, frequency, insertionOrder++));
-                System.out.println("Agregado nodo: " + upperChar + " - Frecuencia: " + frequency + " - Orden: "
-                        + (insertionOrder - 1));
-            }
-        }
+            if (upperChar >= 'A' && upperChar <= 'Z') {
 
-        System.out.println("Lista inicial: " + nodes);
-
-        // Paso 4: Construir árbol paso a paso
-        int step = 1;
-        while (nodes.size() > 1) {
-            System.out.println("\n--- Paso " + step + " ---");
-            System.out.println("Lista actual: " + nodes);
-
-            // Tomar los dos últimos
-            int lastIndex = nodes.size() - 1;
-            HuffmanNode right = nodes.get(lastIndex);
-            HuffmanNode left = nodes.get(lastIndex - 1);
-
-            System.out.println("Combinando: " + left + " + " + right);
-
-            nodes.remove(lastIndex);
-            nodes.remove(lastIndex - 1);
-
-            double combinedFrequency = left.frequency + right.frequency;
-            HuffmanNode parent = new HuffmanNode(left, right, combinedFrequency, insertionOrder++);
-
-            System.out.println("Nuevo nodo: " + parent);
-
-            // Insertar en posición ordenada
-            boolean inserted = false;
-            for (int i = nodes.size() - 1; i >= 0; i--) {
-                if (nodes.get(i).frequency >= combinedFrequency) {
-                    nodes.add(i + 1, parent);
-                    inserted = true;
-                    System.out.println("Insertado en posición: " + (i + 1));
-                    break;
+                boolean exists = false;
+                for (HuffmanNode node : queue) {
+                    if (node.isLeaf() && node.letter == upperChar) {
+                        exists = true;
+                        break;
+                    }
+                }
+                if (!exists) {
+                    double frequency = (double) charCount.get(upperChar) / totalChars;
+                    queue.add(new HuffmanNode(upperChar, frequency, insertionOrder++));
                 }
             }
-            if (!inserted) {
-                nodes.add(0, parent);
-                System.out.println("Insertado al inicio");
-            }
-
-            step++;
         }
 
-        if (!nodes.isEmpty()) {
-            System.out.println("\n=== ESTRUCTURA FINAL ===");
-            String structure = getHuffmanTreeStructure(nodes.get(0));
-            System.out.println("Estructura: " + structure);
+        int currentInsertionOrder = insertionOrder;
 
-            // Generar códigos para verificación
-            Map<Character, String> codes = new HashMap<>();
-            generateHuffmanCodesDebug(nodes.get(0), "", codes);
-            System.out.println("Códigos: " + codes);
-        }
-    }
+        while (queue.size() > 1) {
 
-    private void generateHuffmanCodesDebug(HuffmanNode node, String code, Map<Character, String> codes) {
-        if (node == null)
-            return;
-        if (node.isLeaf()) {
-            codes.put(node.letter, code);
-            return;
-        }
-        generateHuffmanCodesDebug(node.left, code + "0", codes);
-        generateHuffmanCodesDebug(node.right, code + "1", codes);
-    }
+            HuffmanNode first = queue.remove(0);
+            HuffmanNode second = queue.remove(0);
 
-    private String nodeToString(HuffmanNode node) {
-        if (node.isLeaf()) {
-            return node.letter + ":" + String.format("%.3f", node.frequency);
-        } else {
-            return "Node:" + String.format("%.3f", node.frequency);
-        }
-    }
+            double combinedFrequency = first.frequency + second.frequency;
+            HuffmanNode parent = new HuffmanNode(first, second, combinedFrequency, currentInsertionOrder++);
 
-    private boolean containsNodeWithLetter(List<HuffmanNode> nodes, char letter) {
-        for (HuffmanNode node : nodes) {
-            if (node.isLeaf() && node.letter != null && node.letter == letter) {
-                return true;
-            }
+            queue.add(parent);
+
         }
-        return false;
+
+        huffmanRoot = queue.isEmpty() ? null : queue.get(0);
+
+        huffmanCodes.clear();
+        generateHuffmanCodes(huffmanRoot, "");
+
+        updateTreeVisualization();
     }
 
     private String getHuffmanTreeStructure(HuffmanNode node) {
@@ -1682,29 +1604,6 @@ public int compareTo(HuffmanNode other) {
 
         generateHuffmanCodes(node.left, code + "0");
         generateHuffmanCodes(node.right, code + "1");
-    }
-
-    private void showHuffmanTreeInfo() {
-        StringBuilder info = new StringBuilder();
-        info.append("Árbol de Huffman - Mensaje invertido: ").append(huffmanMessage).append("\n");
-
-        if (huffmanRoot != null) {
-            String structure = getHuffmanTreeStructure(huffmanRoot);
-            info.append("Estructura: ").append(structure).append("\n");
-        }
-
-        Map<Character, Double> frequencies = calculateFrequencies(huffmanMessage);
-        info.append("Frecuencias: ");
-        for (Map.Entry<Character, Double> entry : frequencies.entrySet()) {
-            info.append(entry.getKey()).append(":").append(String.format("%.3f", entry.getValue())).append(" ");
-        }
-
-        info.append("\nCódigos Huffman: ");
-        for (Map.Entry<Character, String> entry : huffmanCodes.entrySet()) {
-            info.append(entry.getKey()).append(":").append(entry.getValue()).append(" ");
-        }
-
-        notificationText.setText(info.toString());
     }
 
     private void updateTreeVisualization() {
@@ -1739,13 +1638,19 @@ public int compareTo(HuffmanNode other) {
         canvas.setMinSize(canvasWidth, canvasHeight);
         canvas.setMaxSize(canvasWidth, canvasHeight);
 
+        Button expandButton = new Button("Ampliar Vista");
+        expandButton.setLayoutX(360);
+        expandButton.setLayoutY(120);
+        expandButton.setOnAction(e -> showExpandedTreeView());
+        principalPane.getChildren().add(expandButton);
+
         double initialX = canvasWidth / 2;
         double initialY = 100;
 
         switch (treeString) {
             case "Arboles de busqueda digital":
                 if (digitalRoot != null) {
-                    drawDigitalTree(canvas, digitalRoot, initialX, initialY, canvasWidth * 0.7);
+                    drawDigitalTree(canvas, digitalRoot, initialX, initialY, canvasWidth * 0.4);
                 }
                 break;
             case "Arboles de busqueda por residuos":
@@ -1755,7 +1660,7 @@ public int compareTo(HuffmanNode other) {
                 break;
             case "Arboles de busqueda por residuos multiple":
                 if (multipleResidueRoot != null) {
-                    drawMultipleResidueTree(canvas, multipleResidueRoot, initialX, initialY, canvasWidth * 0.9, 0);
+                    drawMultipleResidueTree(canvas, multipleResidueRoot, initialX, initialY, canvasWidth * 0.4, 0);
                 }
                 break;
             case "Arboles de Huffman":
@@ -2149,7 +2054,6 @@ public int compareTo(HuffmanNode other) {
         node.x = x;
         node.y = y;
 
-        // Colores uniformes con los otros árboles
         Color nodeColor, strokeColor;
         if (node.isLeaf()) {
             nodeColor = Color.WHITE;
@@ -2159,7 +2063,6 @@ public int compareTo(HuffmanNode other) {
             strokeColor = Color.BLACK;
         }
 
-        // Resaltado para búsqueda (verde)
         if (isSearchInProgress && currentSearchPath.contains(node)) {
             nodeColor = Color.LIGHTGREEN;
             strokeColor = Color.DARKGREEN;
@@ -2173,28 +2076,25 @@ public int compareTo(HuffmanNode other) {
         canvas.getChildren().add(circle);
         node.circle = circle;
 
-        // Mostrar solo letras en nodos hoja, frecuencias en nodos de enlace
         String text = node.getDisplayText();
         Text nodeText = new Text(x - (text.length() * 3), y + 5, text);
         nodeText.setStyle("-fx-font-size: " + (node.isLeaf() ? "12" : "10") + "px; -fx-font-weight: bold;");
         canvas.getChildren().add(nodeText);
 
         double childY = y + 80;
-        double childWidth = levelWidth * 0.6;
+        double childWidth = levelWidth * 0.5;
 
         if (node.left != null) {
             double leftX = x - levelWidth / 2;
             double leftWidth = drawHuffmanTree(canvas, node.left, leftX, childY, childWidth);
 
-            // Línea negra en lugar de azul
             Line line = new Line(x, y + nodeRadius, leftX, childY - 20);
             line.setStroke(Color.BLACK);
             line.setStrokeWidth(1.5);
             canvas.getChildren().add(line);
 
-            // Etiqueta de frecuencia en negro
             Text edgeText = new Text((x + leftX) / 2 - 8, (y + childY) / 2,
-                    String.format("%.3f", node.left.frequency));
+                    node.left.getFractionString());
             edgeText.setFill(Color.BLACK);
             edgeText.setStyle("-fx-font-weight: bold; -fx-font-size: 9px;");
             canvas.getChildren().add(edgeText);
@@ -2204,15 +2104,13 @@ public int compareTo(HuffmanNode other) {
             double rightX = x + levelWidth / 2;
             double rightWidth = drawHuffmanTree(canvas, node.right, rightX, childY, childWidth);
 
-            // Línea negra en lugar de roja
             Line line = new Line(x, y + nodeRadius, rightX, childY - 20);
             line.setStroke(Color.BLACK);
             line.setStrokeWidth(1.5);
             canvas.getChildren().add(line);
 
-            // Etiqueta de frecuencia en negro
             Text edgeText = new Text((x + rightX) / 2 - 8, (y + childY) / 2,
-                    String.format("%.3f", node.right.frequency));
+                    node.right.getFractionString());
             edgeText.setFill(Color.BLACK);
             edgeText.setStyle("-fx-font-weight: bold; -fx-font-size: 9px;");
             canvas.getChildren().add(edgeText);
@@ -2221,31 +2119,727 @@ public int compareTo(HuffmanNode other) {
         return levelWidth;
     }
 
+    private void showExpandedTreeView() {
+
+        Stage expandedStage = new Stage();
+        expandedStage.setTitle("Vista Ampliada del Árbol - " + treeString);
+        expandedStage.initModality(Modality.WINDOW_MODAL);
+        expandedStage.initOwner(treePane.getScene().getWindow());
+
+        Rectangle2D screenBounds = Screen.getPrimary().getVisualBounds();
+        double stageWidth = screenBounds.getWidth() * 0.9;
+        double stageHeight = screenBounds.getHeight() * 0.9;
+
+        Pane expandedCanvas = createExpandedTreeCanvas();
+
+        ScrollPane expandedScrollPane = createExpandedScrollPane(expandedCanvas, stageWidth, stageHeight);
+
+        setupExpandedPan(expandedCanvas, expandedScrollPane);
+
+        HBox buttonBox = createControlButtons(expandedStage, expandedScrollPane, expandedCanvas);
+
+        BorderPane root = new BorderPane();
+        root.setCenter(expandedScrollPane);
+        root.setBottom(buttonBox);
+
+        Scene scene = new Scene(root, stageWidth, stageHeight);
+        expandedStage.setScene(scene);
+        expandedStage.setMaximized(true);
+
+        expandedStage.show();
+
+        centerExpandedView(expandedScrollPane, expandedCanvas);
+    }
+
+    private ScrollPane createExpandedScrollPane(Pane expandedCanvas, double width, double height) {
+        ScrollPane scrollPane = new ScrollPane();
+        scrollPane.setContent(expandedCanvas);
+        scrollPane.setPrefSize(width, height);
+        scrollPane.setFitToWidth(false);
+        scrollPane.setFitToHeight(false);
+        scrollPane.setPannable(true);
+
+        setupExpandedZoom(scrollPane);
+
+        return scrollPane;
+    }
+
+    private void setupExpandedPan(Pane canvas, ScrollPane scrollPane) {
+        final double[] dragDelta = new double[2];
+
+        canvas.setOnMousePressed(event -> {
+
+            if (!(event.getTarget() instanceof Circle) && !(event.getTarget() instanceof Text)) {
+                dragDelta[0] = event.getSceneX();
+                dragDelta[1] = event.getSceneY();
+                canvas.setCursor(javafx.scene.Cursor.CLOSED_HAND);
+            }
+        });
+
+        canvas.setOnMouseReleased(event -> {
+            canvas.setCursor(javafx.scene.Cursor.DEFAULT);
+        });
+
+        canvas.setOnMouseDragged(event -> {
+            if (canvas.getCursor() == javafx.scene.Cursor.CLOSED_HAND) {
+                double deltaX = event.getSceneX() - dragDelta[0];
+                double deltaY = event.getSceneY() - dragDelta[1];
+
+                double newHValue = scrollPane.getHvalue()
+                        - deltaX / (canvas.getWidth() * scrollPane.getContent().getScaleX());
+                double newVValue = scrollPane.getVvalue()
+                        - deltaY / (canvas.getHeight() * scrollPane.getContent().getScaleY());
+
+                scrollPane.setHvalue(Math.max(0, Math.min(1, newHValue)));
+                scrollPane.setVvalue(Math.max(0, Math.min(1, newVValue)));
+
+                dragDelta[0] = event.getSceneX();
+                dragDelta[1] = event.getSceneY();
+            }
+        });
+    }
+
+    private HBox createControlButtons(Stage stage, ScrollPane scrollPane, Pane canvas) {
+
+        Button resetZoomButton = new Button("Centrar vista");
+        resetZoomButton.setOnAction(e -> resetExpandedZoom(scrollPane, canvas));
+        Button imprimirButton = new Button("Imprimir");
+        imprimirButton.setOnAction(e -> imprimirVistaAmpliada());
+
+        HBox buttonBox = new HBox(120, resetZoomButton, imprimirButton);
+        buttonBox.setAlignment(Pos.CENTER);
+        buttonBox.setPadding(new Insets(10));
+        return buttonBox;
+    }
+
+    private void imprimirVistaAmpliada() {
+        
+    }
+
+    private void setupExpandedZoom(ScrollPane scrollPane) {
+        final double[] expandedScale = { 1.0 };
+        final double EXPANDED_SCALE_DELTA = 0.1;
+        final double EXPANDED_MAX_SCALE = 3.0;
+        final double EXPANDED_MIN_SCALE = 0.3;
+
+        scrollPane.addEventFilter(ScrollEvent.SCROLL, event -> {
+            if (event.isControlDown()) {
+                event.consume();
+
+                double zoomFactor = (event.getDeltaY() > 0) ? 1 + EXPANDED_SCALE_DELTA : 1 - EXPANDED_SCALE_DELTA;
+                double newScale = expandedScale[0] * zoomFactor;
+
+                newScale = Math.max(EXPANDED_MIN_SCALE, Math.min(EXPANDED_MAX_SCALE, newScale));
+
+                if (scrollPane.getContent() != null) {
+
+                    double mouseX = event.getX();
+                    double mouseY = event.getY();
+
+                    double contentWidth = scrollPane.getContent().getBoundsInParent().getWidth();
+                    double contentHeight = scrollPane.getContent().getBoundsInParent().getHeight();
+
+                    double hValue = scrollPane.getHvalue();
+                    double vValue = scrollPane.getVvalue();
+
+                    double xRatio = (hValue * contentWidth + mouseX) / contentWidth;
+                    double yRatio = (vValue * contentHeight + mouseY) / contentHeight;
+
+                    scrollPane.getContent().setScaleX(newScale);
+                    scrollPane.getContent().setScaleY(newScale);
+                    expandedScale[0] = newScale;
+
+                    double newContentWidth = contentWidth * (newScale / expandedScale[0]);
+                    double newContentHeight = contentHeight * (newScale / expandedScale[0]);
+
+                    double newHValue = (xRatio * newContentWidth - mouseX) / newContentWidth;
+                    double newVValue = (yRatio * newContentHeight - mouseY) / newContentHeight;
+
+                    scrollPane.setHvalue(Math.max(0, Math.min(1, newHValue)));
+                    scrollPane.setVvalue(Math.max(0, Math.min(1, newVValue)));
+                }
+            }
+        });
+    }
+
+    private void resetExpandedZoom(ScrollPane scrollPane, Pane canvas) {
+        if (scrollPane.getContent() != null) {
+            scrollPane.getContent().setScaleX(1.0);
+            scrollPane.getContent().setScaleY(1.0);
+            centerExpandedView(scrollPane, canvas);
+        }
+    }
+
+    private Pane createExpandedTreeCanvas() {
+
+        double expandedWidth = canvasWidth * 2.5;
+        double expandedHeight = canvasHeight * 2.5;
+
+        Pane expandedCanvas = new Pane();
+        expandedCanvas.setPrefSize(expandedWidth, expandedHeight);
+        expandedCanvas.setMinSize(expandedWidth, expandedHeight);
+        expandedCanvas.setMaxSize(expandedWidth, expandedHeight);
+        expandedCanvas.setStyle("-fx-background-color: white;");
+
+        drawTreeOnExpandedCanvas(expandedCanvas, expandedWidth, expandedHeight);
+
+        return expandedCanvas;
+    }
+
+    private void drawTreeOnExpandedCanvas(Pane canvas, double width, double height) {
+        double initialX = width / 2;
+        double initialY = 150;
+
+        double expandedLevelWidth = width * 0.4;
+
+        switch (treeString) {
+            case "Arboles de busqueda digital":
+                if (digitalRoot != null) {
+                    drawDigitalTreeExpanded(canvas, digitalRoot, initialX, initialY, expandedLevelWidth);
+                }
+                break;
+            case "Arboles de busqueda por residuos":
+                if (residueRoot != null) {
+                    drawResidueTreeExpanded(canvas, residueRoot, initialX, initialY, expandedLevelWidth * 0.6);
+                }
+                break;
+            case "Arboles de busqueda por residuos multiple":
+                if (multipleResidueRoot != null) {
+                    drawMultipleResidueTreeExpanded(canvas, multipleResidueRoot, initialX, initialY, expandedLevelWidth,
+                            0);
+                }
+                break;
+            case "Arboles de Huffman":
+                if (huffmanRoot != null) {
+                    drawHuffmanTreeExpanded(canvas, huffmanRoot, initialX, initialY, expandedLevelWidth * 0.6);
+                }
+                break;
+            default:
+                break;
+        }
+    }
+
+    private double drawDigitalTreeExpanded(Pane canvas, DigitalNode node, double x, double y, double levelWidth) {
+        if (node == null)
+            return 0;
+
+        node.x = x;
+        node.y = y;
+
+        Color nodeColor = Color.WHITE;
+        Color strokeColor = Color.BLACK;
+
+        if (isSearchInProgress && currentSearchPath.contains(node)) {
+            nodeColor = Color.LIGHTGREEN;
+            strokeColor = Color.DARKGREEN;
+        }
+
+        double nodeRadius = 25;
+        Circle circle = new Circle(x, y, nodeRadius);
+        circle.setFill(nodeColor);
+        circle.setStroke(strokeColor);
+        circle.setStrokeWidth(2.5);
+        canvas.getChildren().add(circle);
+
+        String text = (node.letter != null) ? String.valueOf(node.letter) : "";
+        Text nodeText = new Text(x - 6, y + 7, text);
+        nodeText.setStyle("-fx-font-size: 14px; -fx-font-weight: bold;");
+        canvas.getChildren().add(nodeText);
+
+        double childY = y + 120;
+        double totalWidth = 0;
+
+        if (node.left != null) {
+            double leftWidth = drawDigitalTreeExpanded(canvas, node.left, x - levelWidth / 2, childY, levelWidth * 0.4);
+            totalWidth += leftWidth;
+
+            Color lineColor = Color.BLACK;
+            if (isSearchInProgress && currentSearchPath.contains(node) && currentSearchPath.contains(node.left)) {
+                lineColor = Color.GREEN;
+            }
+
+            Line line = new Line(x, y + nodeRadius, x - levelWidth / 2, childY - 25);
+            line.setStroke(lineColor);
+            line.setStrokeWidth(2);
+            canvas.getChildren().add(line);
+
+            Text edgeText = new Text(x - levelWidth / 4 - 5, (y + childY) / 2, "0");
+            edgeText.setFill(lineColor);
+            edgeText.setStyle("-fx-font-size: 12px; -fx-font-weight: bold;");
+            canvas.getChildren().add(edgeText);
+        }
+
+        if (node.right != null) {
+            double rightWidth = drawDigitalTreeExpanded(canvas, node.right, x + levelWidth / 2, childY,
+                    levelWidth * 0.6);
+            totalWidth += rightWidth;
+
+            Color lineColor = Color.BLACK;
+            if (isSearchInProgress && currentSearchPath.contains(node) && currentSearchPath.contains(node.right)) {
+                lineColor = Color.GREEN;
+            }
+
+            Line line = new Line(x, y + nodeRadius, x + levelWidth / 2, childY - 25);
+            line.setStroke(lineColor);
+            line.setStrokeWidth(2);
+            canvas.getChildren().add(line);
+
+            Text edgeText = new Text(x + levelWidth / 4 - 5, (y + childY) / 2, "1");
+            edgeText.setFill(lineColor);
+            edgeText.setStyle("-fx-font-size: 12px; -fx-font-weight: bold;");
+            canvas.getChildren().add(edgeText);
+        }
+
+        return Math.max(levelWidth, totalWidth);
+    }
+
+    private double drawResidueTreeExpanded(Pane canvas, ResidueNode node, double x, double y, double levelWidth) {
+        if (node == null)
+            return 0;
+
+        node.x = x;
+        node.y = y;
+
+        Color nodeColor = node.isLink ? Color.LIGHTGRAY : Color.WHITE;
+        Color strokeColor = Color.BLACK;
+
+        if (isSearchInProgress && currentSearchPath.contains(node)) {
+            nodeColor = Color.LIGHTGREEN;
+            strokeColor = Color.DARKGREEN;
+        }
+
+        double nodeRadius = 25;
+
+        if (node == residueRoot) {
+            Circle circle = new Circle(x, y, nodeRadius);
+            circle.setFill(nodeColor);
+            circle.setStroke(strokeColor);
+            circle.setStrokeWidth(2.5);
+            canvas.getChildren().add(circle);
+            node.circle = circle;
+            Text nodeText = new Text(x - 6, y + 7, "L");
+            nodeText.setStyle("-fx-font-size: 14px; -fx-font-weight: bold;");
+            canvas.getChildren().add(nodeText);
+        } else {
+            if (node.isLink) {
+                Circle circle = new Circle(x, y, nodeRadius);
+                circle.setFill(nodeColor);
+                circle.setStroke(strokeColor);
+                circle.setStrokeWidth(2.5);
+                canvas.getChildren().add(circle);
+                node.circle = circle;
+                Text nodeText = new Text(x - 6, y + 7, "L");
+                nodeText.setStyle("-fx-font-size: 14px; -fx-font-weight: bold;");
+                canvas.getChildren().add(nodeText);
+            } else {
+                Rectangle rect = new Rectangle(x - 25, y - 25, 50, 50);
+                rect.setFill(nodeColor);
+                rect.setStroke(strokeColor);
+                rect.setStrokeWidth(2.5);
+                canvas.getChildren().add(rect);
+
+                Circle circle = new Circle(x, y, nodeRadius);
+                circle.setFill(Color.TRANSPARENT);
+                circle.setStroke(Color.TRANSPARENT);
+                canvas.getChildren().add(circle);
+                node.circle = circle;
+
+                String text = (node.letter != null) ? String.valueOf(node.letter) : "";
+                Text nodeText = new Text(x - 6, y + 7, text);
+                nodeText.setStyle("-fx-font-size: 14px; -fx-font-weight: bold;");
+                canvas.getChildren().add(nodeText);
+            }
+        }
+
+        double childY = y + 120;
+        double totalWidth = 0;
+
+        if (node.left != null) {
+            double leftWidth = drawResidueTreeExpanded(canvas, node.left, x - levelWidth / 2, childY, levelWidth * 0.6);
+            totalWidth += leftWidth;
+
+            Color lineColor = Color.BLACK;
+            if (isSearchInProgress && currentSearchPath.contains(node) && currentSearchPath.contains(node.left)) {
+                lineColor = Color.GREEN;
+            }
+
+            Line line = new Line(x, y + nodeRadius, x - levelWidth / 2, childY - 25);
+            line.setStroke(lineColor);
+            line.setStrokeWidth(2);
+            canvas.getChildren().add(line);
+
+            Text edgeText = new Text(x - levelWidth / 4 - 5, (y + childY) / 2, "0");
+            edgeText.setFill(lineColor);
+            edgeText.setStyle("-fx-font-size: 12px; -fx-font-weight: bold;");
+            canvas.getChildren().add(edgeText);
+        }
+
+        if (node.right != null) {
+            double rightWidth = drawResidueTreeExpanded(canvas, node.right, x + levelWidth / 2, childY,
+                    levelWidth * 0.6);
+            totalWidth += rightWidth;
+
+            Color lineColor = Color.BLACK;
+            if (isSearchInProgress && currentSearchPath.contains(node) && currentSearchPath.contains(node.right)) {
+                lineColor = Color.GREEN;
+            }
+
+            Line line = new Line(x, y + nodeRadius, x + levelWidth / 2, childY - 25);
+            line.setStroke(lineColor);
+            line.setStrokeWidth(2);
+            canvas.getChildren().add(line);
+
+            Text edgeText = new Text(x + levelWidth / 4 - 5, (y + childY) / 2, "1");
+            edgeText.setFill(lineColor);
+            edgeText.setStyle("-fx-font-size: 12px; -fx-font-weight: bold;");
+            canvas.getChildren().add(edgeText);
+        }
+
+        return Math.max(levelWidth, totalWidth);
+    }
+
+    private double drawMultipleResidueTreeExpanded(Pane canvas, MultipleResidueNode node, double x, double y,
+            double levelWidth, int depth) {
+        if (node == null)
+            return 0;
+
+        node.x = x;
+        node.y = y;
+
+        Color nodeColor = node.isLink ? Color.LIGHTGRAY : Color.WHITE;
+        Color strokeColor = Color.BLACK;
+
+        if (isSearchInProgress && currentSearchPath.contains(node)) {
+            nodeColor = Color.LIGHTGREEN;
+            strokeColor = Color.DARKGREEN;
+        }
+
+        double nodeRadius = 25;
+
+        if (node.isLink) {
+            Circle circle = new Circle(x, y, nodeRadius);
+            circle.setFill(nodeColor);
+            circle.setStroke(strokeColor);
+            circle.setStrokeWidth(2.5);
+            canvas.getChildren().add(circle);
+            node.circle = circle;
+            Text nodeText = new Text(x - 6, y + 7, "L");
+            nodeText.setStyle("-fx-font-size: 14px; -fx-font-weight: bold;");
+            nodeText.setFill(strokeColor);
+            canvas.getChildren().add(nodeText);
+        } else {
+            Rectangle rect = new Rectangle(x - 25, y - 25, 50, 50);
+            rect.setFill(nodeColor);
+            rect.setStroke(strokeColor);
+            rect.setStrokeWidth(2.5);
+            canvas.getChildren().add(rect);
+
+            Circle circle = new Circle(x, y, nodeRadius);
+            circle.setFill(Color.TRANSPARENT);
+            circle.setStroke(Color.TRANSPARENT);
+            canvas.getChildren().add(circle);
+            node.circle = circle;
+
+            String text = (node.letter != null) ? String.valueOf(node.letter) : "";
+            Text nodeText = new Text(x - 6, y + 7, text);
+            nodeText.setStyle("-fx-font-size: 14px; -fx-font-weight: bold;");
+            nodeText.setFill(strokeColor);
+            canvas.getChildren().add(nodeText);
+        }
+
+        List<Integer> nonNullChildren = new ArrayList<>();
+        for (int i = 0; i < 4; i++) {
+            if (node.children[i] != null) {
+                nonNullChildren.add(i);
+            }
+        }
+
+        if (nonNullChildren.isEmpty()) {
+            return 100;
+        }
+
+        double totalChildWidth = 0;
+        List<Double> childWidths = new ArrayList<>();
+
+        for (int childIndex : nonNullChildren) {
+            double childTreeWidth = calculateSubtreeWidth(node.children[childIndex], depth + 1);
+            childWidths.add(childTreeWidth);
+            totalChildWidth += childTreeWidth;
+        }
+
+        double horizontalSpacing = 100;
+        totalChildWidth += horizontalSpacing * (nonNullChildren.size() - 1);
+
+        if (totalChildWidth > levelWidth) {
+            levelWidth = totalChildWidth;
+        }
+
+        double verticalSpacing = 150;
+        double childY = y + verticalSpacing;
+        double currentX = x - (totalChildWidth / 2);
+
+        double maxChildWidth = 0;
+        int childCount = 0;
+
+        for (int childIndex = 0; childIndex < 4; childIndex++) {
+            if (node.children[childIndex] != null) {
+                double childTreeWidth = childWidths.get(childCount);
+                double childX = currentX + (childTreeWidth / 2);
+
+                if (childCount > 0) {
+                    double previousChildRight = currentX - horizontalSpacing;
+                    if (childX - (childTreeWidth / 2) < previousChildRight) {
+                        childX = previousChildRight + (childTreeWidth / 2) + horizontalSpacing;
+                    }
+                }
+
+                Color lineColor = Color.BLACK;
+                if (isSearchInProgress && currentSearchPath.contains(node)
+                        && currentSearchPath.contains(node.children[childIndex])) {
+                    lineColor = Color.GREEN;
+                }
+
+                Line line = new Line(x, y + nodeRadius, childX, childY - 25);
+                line.setStroke(lineColor);
+                line.setStrokeWidth(2);
+                canvas.getChildren().add(line);
+
+                String label = getEdgeLabel(childIndex, depth);
+                Text edgeText = new Text((x + childX) / 2 - 8, (y + childY) / 2, label);
+                edgeText.setFill(lineColor);
+                edgeText.setStyle("-fx-font-size: 12px; -fx-font-weight: bold;");
+                canvas.getChildren().add(edgeText);
+
+                double actualChildWidth = drawMultipleResidueTreeExpanded(canvas, node.children[childIndex],
+                        childX, childY, childTreeWidth, depth + 1);
+
+                maxChildWidth = Math.max(maxChildWidth, actualChildWidth);
+                currentX += childTreeWidth + horizontalSpacing;
+                childCount++;
+            }
+        }
+
+        return Math.max(levelWidth, maxChildWidth);
+    }
+
+    private double drawHuffmanTreeExpanded(Pane canvas, HuffmanNode node, double x, double y, double levelWidth) {
+        if (node == null)
+            return 0;
+
+        node.x = x;
+        node.y = y;
+
+        Color nodeColor, strokeColor;
+        if (node.isLeaf()) {
+            nodeColor = Color.WHITE;
+            strokeColor = Color.BLACK;
+        } else {
+            nodeColor = Color.LIGHTGRAY;
+            strokeColor = Color.BLACK;
+        }
+
+        if (isSearchInProgress && currentSearchPath.contains(node)) {
+            nodeColor = Color.LIGHTGREEN;
+            strokeColor = Color.DARKGREEN;
+        }
+
+        double nodeRadius = 30;
+        Circle circle = new Circle(x, y, nodeRadius);
+        circle.setFill(nodeColor);
+        circle.setStroke(strokeColor);
+        circle.setStrokeWidth(3);
+        canvas.getChildren().add(circle);
+
+        String text = node.getDisplayText();
+        Text nodeText = new Text(x - (text.length() * 4), y + 7, text);
+        nodeText.setStyle("-fx-font-size: " + (node.isLeaf() ? "16" : "14") + "px; -fx-font-weight: bold;");
+        canvas.getChildren().add(nodeText);
+
+        double childY = y + 120;
+        double childWidth = levelWidth * 0.5;
+
+        if (node.left != null) {
+            double leftX = x - levelWidth / 2;
+            drawHuffmanTreeExpanded(canvas, node.left, leftX, childY, childWidth);
+
+            Line line = new Line(x, y + nodeRadius, leftX, childY - 30);
+            line.setStroke(Color.BLACK);
+            line.setStrokeWidth(2);
+            canvas.getChildren().add(line);
+
+            Text edgeText = new Text((x + leftX) / 2 - 12, (y + childY) / 2,
+                    node.left.getFractionString());
+            edgeText.setFill(Color.BLACK);
+            edgeText.setStyle("-fx-font-weight: bold; -fx-font-size: 12px;");
+            canvas.getChildren().add(edgeText);
+        }
+
+        if (node.right != null) {
+            double rightX = x + levelWidth / 2;
+            drawHuffmanTreeExpanded(canvas, node.right, rightX, childY, childWidth);
+
+            Line line = new Line(x, y + nodeRadius, rightX, childY - 30);
+            line.setStroke(Color.BLACK);
+            line.setStrokeWidth(2);
+            canvas.getChildren().add(line);
+
+            Text edgeText = new Text((x + rightX) / 2 - 12, (y + childY) / 2,
+                    node.right.getFractionString());
+            edgeText.setFill(Color.BLACK);
+            edgeText.setStyle("-fx-font-weight: bold; -fx-font-size: 12px;");
+            canvas.getChildren().add(edgeText);
+        }
+
+        return levelWidth;
+    }
+
+    private void centerExpandedView(ScrollPane scrollPane, Pane canvas) {
+        if (canvas == null)
+            return;
+
+        double rootX = canvas.getPrefWidth() / 2;
+        double rootY = 250;
+
+        double viewportWidth = scrollPane.getViewportBounds().getWidth();
+        double viewportHeight = scrollPane.getViewportBounds().getHeight();
+
+        double canvasScaledWidth = canvas.getPrefWidth() * scrollPane.getContent().getScaleX();
+        double canvasScaledHeight = canvas.getPrefHeight() * scrollPane.getContent().getScaleY();
+
+        double hValue = (rootX * scrollPane.getContent().getScaleX() - viewportWidth / 2)
+                / (canvasScaledWidth - viewportWidth);
+        double vValue = (rootY * scrollPane.getContent().getScaleY() - viewportHeight / 2)
+                / (canvasScaledHeight - viewportHeight);
+
+        hValue = Math.max(0, Math.min(1, hValue));
+        vValue = Math.max(0, Math.min(1, vValue));
+
+        scrollPane.setHvalue(hValue);
+        scrollPane.setVvalue(vValue);
+    }
+
+    @FXML
+    private void saveTree() {
+        if (treeString == null || treeString.isEmpty()) {
+            notificationText.setText("No hay árbol activo para guardar.");
+            return;
+        }
+
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Guardar Árbol");
+        fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Archivos de Árbol", "*.tree"));
+        fileChooser.setInitialFileName("arbol_" + treeString.replace(" ", "_") + ".tree");
+
+        File file = fileChooser.showSaveDialog(saveButton.getScene().getWindow());
+
+        if (file != null) {
+            try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(file))) {
+                Map<String, Object> saveData = new HashMap<>();
+                saveData.put("treeType", treeString);
+                saveData.put("timestamp", System.currentTimeMillis());
+
+                switch (treeString) {
+                    case "Arboles de busqueda digital":
+                        saveData.put("digitalInsertionOrder", digitalInsertionOrder);
+                        saveData.put("digitalRoot", digitalRoot);
+                        break;
+                    case "Arboles de busqueda por residuos":
+                        saveData.put("residueInsertionOrder", residueInsertionOrder);
+                        saveData.put("residueRoot", residueRoot);
+                        break;
+                    case "Arboles de busqueda por residuos multiple":
+                        saveData.put("multipleResidueInsertionOrder", multipleResidueInsertionOrder);
+                        saveData.put("multipleResidueRoot", multipleResidueRoot);
+                        break;
+                    case "Arboles de Huffman":
+                        saveData.put("huffmanMessage", huffmanMessage);
+                        saveData.put("huffmanRoot", huffmanRoot);
+                        saveData.put("huffmanCodes", huffmanCodes);
+                        break;
+                }
+
+                oos.writeObject(saveData);
+                notificationText.setText("Árbol guardado exitosamente: " + file.getName());
+
+            } catch (IOException e) {
+                notificationText.setText("Error al guardar el árbol: " + e.getMessage());
+                e.printStackTrace();
+            }
+        }
+    }
+
+    @FXML
+    private void loadTree() {
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Cargar Árbol");
+        fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Archivos de Árbol", "*.tree"));
+
+        File file = fileChooser.showOpenDialog(loadButton.getScene().getWindow());
+
+        if (file != null) {
+            try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(file))) {
+                Map<String, Object> loadData = (Map<String, Object>) ois.readObject();
+
+                String loadedTreeType = (String) loadData.get("treeType");
+
+                if (!loadedTreeType.equals(treeString)) {
+                    Alert alert = new Alert(Alert.AlertType.ERROR);
+                    alert.setTitle("Error de Carga");
+                    alert.setHeaderText("Tipo de árbol incompatible");
+                    alert.setContentText("El archivo contiene un árbol de tipo: " + loadedTreeType +
+                            "\nPero actualmente está seleccionado: " + treeString +
+                            "\n\nSeleccione el tipo de árbol correcto antes de cargar.");
+                    alert.showAndWait();
+                    notificationText.setText("Error: Tipo de árbol incompatible");
+                    return;
+                }
+
+                switch (treeString) {
+                    case "Arboles de busqueda digital":
+                        digitalInsertionOrder = (List<Character>) loadData.get("digitalInsertionOrder");
+                        digitalRoot = (DigitalNode) loadData.get("digitalRoot");
+                        break;
+                    case "Arboles de busqueda por residuos":
+                        residueInsertionOrder = (List<Character>) loadData.get("residueInsertionOrder");
+                        residueRoot = (ResidueNode) loadData.get("residueRoot");
+                        break;
+                    case "Arboles de busqueda por residuos multiple":
+                        multipleResidueInsertionOrder = (List<Character>) loadData.get("multipleResidueInsertionOrder");
+                        multipleResidueRoot = (MultipleResidueNode) loadData.get("multipleResidueRoot");
+                        break;
+                    case "Arboles de Huffman":
+                        huffmanMessage = (String) loadData.get("huffmanMessage");
+                        huffmanRoot = (HuffmanNode) loadData.get("huffmanRoot");
+                        huffmanCodes = (Map<Character, String>) loadData.get("huffmanCodes");
+                        break;
+                }
+
+                updateTreeVisualization();
+                updateItemsText();
+                saveState();
+
+                saveButton.setDisable(true);
+
+                notificationText.setText("Árbol cargado exitosamente: " + file.getName());
+
+            } catch (IOException | ClassNotFoundException e) {
+                Alert alert = new Alert(Alert.AlertType.ERROR);
+                alert.setTitle("Error de Carga");
+                alert.setHeaderText("No se pudo cargar el archivo");
+                alert.setContentText("El archivo seleccionado no es válido o está corrupto.");
+                alert.showAndWait();
+                notificationText.setText("Error al cargar el árbol: " + e.getMessage());
+                e.printStackTrace();
+            }
+        }
+    }
+
     private void focusOnRootWithDelay() {
         PauseTransition pause = new PauseTransition(Duration.millis(150));
         pause.setOnFinished(e -> {
             focusOnRoot();
         });
         pause.play();
-    }
-
-    private void focusOnPosition(double x, double y) {
-        Pane canvas = (Pane) treePane.getContent();
-        if (canvas == null)
-            return;
-
-        double viewportWidth = treePane.getViewportBounds().getWidth();
-        double viewportHeight = treePane.getViewportBounds().getHeight();
-
-        double hValue = (x - viewportWidth / 2) / (canvasWidth - viewportWidth);
-        double vValue = (y - viewportHeight / 2) / (canvasHeight - viewportHeight);
-
-        hValue = Math.max(0, Math.min(1, hValue));
-        vValue = Math.max(0, Math.min(1, vValue));
-
-        treePane.setHvalue(hValue);
-        treePane.setVvalue(vValue);
-        treePane.requestFocus();
     }
 
     private void focusOnRoot() {
@@ -2290,17 +2884,6 @@ public int compareTo(HuffmanNode other) {
     }
 
     @FXML
-    private void redoAction() {
-        if (redoStack.isEmpty())
-            return;
-
-        TreeState state = redoStack.pop();
-        undoStack.push(new TreeState(digitalRoot, residueRoot, multipleResidueRoot, huffmanRoot, huffmanMessage));
-        restoreState(state);
-        updateUndoRedoButtons();
-    }
-
-    @FXML
     private void undoAction() {
         if (undoStack.size() <= 1)
             return;
@@ -2313,16 +2896,25 @@ public int compareTo(HuffmanNode other) {
         TreeState previousState = undoStack.peek();
         restoreState(previousState);
         updateUndoRedoButtons();
+
+        if (undoStack.size() == 1) {
+            saveButton.setDisable(true);
+        } else {
+            saveButton.setDisable(false);
+        }
     }
 
     @FXML
-    private void saveTree() {
-        notificationText.setText("Funcionalidad de guardado no implementada aún.");
-    }
+    private void redoAction() {
+        if (redoStack.isEmpty())
+            return;
 
-    @FXML
-    private void loadTree() {
-        notificationText.setText("Funcionalidad de carga no implementada aún.");
+        TreeState state = redoStack.pop();
+        undoStack.push(new TreeState(digitalRoot, residueRoot, multipleResidueRoot, huffmanRoot, huffmanMessage));
+        restoreState(state);
+        updateUndoRedoButtons();
+
+        saveButton.setDisable(false);
     }
 
     @FXML
@@ -2338,7 +2930,7 @@ public int compareTo(HuffmanNode other) {
                 break;
             case "Arboles de busqueda por residuos multiple":
                 multipleResidueInsertionOrder.clear();
-                initializeMultipleResidueTree();
+                multipleResidueRoot = new MultipleResidueNode(true, null);
                 break;
             case "Arboles de Huffman":
                 huffmanRoot = null;
@@ -2358,5 +2950,6 @@ public int compareTo(HuffmanNode other) {
         searchButton.setDisable(true);
         deleteButton.setDisable(true);
         modDeleteItem.setDisable(true);
+        saveButton.setDisable(true);
     }
 }
