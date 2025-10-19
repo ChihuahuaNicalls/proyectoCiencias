@@ -110,27 +110,19 @@ public class TreesController {
     private List<Object> currentSearchPath = new ArrayList<>();
     private boolean isSearchInProgress = false;
 
-    private class TreeState implements Serializable {
+    private static class TreeState implements Serializable {
         private static final long serialVersionUID = 1L;
-        DigitalNode digitalState;
-        ResidueNode residueState;
-        MultipleResidueNode multipleResidueState;
-        HuffmanNode huffmanState;
-        String message;
         List<Character> digitalOrder;
         List<Character> residueOrder;
         List<Character> multipleResidueOrder;
+        String huffmanMessage;
 
-        TreeState(DigitalNode digital, ResidueNode residue, MultipleResidueNode multiple, HuffmanNode huffman,
-                String msg) {
-            this.digitalState = digital != null ? cloneDigitalTree(digital) : null;
-            this.residueState = residue != null ? cloneResidueTree(residue) : null;
-            this.multipleResidueState = multiple != null ? cloneMultipleResidueTree(multiple) : null;
-            this.huffmanState = huffman != null ? cloneHuffmanTree(huffman) : null;
-            this.message = msg;
-            this.digitalOrder = new ArrayList<>(digitalInsertionOrder);
-            this.residueOrder = new ArrayList<>(residueInsertionOrder);
-            this.multipleResidueOrder = new ArrayList<>(multipleResidueInsertionOrder);
+        TreeState(List<Character> digitalOrder, List<Character> residueOrder,
+                List<Character> multipleResidueOrder, String huffmanMessage) {
+            this.digitalOrder = new ArrayList<>(digitalOrder);
+            this.residueOrder = new ArrayList<>(residueOrder);
+            this.multipleResidueOrder = new ArrayList<>(multipleResidueOrder);
+            this.huffmanMessage = huffmanMessage;
         }
     }
 
@@ -340,7 +332,7 @@ public class TreesController {
             case "Arboles de busqueda digital":
                 treesTitle.setText("Arboles de busqueda digital");
                 treesDescription.setText(
-                        "Todos los bits de la clave se representan explícitamente en el recorrido, aunque haya caminos con nodos de un solo hijo.");
+                        "Todos los bits de la clave se representan explicitamente en el recorrido, aunque haya caminos con nodos de un solo hijo.");
                 digitalRoot = null;
                 break;
             case "Arboles de busqueda por residuos":
@@ -363,7 +355,7 @@ public class TreesController {
             case "Arboles de Huffman":
                 treesTitle.setText("Arboles de Huffman");
                 treesDescription.setText(
-                        "Es construido a partir de las frecuencias de aparición de los símbolos donde se toman siempre los dos nodos de menor frecuencia.");
+                        "Es construido a partir de las frecuencias de aparicion de los simbolos donde se toman siempre los dos nodos de menor frecuencia.");
                 huffmanRoot = null;
                 undoButton.setVisible(false);
                 redoButton.setVisible(false);
@@ -427,7 +419,7 @@ public class TreesController {
                 break;
 
             case "Arboles de busqueda por residuos multiple":
-                sb.append("Residuos Múltiples: ");
+                sb.append("Residuos Multiples: ");
                 for (int i = 0; i < multipleResidueInsertionOrder.size(); i++) {
                     Character c = multipleResidueInsertionOrder.get(i);
                     String binary = letterToBinary(c);
@@ -441,7 +433,7 @@ public class TreesController {
 
             case "Arboles de Huffman":
                 if (huffmanRoot == null) {
-                    sb.append("Huffman - Ingrese un mensaje para construir el árbol");
+                    sb.append("Huffman - Ingrese un mensaje para construir el arbol");
                 } else {
                     sb.append("Huffman Mensaje: ").append(huffmanMessage);
                     sb.append("\nEstructura: ").append(getHuffmanTreeStructure(huffmanRoot));
@@ -454,11 +446,11 @@ public class TreesController {
                     }
                 }
                 treeLengthText
-                        .setText("Número de caracteres: " + (huffmanMessage != null ? huffmanMessage.length() : 0));
+                        .setText("Numero de caracteres: " + (huffmanMessage != null ? huffmanMessage.length() : 0));
                 break;
 
             default:
-                sb.append("Seleccione un tipo de árbol");
+                sb.append("Seleccione un tipo de arbol");
                 break;
         }
 
@@ -515,6 +507,13 @@ public class TreesController {
         residueRoot = new ResidueNode(true, null);
         for (Character letter : residueInsertionOrder) {
             insertResidueSimple(letter);
+        }
+    }
+
+    private void rebuildMultipleResidueTree() {
+        multipleResidueRoot = new MultipleResidueNode(true, null);
+        for (Character letter : multipleResidueInsertionOrder) {
+            insertMultipleResidueSimple(letter);
         }
     }
 
@@ -700,7 +699,7 @@ public class TreesController {
 
         Character letter = validateInput(newItemTree.getText());
         if (letter == null) {
-            notificationText.setText("Entrada inválida. Solo letras de la A a la Z.");
+            notificationText.setText("Entrada invalida. Solo letras de la A a la Z.");
             return;
         }
 
@@ -709,7 +708,7 @@ public class TreesController {
         switch (treeString) {
             case "Arboles de busqueda digital":
                 if (digitalInsertionOrder.contains(letter)) {
-                    notificationText.setText("La letra '" + letter + "' ya existe en el árbol.");
+                    notificationText.setText("La letra '" + letter + "' ya existe en el arbol.");
                     newItemTree.clear();
                     return;
                 }
@@ -721,7 +720,7 @@ public class TreesController {
 
             case "Arboles de busqueda por residuos":
                 if (residueInsertionOrder.contains(letter)) {
-                    notificationText.setText("La letra '" + letter + "' ya existe en el árbol.");
+                    notificationText.setText("La letra '" + letter + "' ya existe en el arbol.");
                     newItemTree.clear();
                     return;
                 }
@@ -733,7 +732,7 @@ public class TreesController {
 
             case "Arboles de busqueda por residuos multiple":
                 if (multipleResidueInsertionOrder.contains(letter)) {
-                    notificationText.setText("La letra '" + letter + "' ya existe en el árbol.");
+                    notificationText.setText("La letra '" + letter + "' ya existe en el arbol.");
                     newItemTree.clear();
                     return;
                 }
@@ -774,11 +773,11 @@ public class TreesController {
         if (treeString.equals("Arboles de Huffman")) {
             Character letter = validateInput(modDeleteItem.getText());
             if (letter == null) {
-                notificationText.setText("Entrada inválida. Solo letras de la A a la Z.");
+                notificationText.setText("Entrada invalida. Solo letras de la A a la Z.");
                 return;
             }
             if (huffmanCodes.containsKey(letter)) {
-                notificationText.setText("Letra '" + letter + "' encontrada. Código: " + huffmanCodes.get(letter));
+                notificationText.setText("Letra '" + letter + "' encontrada. Codigo: " + huffmanCodes.get(letter));
                 isSearchInProgress = true;
                 currentSearchPath.clear();
                 List<HuffmanNode> tempPath = new ArrayList<>();
@@ -795,7 +794,7 @@ public class TreesController {
 
         Character letter = validateInput(modDeleteItem.getText());
         if (letter == null) {
-            notificationText.setText("Entrada inválida. Solo letras de la A a la Z.");
+            notificationText.setText("Entrada invalida. Solo letras de la A a la Z.");
             return;
         }
 
@@ -851,13 +850,13 @@ public class TreesController {
         clearSearchHighlight();
 
         if (treeString.equals("Arboles de Huffman")) {
-            notificationText.setText("No se puede eliminar letras de un árbol de Huffman.");
+            notificationText.setText("No se puede eliminar letras de un arbol de Huffman.");
             return;
         }
 
         Character letter = validateInput(modDeleteItem.getText());
         if (letter == null) {
-            notificationText.setText("Entrada inválida. Solo letras de la A a la Z.");
+            notificationText.setText("Entrada invalida. Solo letras de la A a la Z.");
             return;
         }
 
@@ -1279,23 +1278,70 @@ public class TreesController {
     }
 
     private void saveState() {
-        TreeState state = new TreeState(digitalRoot, residueRoot, multipleResidueRoot, huffmanRoot, huffmanMessage);
+        TreeState state = new TreeState(digitalInsertionOrder, residueInsertionOrder,
+                multipleResidueInsertionOrder, huffmanMessage);
         undoStack.push(state);
         redoStack.clear();
         updateUndoRedoButtons();
     }
 
     private void restoreState(TreeState state) {
-        this.digitalRoot = state.digitalState;
-        this.residueRoot = state.residueState;
-        this.multipleResidueRoot = state.multipleResidueState;
-        this.huffmanRoot = state.huffmanState;
-        this.huffmanMessage = state.message;
+
         this.digitalInsertionOrder = new ArrayList<>(state.digitalOrder);
         this.residueInsertionOrder = new ArrayList<>(state.residueOrder);
         this.multipleResidueInsertionOrder = new ArrayList<>(state.multipleResidueOrder);
+        this.huffmanMessage = state.huffmanMessage;
+
+        switch (treeString) {
+            case "Arboles de busqueda digital":
+                rebuildDigitalTree();
+                break;
+            case "Arboles de busqueda por residuos":
+                rebuildResidueTree();
+                break;
+            case "Arboles de busqueda por residuos multiple":
+                rebuildMultipleResidueTree();
+                break;
+            case "Arboles de Huffman":
+                if (huffmanMessage != null && !huffmanMessage.isEmpty()) {
+                    buildHuffmanTree(huffmanMessage);
+                } else {
+                    huffmanRoot = null;
+                    huffmanCodes.clear();
+                }
+                break;
+        }
+
         updateTreeVisualization();
         updateItemsText();
+    }
+
+    private void updateButtonStates() {
+        boolean isEmpty = false;
+        switch (treeString) {
+            case "Arboles de busqueda digital":
+                isEmpty = digitalInsertionOrder.isEmpty();
+                break;
+            case "Arboles de busqueda por residuos":
+                isEmpty = residueInsertionOrder.isEmpty();
+                break;
+            case "Arboles de busqueda por residuos multiple":
+                isEmpty = multipleResidueInsertionOrder.isEmpty();
+                break;
+            case "Arboles de Huffman":
+                isEmpty = (huffmanMessage == null || huffmanMessage.isEmpty());
+                break;
+        }
+
+        if (isEmpty) {
+            searchButton.setDisable(true);
+            deleteButton.setDisable(true);
+            modDeleteItem.setDisable(true);
+        } else {
+            searchButton.setDisable(false);
+            deleteButton.setDisable(false);
+            modDeleteItem.setDisable(false);
+        }
     }
 
     private void updateUndoRedoButtons() {
@@ -1511,7 +1557,7 @@ public class TreesController {
 
     private void buildHuffmanTree(String message) {
         if (message == null || message.isEmpty()) {
-            notificationText.setText("Mensaje vacío para construir árbol de Huffman.");
+            notificationText.setText("Mensaje vacio para construir arbol de Huffman.");
             return;
         }
 
@@ -1529,7 +1575,7 @@ public class TreesController {
         }
 
         if (charCount.isEmpty()) {
-            notificationText.setText("El mensaje no contiene letras válidas (A-Z).");
+            notificationText.setText("El mensaje no contiene letras validas (A-Z).");
             huffmanRoot = null;
             huffmanCodes.clear();
             updateTreeVisualization();
@@ -2122,7 +2168,7 @@ public class TreesController {
     private void showExpandedTreeView() {
 
         Stage expandedStage = new Stage();
-        expandedStage.setTitle("Vista Ampliada del Árbol - " + treeString);
+        expandedStage.setTitle("Vista Ampliada del arbol - " + treeString);
         expandedStage.initModality(Modality.WINDOW_MODAL);
         expandedStage.initOwner(treePane.getScene().getWindow());
 
@@ -2213,7 +2259,449 @@ public class TreesController {
     }
 
     private void imprimirVistaAmpliada() {
-        
+        try {
+
+            PrinterJob job = PrinterJob.createPrinterJob();
+            if (job == null) {
+                notificationText.setText("No se pudo crear el trabajo de impresion.");
+                return;
+            }
+
+            boolean proceder = job.showPrintDialog(treePane.getScene().getWindow());
+            if (!proceder) {
+                return;
+            }
+
+            javafx.print.Printer printer = job.getPrinter();
+            javafx.print.PageLayout pageLayout = printer.createPageLayout(
+                    javafx.print.Paper.A4,
+                    javafx.print.PageOrientation.PORTRAIT,
+                    javafx.print.Printer.MarginType.HARDWARE_MINIMUM);
+
+            double printableWidth = pageLayout.getPrintableWidth();
+            double printableHeight = pageLayout.getPrintableHeight();
+
+            Pane printCanvas = createPrintCanvasMaximized(printableWidth, printableHeight);
+
+            job.getJobSettings().setPageLayout(pageLayout);
+
+            boolean impreso = job.printPage(printCanvas);
+            if (impreso) {
+                job.endJob();
+                notificationText.setText("Vista ampliada impresa exitosamente.");
+            } else {
+                notificationText.setText("Error al imprimir la vista ampliada.");
+            }
+
+        } catch (Exception e) {
+            notificationText.setText("Error en impresion: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    private Pane createPrintCanvasMaximized(double width, double height) {
+
+        Pane printCanvas = new Pane();
+        printCanvas.setPrefSize(width, height);
+        printCanvas.setStyle("-fx-background-color: white;");
+
+        double treeDisplayWidth = width * 0.95;
+        double treeDisplayHeight = height * 0.85;
+
+        double scaleX = treeDisplayWidth / canvasWidth;
+        double scaleY = treeDisplayHeight / canvasHeight;
+        double optimalScale = Math.min(scaleX, scaleY);
+
+        double finalScale = Math.min(optimalScale, 1.2);
+
+        double finalTreeWidth = canvasWidth * finalScale;
+        double finalTreeHeight = canvasHeight * finalScale;
+
+        double offsetX = (width - finalTreeWidth) / 2;
+        double offsetY = 70;
+
+        drawMaximizedTree(printCanvas, finalScale, offsetX, offsetY, finalTreeWidth, finalTreeHeight);
+
+        addTreeInfoMaximized(printCanvas, width, height, finalScale);
+
+        return printCanvas;
+    }
+
+    private void drawMaximizedTree(Pane canvas, double scale, double offsetX, double offsetY, double treeWidth,
+            double treeHeight) {
+        double initialX = (canvasWidth / 2) * scale + offsetX;
+        double initialY = 100 * scale + offsetY;
+        double levelWidth = treeWidth * 0.35;
+
+        switch (treeString) {
+            case "Arboles de busqueda digital":
+                if (digitalRoot != null) {
+                    drawDigitalTreeMaximized(canvas, digitalRoot, initialX, initialY, levelWidth, scale);
+                }
+                break;
+            case "Arboles de busqueda por residuos":
+                if (residueRoot != null) {
+                    drawResidueTreeMaximized(canvas, residueRoot, initialX, initialY, levelWidth * 0.9, scale);
+                }
+                break;
+            case "Arboles de busqueda por residuos multiple":
+                if (multipleResidueRoot != null) {
+                    drawMultipleResidueTreeMaximized(canvas, multipleResidueRoot, initialX, initialY, levelWidth, scale,
+                            0);
+                }
+                break;
+            case "Arboles de Huffman":
+                if (huffmanRoot != null) {
+                    drawHuffmanTreeMaximized(canvas, huffmanRoot, initialX, initialY, levelWidth * 0.9, scale);
+                }
+                break;
+        }
+    }
+
+    private void addTreeInfoMaximized(Pane canvas, double width, double height, double scale) {
+
+        Text title = new Text(20, 25, "Arbol: " + treeString);
+        title.setStyle("-fx-font-size: " + (16 * scale) + "px; -fx-font-weight: bold;");
+        canvas.getChildren().add(title);
+
+        String treeInfo = getTreeSpecificInfoMaximized();
+        Text info = new Text(20, 65, treeInfo);
+        info.setStyle("-fx-font-size: " + (10 * scale) + "px;");
+        canvas.getChildren().add(info);
+
+        Text pageInfo = new Text(width - 100, height - 15, "Pagina 1/1");
+        pageInfo.setStyle("-fx-font-size: " + (9 * scale) + "px;");
+        canvas.getChildren().add(pageInfo);
+    }
+
+    private String getTreeSpecificInfoMaximized() {
+        switch (treeString) {
+            case "Arboles de busqueda digital":
+                return "Elementos: " + digitalInsertionOrder.size() +
+                        "\nClaves: " + digitalInsertionOrder;
+            case "Arboles de busqueda por residuos":
+                return "Elementos: " + residueInsertionOrder.size() +
+                        "\nClaves: " + residueInsertionOrder;
+            case "Arboles de busqueda por residuos multiple":
+                return "Elementos: " + multipleResidueInsertionOrder.size() +
+                        "\nClaves: " + multipleResidueInsertionOrder;
+            case "Arboles de Huffman":
+                String msgPreview = huffmanMessage.length() > 50 ? huffmanMessage.substring(0, 50) + "..."
+                        : huffmanMessage;
+                return "Mensaje: " + msgPreview +
+                        "\nCaracteres unicos: " + (huffmanCodes != null ? huffmanCodes.size() : 0) +
+                        "\nLongitud total: " + huffmanMessage.length();
+            default:
+                return "";
+        }
+    }
+
+    private double drawDigitalTreeMaximized(Pane canvas, DigitalNode node, double x, double y, double levelWidth,
+            double scale) {
+        if (node == null)
+            return 0;
+
+        double nodeRadius = 25 * scale;
+
+        Circle circle = new Circle(x, y, nodeRadius);
+        circle.setFill(Color.WHITE);
+        circle.setStroke(Color.BLACK);
+        circle.setStrokeWidth(2 * scale);
+        canvas.getChildren().add(circle);
+
+        String text = (node.letter != null) ? String.valueOf(node.letter) : "";
+        Text nodeText = new Text(x - (5 * scale), y + (5 * scale), text);
+        nodeText.setStyle("-fx-font-size: " + (12 * scale) + "px; -fx-font-weight: bold;");
+        canvas.getChildren().add(nodeText);
+
+        double childY = y + (90 * scale);
+
+        if (node.left != null) {
+            double leftX = x - levelWidth / 2;
+            drawDigitalTreeMaximized(canvas, node.left, leftX, childY, levelWidth * 0.6, scale);
+
+            Line line = new Line(x, y + nodeRadius, leftX, childY - (18 * scale));
+            line.setStroke(Color.BLACK);
+            line.setStrokeWidth(1.8 * scale);
+            canvas.getChildren().add(line);
+
+            Text edgeText = new Text(x - levelWidth / 4 - (4 * scale), (y + childY) / 2, "0");
+            edgeText.setStyle("-fx-font-size: " + (10 * scale) + "px; -fx-font-weight: bold;");
+            canvas.getChildren().add(edgeText);
+        }
+
+        if (node.right != null) {
+            double rightX = x + levelWidth / 2;
+            drawDigitalTreeMaximized(canvas, node.right, rightX, childY, levelWidth * 0.6, scale);
+
+            Line line = new Line(x, y + nodeRadius, rightX, childY - (18 * scale));
+            line.setStroke(Color.BLACK);
+            line.setStrokeWidth(1.8 * scale);
+            canvas.getChildren().add(line);
+
+            Text edgeText = new Text(x + levelWidth / 4 - (4 * scale), (y + childY) / 2, "1");
+            edgeText.setStyle("-fx-font-size: " + (10 * scale) + "px; -fx-font-weight: bold;");
+            canvas.getChildren().add(edgeText);
+        }
+
+        return levelWidth;
+    }
+
+    private double drawResidueTreeMaximized(Pane canvas, ResidueNode node, double x, double y, double levelWidth,
+            double scale) {
+        if (node == null)
+            return 0;
+
+        double nodeSize = 35 * scale;
+        double nodeRadius = 25 * scale;
+
+        if (node == residueRoot || node.isLink) {
+
+            Circle circle = new Circle(x, y, nodeRadius);
+            circle.setFill(Color.LIGHTGRAY);
+            circle.setStroke(Color.BLACK);
+            circle.setStrokeWidth(1.8 * scale);
+            canvas.getChildren().add(circle);
+
+            Text nodeText = new Text(x - (4 * scale), y + (5 * scale), "L");
+            nodeText.setStyle("-fx-font-size: " + (11 * scale) + "px; -fx-font-weight: bold;");
+            canvas.getChildren().add(nodeText);
+        } else {
+
+            Rectangle rect = new Rectangle(x - nodeSize / 2, y - nodeSize / 2, nodeSize, nodeSize);
+            rect.setFill(Color.WHITE);
+            rect.setStroke(Color.BLACK);
+            rect.setStrokeWidth(1.8 * scale);
+            canvas.getChildren().add(rect);
+
+            String text = (node.letter != null) ? String.valueOf(node.letter) : "";
+            Text nodeText = new Text(x - (4 * scale), y + (5 * scale), text);
+            nodeText.setStyle("-fx-font-size: " + (12 * scale) + "px; -fx-font-weight: bold;");
+            canvas.getChildren().add(nodeText);
+        }
+
+        double childY = y + (90 * scale);
+
+        if (node.left != null) {
+            double leftX = x - levelWidth / 2;
+            drawResidueTreeMaximized(canvas, node.left, leftX, childY, levelWidth * 0.6, scale);
+
+            Line line = new Line(x, y + nodeRadius, leftX, childY - (18 * scale));
+            line.setStroke(Color.BLACK);
+            line.setStrokeWidth(1.8 * scale);
+            canvas.getChildren().add(line);
+
+            Text edgeText = new Text(x - levelWidth / 4 - (4 * scale), (y + childY) / 2, "0");
+            edgeText.setStyle("-fx-font-size: " + (10 * scale) + "px; -fx-font-weight: bold;");
+            canvas.getChildren().add(edgeText);
+        }
+
+        if (node.right != null) {
+            double rightX = x + levelWidth / 2;
+            drawResidueTreeMaximized(canvas, node.right, rightX, childY, levelWidth * 0.6, scale);
+
+            Line line = new Line(x, y + nodeRadius, rightX, childY - (18 * scale));
+            line.setStroke(Color.BLACK);
+            line.setStrokeWidth(1.8 * scale);
+            canvas.getChildren().add(line);
+
+            Text edgeText = new Text(x + levelWidth / 4 - (4 * scale), (y + childY) / 2, "1");
+            edgeText.setStyle("-fx-font-size: " + (10 * scale) + "px; -fx-font-weight: bold;");
+            canvas.getChildren().add(edgeText);
+        }
+
+        return levelWidth;
+    }
+
+    private double drawMultipleResidueTreeMaximized(Pane canvas, MultipleResidueNode node, double x, double y,
+            double levelWidth, double scale, int depth) {
+        if (node == null)
+            return 0;
+
+        double nodeSize = 35 * scale;
+        double nodeRadius = 18 * scale;
+
+        if (node.isLink) {
+
+            Circle circle = new Circle(x, y, nodeRadius);
+            circle.setFill(Color.LIGHTGRAY);
+            circle.setStroke(Color.BLACK);
+            circle.setStrokeWidth(1.8 * scale);
+            canvas.getChildren().add(circle);
+
+            Text nodeText = new Text(x - (4 * scale), y + (5 * scale), "L");
+            nodeText.setStyle("-fx-font-size: " + (11 * scale) + "px; -fx-font-weight: bold;");
+            canvas.getChildren().add(nodeText);
+        } else {
+
+            Rectangle rect = new Rectangle(x - nodeSize / 2, y - nodeSize / 2, nodeSize, nodeSize);
+            rect.setFill(Color.WHITE);
+            rect.setStroke(Color.BLACK);
+            rect.setStrokeWidth(1.8 * scale);
+            canvas.getChildren().add(rect);
+
+            String text = (node.letter != null) ? String.valueOf(node.letter) : "";
+            Text nodeText = new Text(x - (4 * scale), y + (5 * scale), text);
+            nodeText.setStyle("-fx-font-size: " + (12 * scale) + "px; -fx-font-weight: bold;");
+            canvas.getChildren().add(nodeText);
+        }
+
+        List<Integer> nonNullChildren = new ArrayList<>();
+        for (int i = 0; i < 4; i++) {
+            if (node.children[i] != null) {
+                nonNullChildren.add(i);
+            }
+        }
+
+        if (nonNullChildren.isEmpty()) {
+            return 90 * scale;
+        }
+
+        double totalChildWidth = 0;
+        List<Double> childWidths = new ArrayList<>();
+
+        for (int childIndex : nonNullChildren) {
+            double childTreeWidth = calculateSubtreeWidthMaximized(node.children[childIndex], depth + 1) * scale;
+            childWidths.add(childTreeWidth);
+            totalChildWidth += childTreeWidth;
+        }
+
+        double horizontalSpacing = 70 * scale;
+        totalChildWidth += horizontalSpacing * (nonNullChildren.size() - 1);
+
+        if (totalChildWidth > levelWidth) {
+            levelWidth = totalChildWidth;
+        }
+
+        double verticalSpacing = 110 * scale;
+        double childY = y + verticalSpacing;
+        double currentX = x - (totalChildWidth / 2);
+
+        double maxChildWidth = 0;
+        int childCount = 0;
+
+        for (int childIndex = 0; childIndex < 4; childIndex++) {
+            if (node.children[childIndex] != null) {
+                double childTreeWidth = childWidths.get(childCount);
+                double childX = currentX + (childTreeWidth / 2);
+
+                Line line = new Line(x, y + nodeRadius, childX, childY - (18 * scale));
+                line.setStroke(Color.BLACK);
+                line.setStrokeWidth(1.8 * scale);
+                canvas.getChildren().add(line);
+
+                String label = getEdgeLabel(childIndex, depth);
+                Text edgeText = new Text((x + childX) / 2 - (7 * scale), (y + childY) / 2, label);
+                edgeText.setStyle("-fx-font-size: " + (9 * scale) + "px; -fx-font-weight: bold;");
+                canvas.getChildren().add(edgeText);
+
+                double actualChildWidth = drawMultipleResidueTreeMaximized(canvas, node.children[childIndex],
+                        childX, childY, childTreeWidth, scale, depth + 1);
+
+                maxChildWidth = Math.max(maxChildWidth, actualChildWidth);
+                currentX += childTreeWidth + horizontalSpacing;
+                childCount++;
+            }
+        }
+
+        return Math.max(levelWidth, maxChildWidth);
+    }
+
+    private double calculateSubtreeWidthMaximized(MultipleResidueNode node, int depth) {
+        if (node == null)
+            return 0;
+
+        double baseWidth = 35;
+        double horizontalSpacing = 70;
+        double maxChildWidth = 0;
+
+        List<Integer> nonNullChildren = new ArrayList<>();
+        for (int i = 0; i < 4; i++) {
+            if (node.children[i] != null) {
+                nonNullChildren.add(i);
+            }
+        }
+
+        if (nonNullChildren.isEmpty()) {
+            return baseWidth;
+        }
+
+        if (depth >= 3) {
+            return baseWidth + (nonNullChildren.size() * 50);
+        }
+
+        double totalChildWidth = 0;
+        for (int childIndex : nonNullChildren) {
+            double childWidth = calculateSubtreeWidthMaximized(node.children[childIndex], depth + 1);
+            totalChildWidth += childWidth;
+            maxChildWidth = Math.max(maxChildWidth, childWidth);
+        }
+
+        totalChildWidth += horizontalSpacing * (nonNullChildren.size() - 1);
+
+        return Math.max(baseWidth, totalChildWidth);
+    }
+
+    private double drawHuffmanTreeMaximized(Pane canvas, HuffmanNode node, double x, double y, double levelWidth,
+            double scale) {
+        if (node == null)
+            return 0;
+
+        double nodeRadius = 22 * scale;
+
+        Color nodeColor, strokeColor;
+        if (node.isLeaf()) {
+            nodeColor = Color.WHITE;
+            strokeColor = Color.BLACK;
+        } else {
+            nodeColor = Color.LIGHTGRAY;
+            strokeColor = Color.BLACK;
+        }
+
+        Circle circle = new Circle(x, y, nodeRadius);
+        circle.setFill(nodeColor);
+        circle.setStroke(strokeColor);
+        circle.setStrokeWidth(2.2 * scale);
+        canvas.getChildren().add(circle);
+
+        String text = node.getDisplayText();
+        Text nodeText = new Text(x - (text.length() * 2.5 * scale), y + (5 * scale), text);
+        String fontSize = node.isLeaf() ? "13" : "11";
+        nodeText.setStyle("-fx-font-size: " + fontSize + "px; -fx-font-weight: bold;");
+        canvas.getChildren().add(nodeText);
+
+        double childY = y + (85 * scale);
+        double childWidth = levelWidth * 0.55;
+
+        if (node.left != null) {
+            double leftX = x - levelWidth / 2;
+            drawHuffmanTreeMaximized(canvas, node.left, leftX, childY, childWidth, scale);
+
+            Line line = new Line(x, y + nodeRadius, leftX, childY - (18 * scale));
+            line.setStroke(Color.BLACK);
+            line.setStrokeWidth(2 * scale);
+            canvas.getChildren().add(line);
+
+            Text edgeText = new Text((x + leftX) / 2 - (13 * scale), (y + childY) / 2, node.left.getFractionString());
+            edgeText.setStyle("-fx-font-size: " + (9 * scale) + "px; -fx-font-weight: bold;");
+            canvas.getChildren().add(edgeText);
+        }
+
+        if (node.right != null) {
+            double rightX = x + levelWidth / 2;
+            drawHuffmanTreeMaximized(canvas, node.right, rightX, childY, childWidth, scale);
+
+            Line line = new Line(x, y + nodeRadius, rightX, childY - (18 * scale));
+            line.setStroke(Color.BLACK);
+            line.setStrokeWidth(2 * scale);
+            canvas.getChildren().add(line);
+
+            Text edgeText = new Text((x + rightX) / 2 - (13 * scale), (y + childY) / 2, node.right.getFractionString());
+            edgeText.setStyle("-fx-font-size: " + (9 * scale) + "px; -fx-font-weight: bold;");
+            canvas.getChildren().add(edgeText);
+        }
+
+        return levelWidth;
     }
 
     private void setupExpandedZoom(ScrollPane scrollPane) {
@@ -2720,115 +3208,87 @@ public class TreesController {
 
     @FXML
     private void saveTree() {
-        if (treeString == null || treeString.isEmpty()) {
-            notificationText.setText("No hay árbol activo para guardar.");
+        if (undoStack.isEmpty()) {
+            notificationText.setText("No hay estado para guardar.");
             return;
         }
 
         FileChooser fileChooser = new FileChooser();
-        fileChooser.setTitle("Guardar Árbol");
-        fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Archivos de Árbol", "*.tree"));
-        fileChooser.setInitialFileName("arbol_" + treeString.replace(" ", "_") + ".tree");
-
-        File file = fileChooser.showSaveDialog(saveButton.getScene().getWindow());
+        fileChooser.setTitle("Guardar Estado del arbol");
+        fileChooser.setInitialDirectory(new File(System.getProperty("user.home") + "/Documents"));
+        fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Archivo de estado arbol", "*.tree"));
+        File file = fileChooser.showSaveDialog(treePane.getScene().getWindow());
 
         if (file != null) {
             try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(file))) {
                 Map<String, Object> saveData = new HashMap<>();
-                saveData.put("treeType", treeString);
-                saveData.put("timestamp", System.currentTimeMillis());
-
-                switch (treeString) {
-                    case "Arboles de busqueda digital":
-                        saveData.put("digitalInsertionOrder", digitalInsertionOrder);
-                        saveData.put("digitalRoot", digitalRoot);
-                        break;
-                    case "Arboles de busqueda por residuos":
-                        saveData.put("residueInsertionOrder", residueInsertionOrder);
-                        saveData.put("residueRoot", residueRoot);
-                        break;
-                    case "Arboles de busqueda por residuos multiple":
-                        saveData.put("multipleResidueInsertionOrder", multipleResidueInsertionOrder);
-                        saveData.put("multipleResidueRoot", multipleResidueRoot);
-                        break;
-                    case "Arboles de Huffman":
-                        saveData.put("huffmanMessage", huffmanMessage);
-                        saveData.put("huffmanRoot", huffmanRoot);
-                        saveData.put("huffmanCodes", huffmanCodes);
-                        break;
-                }
+                saveData.put("treeType", this.treeString);
+                saveData.put("state", undoStack.peek());
 
                 oos.writeObject(saveData);
-                notificationText.setText("Árbol guardado exitosamente: " + file.getName());
-
+                notificationText.setText("Estado guardado en: " + file.getName());
             } catch (IOException e) {
-                notificationText.setText("Error al guardar el árbol: " + e.getMessage());
+                notificationText.setText("Error al guardar el archivo: " + e.getMessage());
                 e.printStackTrace();
             }
         }
+
+        restartTree();
     }
 
     @FXML
     private void loadTree() {
         FileChooser fileChooser = new FileChooser();
-        fileChooser.setTitle("Cargar Árbol");
-        fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Archivos de Árbol", "*.tree"));
-
-        File file = fileChooser.showOpenDialog(loadButton.getScene().getWindow());
+        fileChooser.setTitle("Cargar Estado del arbol");
+        fileChooser.setInitialDirectory(new File(System.getProperty("user.home") + "/Documents"));
+        fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Archivo de estado arbol", "*.tree"));
+        File file = fileChooser.showOpenDialog(treePane.getScene().getWindow());
 
         if (file != null) {
             try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(file))) {
-                Map<String, Object> loadData = (Map<String, Object>) ois.readObject();
+                Object loadedData = ois.readObject();
 
-                String loadedTreeType = (String) loadData.get("treeType");
+                if (loadedData instanceof Map) {
+                    @SuppressWarnings("unchecked")
+                    Map<String, Object> saveData = (Map<String, Object>) loadedData;
+                    String savedTreeType = (String) saveData.get("treeType");
+                    TreeState loadedState = (TreeState) saveData.get("state");
 
-                if (!loadedTreeType.equals(treeString)) {
-                    Alert alert = new Alert(Alert.AlertType.ERROR);
-                    alert.setTitle("Error de Carga");
-                    alert.setHeaderText("Tipo de árbol incompatible");
-                    alert.setContentText("El archivo contiene un árbol de tipo: " + loadedTreeType +
-                            "\nPero actualmente está seleccionado: " + treeString +
-                            "\n\nSeleccione el tipo de árbol correcto antes de cargar.");
-                    alert.showAndWait();
-                    notificationText.setText("Error: Tipo de árbol incompatible");
-                    return;
+                    if (!savedTreeType.equals(this.treeString)) {
+                        Alert alert = new Alert(Alert.AlertType.ERROR);
+                        alert.setTitle("Error de Carga");
+                        alert.setHeaderText("Tipo de arbol incompatible");
+                        alert.setContentText("El archivo fue guardado con el tipo de arbol: " + savedTreeType +
+                                "\nPero actualmente esta seleccionado: " + this.treeString +
+                                "\n\nSeleccione el tipo de arbol correcto antes de cargar el archivo.");
+                        alert.showAndWait();
+                        notificationText.setText("Error: Tipo de arbol incompatible");
+                        return;
+                    }
+
+                    undoStack.clear();
+                    redoStack.clear();
+                    undoStack.push(loadedState);
+
+                    restoreState(loadedState);
+                    updateUndoRedoButtons();
+
+                    updateItemsText();
+                    updateTreeVisualization();
+                    focusOnRootWithDelay();
+
+                    updateButtonStates();
+
+                    saveButton.setDisable(false);
+                    notificationText.setText("Estado cargado desde: " + file.getName());
                 }
-
-                switch (treeString) {
-                    case "Arboles de busqueda digital":
-                        digitalInsertionOrder = (List<Character>) loadData.get("digitalInsertionOrder");
-                        digitalRoot = (DigitalNode) loadData.get("digitalRoot");
-                        break;
-                    case "Arboles de busqueda por residuos":
-                        residueInsertionOrder = (List<Character>) loadData.get("residueInsertionOrder");
-                        residueRoot = (ResidueNode) loadData.get("residueRoot");
-                        break;
-                    case "Arboles de busqueda por residuos multiple":
-                        multipleResidueInsertionOrder = (List<Character>) loadData.get("multipleResidueInsertionOrder");
-                        multipleResidueRoot = (MultipleResidueNode) loadData.get("multipleResidueRoot");
-                        break;
-                    case "Arboles de Huffman":
-                        huffmanMessage = (String) loadData.get("huffmanMessage");
-                        huffmanRoot = (HuffmanNode) loadData.get("huffmanRoot");
-                        huffmanCodes = (Map<Character, String>) loadData.get("huffmanCodes");
-                        break;
-                }
-
-                updateTreeVisualization();
-                updateItemsText();
-                saveState();
-
-                saveButton.setDisable(true);
-
-                notificationText.setText("Árbol cargado exitosamente: " + file.getName());
-
             } catch (IOException | ClassNotFoundException e) {
                 Alert alert = new Alert(Alert.AlertType.ERROR);
                 alert.setTitle("Error de Carga");
                 alert.setHeaderText("No se pudo cargar el archivo");
-                alert.setContentText("El archivo seleccionado no es válido o está corrupto.");
+                alert.setContentText("El archivo seleccionado no es valido o esta corrupto: " + e.getMessage());
                 alert.showAndWait();
-                notificationText.setText("Error al cargar el árbol: " + e.getMessage());
+                notificationText.setText("Archivo no valido o corrupto");
                 e.printStackTrace();
             }
         }
@@ -2888,8 +3348,8 @@ public class TreesController {
         if (undoStack.size() <= 1)
             return;
 
-        TreeState currentState = new TreeState(digitalRoot, residueRoot, multipleResidueRoot, huffmanRoot,
-                huffmanMessage);
+        TreeState currentState = new TreeState(digitalInsertionOrder, residueInsertionOrder,
+                multipleResidueInsertionOrder, huffmanMessage);
         redoStack.push(currentState);
 
         undoStack.pop();
@@ -2910,7 +3370,11 @@ public class TreesController {
             return;
 
         TreeState state = redoStack.pop();
-        undoStack.push(new TreeState(digitalRoot, residueRoot, multipleResidueRoot, huffmanRoot, huffmanMessage));
+
+        TreeState currentState = new TreeState(digitalInsertionOrder, residueInsertionOrder,
+                multipleResidueInsertionOrder, huffmanMessage);
+        undoStack.push(currentState);
+
         restoreState(state);
         updateUndoRedoButtons();
 
@@ -2945,7 +3409,7 @@ public class TreesController {
         updateTreeVisualization();
         focusOnRoot();
         updateItemsText();
-        notificationText.setText("Árbol reiniciado.");
+        notificationText.setText("Arbol reiniciado.");
 
         searchButton.setDisable(true);
         deleteButton.setDisable(true);
