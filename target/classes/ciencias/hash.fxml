@@ -45,8 +45,8 @@
                 <MenuItem mnemonicParsing="false" text="Lineal" />
                 <MenuItem mnemonicParsing="false" text="Cuadratica" />
                 <MenuItem mnemonicParsing="false" text="Doble Hash" />
-                <MenuItem disable="true" mnemonicParsing="false" text="Anidamiento" />
-                <MenuItem disable="true" mnemonicParsing="false" text="Encadenamiento" />
+                <MenuItem mnemonicParsing="false" text="Anidamiento" />
+                <MenuItem mnemonicParsing="false" text="Encadenamiento" />
             </items>
         </MenuButton>
         <Label layoutX="29.0" layoutY="273.0" prefHeight="17.0" prefWidth="148.0" text="Elige solucion de colisiones " />
@@ -70,17 +70,17 @@
         <Button fx:id="searchButton" disable="true" layoutX="318.0" layoutY="310.0" mnemonicParsing="false" onAction="#searchItem" text="Buscar" />
         <Button fx:id="deleteButton" disable="true" layoutX="378.0" layoutY="310.0" mnemonicParsing="false" onAction="#eliminateItem" text="Eliminar" />
         <Label layoutX="103.0" layoutY="314.0" prefHeight="17.0" prefWidth="70.0" text="Buscar clave" />
-        <ListView fx:id="miViewList" layoutX="483.0" layoutY="90.0" prefHeight="288.0" prefWidth="233.0" />
+        <ListView fx:id="miViewList" layoutX="483.0" layoutY="107.0" prefHeight="288.0" prefWidth="233.0" />
         <Label layoutX="75.0" layoutY="164.0" text="Numero de digitos" />
         <Spinner fx:id="numberDigits" layoutX="189.0" layoutY="160.0" prefHeight="16.0" prefWidth="112.0" />
         <Button fx:id="undoButton" disable="true" layoutX="85.0" layoutY="394.0" mnemonicParsing="false" onAction="#undoAction" text="Deshacer cambio" />
         <Button fx:id="redoButton" disable="true" layoutX="266.0" layoutY="394.0" mnemonicParsing="false" onAction="#redoAction" text="Rehacer cambio" />
-        <Button fx:id="saveButton" layoutX="483.0" layoutY="392.0" mnemonicParsing="false" onAction="#saveArray" prefHeight="30.0" prefWidth="85.0" text="Guardar...">
+        <Button fx:id="saveButton" layoutX="483.0" layoutY="404.0" mnemonicParsing="false" onAction="#saveArray" prefHeight="30.0" prefWidth="85.0" text="Guardar...">
             <font>
                 <Font size="14.0" />
             </font>
         </Button>
-        <Button layoutX="631.0" layoutY="390.0" mnemonicParsing="false" onAction="#loadArray" prefHeight="30.0" prefWidth="85.0" text="Cargar...">
+        <Button layoutX="631.0" layoutY="404.0" mnemonicParsing="false" onAction="#loadArray" prefHeight="30.0" prefWidth="85.0" text="Cargar...">
             <font>
                 <Font size="14.0" />
             </font>
@@ -92,7 +92,14 @@
             <MenuItem mnemonicParsing="false" text="100" />
             <MenuItem mnemonicParsing="false" text="1000" />
             <MenuItem mnemonicParsing="false" text="10000" />
+            <MenuItem mnemonicParsing="false" text="100000" />
          </items>
+      </MenuButton>
+      <MenuButton fx:id="collisionCustomButton" disable="true" layoutX="483.0" layoutY="76.0" mnemonicParsing="false" visible="false">
+        <items>
+          <MenuItem mnemonicParsing="false" text="Action 1" />
+          <MenuItem mnemonicParsing="false" text="Action 2" />
+        </items>
       </MenuButton>
     </children>
 </Pane>
