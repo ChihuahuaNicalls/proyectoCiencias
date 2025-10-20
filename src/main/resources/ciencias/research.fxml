@@ -107,7 +107,7 @@
                   </AnchorPane>
             </content>
           </Tab>
-          <Tab onSelectionChanged="#external" text="Busquedas externas">
+          <Tab fx:id="tabSecuencialExt" onSelectionChanged="#external" text="Busquedas externas">
             <content>
               <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
                      <children>
@@ -115,7 +115,7 @@
                            <children>
                               <TabPane fx:id="tabPaneExternal" prefHeight="594.0" prefWidth="1080.0" tabClosingPolicy="UNAVAILABLE" tabMinHeight="60.0" tabMinWidth="150.0">
                                  <tabs>
-                                    <Tab closable="false" onSelectionChanged="#restart" text="Secuencial">
+                                    <Tab closable="false" text="Secuencial">
                                        <content>
                                           <AnchorPane prefHeight="184.0" prefWidth="1080.0">
                                              <children>
@@ -123,7 +123,7 @@
                                              </children></AnchorPane>
                                        </content>
                                     </Tab>
-                                    <Tab onSelectionChanged="#restart" text="Binaria">
+                                    <Tab fx:id="tabBinariaExt" text="Binaria">
                                       <content>
                                         <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
                                              <children>
@@ -137,11 +137,11 @@
                                              <children>
                                                 <MenuButton fx:id="menuButtonClaves" layoutX="22.0" layoutY="22.0" mnemonicParsing="false" prefHeight="44.0" prefWidth="300.0" text="Elegir">
                                                    <items>
-                                                      <MenuItem mnemonicParsing="false" text="Modulo" />
-                                                      <MenuItem mnemonicParsing="false" text="Cuadrada" />
-                                                      <MenuItem mnemonicParsing="false" text="Truncamiento" />
-                                                      <MenuItem mnemonicParsing="false" text="Plegamiento" />
-                                                      <MenuItem mnemonicParsing="false" text="Transferencia de clave" />
+                                                      <MenuItem mnemonicParsing="false" onAction="#handleHashExternalAction" text="Modulo" />
+                                                      <MenuItem mnemonicParsing="false" onAction="#handleHashExternalAction" text="Cuadrada" />
+                                                      <MenuItem mnemonicParsing="false" onAction="#handleHashExternalAction" text="Truncamiento" />
+                                                      <MenuItem mnemonicParsing="false" onAction="#handleHashExternalAction" text="Plegamiento" />
+                                                      <MenuItem mnemonicParsing="false" onAction="#handleHashExternalAction" text="Transferencia de clave" />
                                                    </items>
                                                    <font>
                                                       <Font size="20.0" />

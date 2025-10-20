@@ -49,6 +49,10 @@ public class ResearchController {
     private Tab tabBinaria;
     @FXML
     private Tab tabSecuencial;
+    @FXML
+    private Tab tabSecuencialExt;
+    @FXML
+    private Tab tabBinariaExt;
 
     @FXML
     private TabPane tabPaneInternal;
@@ -113,6 +117,32 @@ public class ResearchController {
                 }
             }
         });
+        tabBinariaExt.setOnSelectionChanged(event -> {
+            if (tabBinariaExt.isSelected()) {
+                try {
+                    restart();
+                    FXMLLoader loader = new FXMLLoader(getClass().getResource("binariaExt.fxml"));
+                    Parent vista = loader.load();
+
+                    paneBinariaExt.getChildren().setAll(vista);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+        tabSecuencialExt.setOnSelectionChanged(event -> {
+            if (tabSecuencialExt.isSelected()) {
+                try {
+                    restart();
+                    FXMLLoader loader = new FXMLLoader(getClass().getResource("secuencialExt.fxml"));
+                    Parent vista = loader.load();
+
+                    paneSecuencialExt.getChildren().setAll(vista);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        });
     }
 
     @FXML
@@ -168,7 +198,24 @@ public class ResearchController {
     @FXML
     private void external() {
         restart();
-        tabPaneExternal.getSelectionModel().select(0);
+        try {
+            if (paneSecuencialExt == null) {
+                System.err.println("Error: paneSecuencial es null");
+                return;
+            }
+
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("secuencialExt.fxml"));
+            Parent vista = loader.load();
+
+            paneSecuencialExt.getChildren().clear();
+            paneSecuencialExt.getChildren().add(vista);
+
+            tabPaneExternal.getSelectionModel().select(0);
+
+        } catch (IOException e) {
+            System.err.println("Error cargando secuencialExt.fxml: " + e.getMessage());
+            e.printStackTrace();
+        }
     }
 
     @FXML
@@ -191,6 +238,28 @@ public class ResearchController {
             hashController.initData();
 
             paneHashInt.getChildren().setAll(vista);
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @FXML
+    private void handleHashExternalAction(javafx.event.ActionEvent event) {
+        MenuItem source = (MenuItem) event.getSource();
+        String option = source.getText();
+        menuButtonHash.setText(option);
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("hashExt.fxml"));
+            Parent vista = loader.load();
+
+            HashControllerExternal hashControllerExternal = loader.getController();
+
+            hashControllerExternal.setResearchController(this);
+
+            hashControllerExternal.initData();
+
+            paneHashExt.getChildren().setAll(vista);
 
         } catch (IOException e) {
             e.printStackTrace();
