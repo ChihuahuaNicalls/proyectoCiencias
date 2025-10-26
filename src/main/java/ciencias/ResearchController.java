@@ -3,6 +3,8 @@ package ciencias;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 
 import ciencias.Research.*;
 import javafx.fxml.FXML;
@@ -27,6 +29,8 @@ public class ResearchController {
     private MenuButton menuButtonResiduos;
     @FXML
     private MenuButton menuButtonTrees;
+    @FXML
+    private MenuButton menuButtonClaves;
 
     @FXML
     private Pane paneHashInt;
@@ -64,25 +68,48 @@ public class ResearchController {
 
     private List<MenuButton> menuButtons;
     private List<Pane> panes;
+    
+    private Map<Tab, Pane> tabPaneMapInternal;
+    private Map<Tab, Pane> tabPaneMapExternal;
+    private Map<Tab, String> fxmlMapInternal;
+    private Map<Tab, String> fxmlMapExternal;
 
     @FXML
     public void initialize() {
-        try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("secuencial.fxml"));
-            Parent vista = loader.load();
+        initializeMappings();
+        loadInitialContent();
+        setupTabListeners();
+        setupMenuButtonsAndPanes();
+    }
 
-            paneSecuencialInt.getChildren().setAll(vista);
-            restart();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+    private void initializeMappings() {
+        // Mapeo para Internal Tabs
+        tabPaneMapInternal = new HashMap<>();
+        tabPaneMapInternal.put(tabSecuencial, paneSecuencialInt);
+        tabPaneMapInternal.put(tabBinaria, paneBinariaInt);
 
+        fxmlMapInternal = new HashMap<>();
+        fxmlMapInternal.put(tabSecuencial, "secuencial.fxml");
+        fxmlMapInternal.put(tabBinaria, "binaria.fxml");
+
+        // Mapeo para External Tabs
+        tabPaneMapExternal = new HashMap<>();
+        tabPaneMapExternal.put(tabSecuencialExt, paneSecuencialExt);
+        tabPaneMapExternal.put(tabBinariaExt, paneBinariaExt);
+
+        fxmlMapExternal = new HashMap<>();
+        fxmlMapExternal.put(tabSecuencialExt, "secuencialExt.fxml");
+        fxmlMapExternal.put(tabBinariaExt, "binariaExt.fxml");
+    }
+
+    private void setupMenuButtonsAndPanes() {
         menuButtons = Arrays.asList(
                 menuButtonSecuencial,
                 menuButtonBinaria,
                 menuButtonHash,
                 menuButtonResiduos,
-                menuButtonTrees);
+                menuButtonTrees,
+                menuButtonClaves);
         panes = Arrays.asList(
                 paneHashInt,
                 paneBinariaInt,
@@ -92,57 +119,77 @@ public class ResearchController {
                 paneSecuencialExt,
                 paneDynamic,
                 paneTrees);
-        tabBinaria.setOnSelectionChanged(event -> {
-            if (tabBinaria.isSelected()) {
-                try {
-                    restart();
-                    FXMLLoader loader = new FXMLLoader(getClass().getResource("binaria.fxml"));
-                    Parent vista = loader.load();
+    }
 
-                    paneBinariaInt.getChildren().setAll(vista);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-        });
+    private void loadInitialContent() {
+        // Cargar contenido inicial para Internal
+        loadTabContent(tabSecuencial, paneSecuencialInt, "secuencial.fxml");
+        loadTabContent(tabBinaria, paneBinariaInt, "binaria.fxml");
+        
+        // Cargar contenido inicial para External
+        loadTabContent(tabSecuencialExt, paneSecuencialExt, "secuencialExt.fxml");
+        loadTabContent(tabBinariaExt, paneBinariaExt, "binariaExt.fxml");
+        
+        // Seleccionar pestañas iniciales
+        tabPaneInternal.getSelectionModel().select(tabSecuencial);
+        tabPaneExternal.getSelectionModel().select(tabSecuencialExt);
+    }
+
+    private void setupTabListeners() {
+        // Listeners para Internal Tabs
         tabSecuencial.setOnSelectionChanged(event -> {
             if (tabSecuencial.isSelected()) {
-                try {
-                    restart();
-                    FXMLLoader loader = new FXMLLoader(getClass().getResource("secuencial.fxml"));
-                    Parent vista = loader.load();
-                    paneSecuencialInt.getChildren().setAll(vista);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
+                softRestart();
+                ensureTabContent(tabSecuencial, paneSecuencialInt, "secuencial.fxml");
             }
         });
-        tabBinariaExt.setOnSelectionChanged(event -> {
-            if (tabBinariaExt.isSelected()) {
-                try {
-                    restart();
-                    FXMLLoader loader = new FXMLLoader(getClass().getResource("binariaExt.fxml"));
-                    Parent vista = loader.load();
+        
+        tabBinaria.setOnSelectionChanged(event -> {
+            if (tabBinaria.isSelected()) {
+                softRestart();
+                ensureTabContent(tabBinaria, paneBinariaInt, "binaria.fxml");
+            }
+        });
 
-                    paneBinariaExt.getChildren().setAll(vista);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-        });
+        // Listeners para External Tabs
         tabSecuencialExt.setOnSelectionChanged(event -> {
             if (tabSecuencialExt.isSelected()) {
-                try {
-                    restart();
-                    FXMLLoader loader = new FXMLLoader(getClass().getResource("secuencialExt.fxml"));
-                    Parent vista = loader.load();
-
-                    paneSecuencialExt.getChildren().setAll(vista);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
+                softRestart();
+                ensureTabContent(tabSecuencialExt, paneSecuencialExt, "secuencialExt.fxml");
             }
         });
+        
+        tabBinariaExt.setOnSelectionChanged(event -> {
+            if (tabBinariaExt.isSelected()) {
+                softRestart();
+                ensureTabContent(tabBinariaExt, paneBinariaExt, "binariaExt.fxml");
+            }
+        });
+    }
+
+    private void loadTabContent(Tab tab, Pane pane, String fxmlFile) {
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource(fxmlFile));
+            Parent vista = loader.load();
+            pane.getChildren().setAll(vista);
+        } catch (IOException e) {
+            System.err.println("Error cargando " + fxmlFile + " para tab " + tab.getText() + ": " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    private void ensureTabContent(Tab tab, Pane pane, String fxmlFile) {
+        try {
+            // Solo carga si el pane está vacío
+            if (pane.getChildren().isEmpty()) {
+                FXMLLoader loader = new FXMLLoader(getClass().getResource(fxmlFile));
+                Parent vista = loader.load();
+                pane.getChildren().setAll(vista);
+            }
+        } catch (IOException e) {
+            System.err.println("Error cargando " + fxmlFile + " para tab " + tab.getText() + ": " + e.getMessage());
+            e.printStackTrace();
+        }
     }
 
     @FXML
@@ -151,7 +198,23 @@ public class ResearchController {
     }
 
     @FXML
+    private void softRestart() {
+        // Solo reinicia los menús, no limpia el contenido de los panes
+        if (menuButtons != null) {
+            menuButtons.forEach(button -> {
+                if (button != null) {
+                    button.setText("Elegir");
+                }
+            });
+        }
+        if (textHashMenu != null) {
+            textHashMenu.setText(null);
+        }
+    }
+
+    @FXML
     private void restart() {
+        // Versión original que limpia todo (para cuando sea necesario)
         if (menuButtons != null) {
             menuButtons.forEach(button -> {
                 if (button != null) {
@@ -173,53 +236,25 @@ public class ResearchController {
 
     @FXML
     private void internal() {
-        restart();
-
-        try {
-            if (paneSecuencialInt == null) {
-                System.err.println("Error: paneSecuencial es null");
-                return;
-            }
-
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("secuencial.fxml"));
-            Parent vista = loader.load();
-
-            paneSecuencialInt.getChildren().clear();
-            paneSecuencialInt.getChildren().add(vista);
-
-            tabPaneInternal.getSelectionModel().select(0);
-
-        } catch (IOException e) {
-            System.err.println("Error cargando secuencial.fxml: " + e.getMessage());
-            e.printStackTrace();
-        }
+        softRestart();
+        tabPaneInternal.getSelectionModel().select(tabSecuencial);
+        
+        // Asegurar que el contenido esté cargado
+        ensureTabContent(tabSecuencial, paneSecuencialInt, "secuencial.fxml");
     }
 
     @FXML
     private void external() {
-        restart();
-        try {
-            if (paneSecuencialExt == null) {
-                System.err.println("Error: paneSecuencial es null");
-                return;
-            }
-
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("secuencialExt.fxml"));
-            Parent vista = loader.load();
-
-            paneSecuencialExt.getChildren().clear();
-            paneSecuencialExt.getChildren().add(vista);
-
-            tabPaneExternal.getSelectionModel().select(0);
-
-        } catch (IOException e) {
-            System.err.println("Error cargando secuencialExt.fxml: " + e.getMessage());
-            e.printStackTrace();
-        }
+        softRestart();
+        tabPaneExternal.getSelectionModel().select(tabSecuencialExt);
+        
+        // Asegurar que el contenido esté cargado
+        ensureTabContent(tabSecuencialExt, paneSecuencialExt, "secuencialExt.fxml");
     }
 
     @FXML
-    private void index(){
+    private void index() {
+        // Método existente - mantener funcionalidad actual
     }
 
     @FXML
@@ -232,9 +267,7 @@ public class ResearchController {
             Parent vista = loader.load();
 
             HashController hashController = loader.getController();
-
             hashController.setResearchController(this);
-
             hashController.initData();
 
             paneHashInt.getChildren().setAll(vista);
@@ -248,15 +281,13 @@ public class ResearchController {
     private void handleHashExternalAction(javafx.event.ActionEvent event) {
         MenuItem source = (MenuItem) event.getSource();
         String option = source.getText();
-        menuButtonHash.setText(option);
+        menuButtonClaves.setText(option);
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("hashExt.fxml"));
             Parent vista = loader.load();
 
             HashControllerExternal hashControllerExternal = loader.getController();
-
             hashControllerExternal.setResearchController(this);
-
             hashControllerExternal.initData();
 
             paneHashExt.getChildren().setAll(vista);
@@ -298,8 +329,25 @@ public class ResearchController {
     }
 
     @FXML
+    public String getClavesString() {
+        return menuButtonClaves.getText();
+    }
+
+    @FXML
     public String getTreesString() {
         return menuButtonTrees.getText();
     }
 
+    // Método auxiliar para forzar recarga si es necesario
+    public void reloadTabContent(Tab tab) {
+        if (tabPaneMapInternal.containsKey(tab) && fxmlMapInternal.containsKey(tab)) {
+            Pane pane = tabPaneMapInternal.get(tab);
+            String fxmlFile = fxmlMapInternal.get(tab);
+            loadTabContent(tab, pane, fxmlFile);
+        } else if (tabPaneMapExternal.containsKey(tab) && fxmlMapExternal.containsKey(tab)) {
+            Pane pane = tabPaneMapExternal.get(tab);
+            String fxmlFile = fxmlMapExternal.get(tab);
+            loadTabContent(tab, pane, fxmlFile);
+        }
+    }
 }

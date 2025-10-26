@@ -72,6 +72,7 @@ public class HashControllerExternal implements Initializable {
 
     private List<List<List<String>>> auxiliaryBlocks;
     private Map<Integer, List<String>> chainedStructures;
+    private Map<Integer, String[]> chainedListColors;
 
     private ResearchController researchController;
 
@@ -211,12 +212,13 @@ public class HashControllerExternal implements Initializable {
         collisionCustomButton.setVisible(false);
         collisionCustomButton.setDisable(true);
         defineCollitionsButton.setDisable(true);
+        chainedListColors = new HashMap<>();
     }
 
     public void initData() {
         if (researchController == null)
             return;
-        hashString = researchController.getHashString();
+        hashString = researchController.getClavesString();
 
         switch (hashString) {
             case "Modulo":
@@ -305,9 +307,11 @@ public class HashControllerExternal implements Initializable {
                     }
                 } else if (isViewingChainedList) {
 
-                    color = "WHITE";
+                    String[] colors = chainedListColors.get(currentChainedPosition);
+                    if (colors != null && index >= 0 && index < colors.length) {
+                        color = colors[index];
+                    }
                 } else {
-
                     String[] colors = cellColorsByBlock.getOrDefault(currentBlockView, null);
                     if (colors != null && index >= 0 && index < colors.length) {
                         color = colors[index];
@@ -372,7 +376,7 @@ public class HashControllerExternal implements Initializable {
     @FXML
     private void defineCollitions() {
         if (collisionString == null || "Elegir".equals(collisionString)) {
-            itemsArrayText.setText("Debe seleccionar un método válido.");
+            itemsArrayText.setText("Debe seleccionar un metodo valido.");
             return;
         }
 
@@ -389,7 +393,7 @@ public class HashControllerExternal implements Initializable {
 
         updateCollisionCustomButton();
 
-        itemsArrayText.setText("Método de colisión '" + collisionString + "' definido.");
+        itemsArrayText.setText("Metodo de colision '" + collisionString + "' definido.");
 
         resetAllColors();
         actualizarVistaArray();
@@ -494,9 +498,9 @@ public class HashControllerExternal implements Initializable {
             actualizarVistaEncadenada();
 
             bloquesButton.setText("Lista Pos " + (position + 1));
-            itemsArrayText.setText("Mostrando lista encadenada de la posición " + (position + 1));
+            itemsArrayText.setText("Mostrando lista encadenada de la posicion " + (position + 1));
         } else {
-            itemsArrayText.setText("No hay lista encadenada en la posición " + (position + 1));
+            itemsArrayText.setText("No hay lista encadenada en la posicion " + (position + 1));
         }
     }
 
@@ -806,7 +810,7 @@ public class HashControllerExternal implements Initializable {
         try {
             claveInt = Integer.parseInt(claveStr);
         } catch (NumberFormatException e) {
-            itemsArrayText.setText("Error: La clave debe ser numérica.");
+            itemsArrayText.setText("Error: La clave debe ser numerica.");
             return;
         }
 
@@ -900,7 +904,7 @@ public class HashControllerExternal implements Initializable {
             }
 
             if (bloquesVisitados.contains(nextBlock)) {
-                itemsArrayText.setText("No se pudo insertar: colisión circular.");
+                itemsArrayText.setText("No se pudo insertar: colision circular.");
                 return new InsertionResult(false, -1, -1, 0, recorrido);
             }
 
@@ -910,7 +914,7 @@ public class HashControllerExternal implements Initializable {
             intentos++;
 
             if (intentos >= numBlocks * 2) {
-                itemsArrayText.setText("No se pudo insertar después de " + intentos + " intentos.");
+                itemsArrayText.setText("No se pudo insertar despues de " + intentos + " intentos.");
                 return new InsertionResult(false, -1, -1, 0, recorrido);
             }
         }
@@ -919,16 +923,29 @@ public class HashControllerExternal implements Initializable {
     private InsertionResult doInsertChained(String claveStr, int claveInt, int startBlock) {
         List<String> bloque = blocks.get(startBlock);
         List<VisitedPos> recorrido = new ArrayList<>();
-        recorrido.add(new VisitedPos(startBlock, -1, 0));
 
         boolean tieneLista = chainedStructures.containsKey(startBlock);
+        int capacidadReal = getBlockCapacity(startBlock);
 
-        if (!tieneLista && bloque.size() < getBlockCapacity(startBlock)) {
+        recorrido.add(new VisitedPos(startBlock, -1, 0));
 
-            int pos = findInsertPositionInBlock(bloque, claveStr);
+        if (!tieneLista && bloque.size() < capacidadReal) {
+
+            int pos = 0;
+            while (pos < bloque.size() && Integer.parseInt(bloque.get(pos)) < Integer.parseInt(claveStr)) {
+                recorrido.add(new VisitedPos(startBlock, pos, 0));
+                pos++;
+            }
             bloque.add(pos, claveStr);
+            recorrido.add(new VisitedPos(startBlock, pos, 0));
             return new InsertionResult(true, startBlock, pos, 0, recorrido);
-        } else if (!tieneLista && bloque.size() >= getBlockCapacity(startBlock)) {
+        }
+
+        else if (!tieneLista) {
+
+            for (int pos = 0; pos < bloque.size(); pos++) {
+                recorrido.add(new VisitedPos(startBlock, pos, 0));
+            }
 
             List<String> chain = new ArrayList<>();
 
@@ -939,40 +956,36 @@ public class HashControllerExternal implements Initializable {
 
             chainedStructures.put(startBlock, chain);
 
-            if (chain.contains(claveStr)) {
-                itemsArrayText.setText("Error: La clave ya existe en la cadena.");
-                return new InsertionResult(false, -1, -1, 0, recorrido);
+            int posLista = 0;
+            while (posLista < chain.size() && Integer.parseInt(chain.get(posLista)) < Integer.parseInt(claveStr)) {
+                recorrido.add(new VisitedPos(startBlock, posLista, -1));
+                posLista++;
+            }
+            chain.add(posLista, claveStr);
+            recorrido.add(new VisitedPos(startBlock, posLista, -1));
+
+            return new InsertionResult(true, startBlock, posLista, -1, recorrido);
+        }
+
+        else {
+
+            for (int pos = 0; pos < bloque.size(); pos++) {
+                recorrido.add(new VisitedPos(startBlock, pos, 0));
             }
 
-            int pos = 0;
-            while (pos < chain.size() && Integer.parseInt(chain.get(pos)) < Integer.parseInt(claveStr)) {
-                pos++;
-            }
-            chain.add(pos, claveStr);
-
-            return new InsertionResult(true, startBlock, pos, -1, recorrido);
-        } else {
+            recorrido.add(new VisitedPos(startBlock, capacidadReal - 1, 0));
 
             List<String> chain = chainedStructures.get(startBlock);
 
-            if (chain == null) {
-
-                chain = new ArrayList<>();
-                chainedStructures.put(startBlock, chain);
+            int posLista = 0;
+            while (posLista < chain.size() && Integer.parseInt(chain.get(posLista)) < Integer.parseInt(claveStr)) {
+                recorrido.add(new VisitedPos(startBlock, posLista, -1));
+                posLista++;
             }
+            chain.add(posLista, claveStr);
+            recorrido.add(new VisitedPos(startBlock, posLista, -1));
 
-            if (chain.contains(claveStr)) {
-                itemsArrayText.setText("Error: La clave ya existe en la cadena.");
-                return new InsertionResult(false, -1, -1, 0, recorrido);
-            }
-
-            int pos = 0;
-            while (pos < chain.size() && Integer.parseInt(chain.get(pos)) < Integer.parseInt(claveStr)) {
-                pos++;
-            }
-            chain.add(pos, claveStr);
-
-            return new InsertionResult(true, startBlock, pos, -1, recorrido);
+            return new InsertionResult(true, startBlock, posLista, -1, recorrido);
         }
     }
 
@@ -1226,60 +1239,36 @@ public class HashControllerExternal implements Initializable {
 
     private void removeFromStructure(SearchResult result) {
         if (result.structureLevel == 0) {
-
             List<String> bloque = blocks.get(result.foundBlock);
             if (result.foundPos < bloque.size()) {
                 bloque.remove(result.foundPos);
                 insertedKeys.remove(result.foundKey);
             }
         } else if (result.structureLevel == -1) {
-
             List<String> chain = chainedStructures.get(result.foundBlock);
             if (chain != null && result.foundPos < chain.size()) {
                 chain.remove(result.foundPos);
                 insertedKeys.remove(result.foundKey);
 
-                if (chain.size() == 1) {
-                    String ultimoElemento = chain.get(0);
-                    List<String> bloquePrincipal = blocks.get(result.foundBlock);
+                String[] colors = chainedListColors.get(result.foundBlock);
+                if (colors != null && colors.length > result.foundPos) {
+                    String[] newColors = new String[colors.length - 1];
+                    System.arraycopy(colors, 0, newColors, 0, result.foundPos);
+                    System.arraycopy(colors, result.foundPos + 1, newColors, result.foundPos,
+                            colors.length - result.foundPos - 1);
+                    chainedListColors.put(result.foundBlock, newColors);
+                }
 
-                    if (bloquePrincipal.size() < getBlockCapacity(result.foundBlock)) {
-                        bloquePrincipal.add(ultimoElemento);
-                        chain.remove(0);
-                        chainedStructures.remove(result.foundBlock);
-
-                        itemsArrayText.setText("Elemento movido a bloque principal - Lista eliminada");
-                    }
-                } else if (chain.isEmpty()) {
+                if (chain.isEmpty()) {
                     chainedStructures.remove(result.foundBlock);
+                    chainedListColors.remove(result.foundBlock);
                 }
             }
         } else {
-
             List<String> auxBlock = getBlockForLevel(result.foundBlock, result.structureLevel);
             if (result.foundPos < auxBlock.size()) {
                 auxBlock.remove(result.foundPos);
                 insertedKeys.remove(result.foundKey);
-
-                int levelIndex = result.structureLevel - 1;
-                if (levelIndex < auxiliaryBlocks.size()) {
-                    List<List<String>> nivelActual = auxiliaryBlocks.get(levelIndex);
-                    boolean todosVacios = true;
-
-                    for (List<String> bloqueAux : nivelActual) {
-                        if (!bloqueAux.isEmpty()) {
-                            todosVacios = false;
-                            break;
-                        }
-                    }
-
-                    if (todosVacios) {
-                        auxiliaryBlocks.remove(levelIndex);
-                        auxCellColors.remove(levelIndex);
-                        itemsArrayText.setText("Estructura auxiliar nivel " + (result.structureLevel)
-                                + " eliminada - Todos los bloques vacíos");
-                    }
-                }
             }
         }
 
@@ -1296,11 +1285,7 @@ public class HashControllerExternal implements Initializable {
         for (VisitedPos vp : recorrido) {
             Duration d = delay;
             timeline.getKeyFrames().add(new KeyFrame(d, e -> {
-
-                if (vp.pos == -2) {
-                    itemsArrayText.setText("Cambiando a nivel " + (vp.structureLevel + 1));
-                    return;
-                }
+                resetAllColors();
 
                 if (vp.structureLevel == 0) {
                     isViewingAuxiliary = false;
@@ -1324,13 +1309,14 @@ public class HashControllerExternal implements Initializable {
                     isViewingChainedList = true;
                     currentChainedPosition = vp.block;
                     actualizarVistaEncadenada();
-                    resaltarElementoEnLista(vp.pos, "GRAY");
+                    setChainedListColor(vp.block, vp.pos, "GRAY");
                 }
             }));
             delay = delay.add(step);
         }
 
         timeline.getKeyFrames().add(new KeyFrame(delay, e -> {
+            resetAllColors();
 
             if (targetBlock >= 0 && targetPos >= 0) {
                 if (structureLevel == 0) {
@@ -1351,10 +1337,11 @@ public class HashControllerExternal implements Initializable {
                     isViewingChainedList = true;
                     currentChainedPosition = targetBlock;
                     actualizarVistaEncadenada();
-                    resaltarElementoEnLista(targetPos, "YELLOW");
+                    setChainedListColor(targetBlock, targetPos, "YELLOW");
                 }
             }
-            itemsArrayText.setText("Inserción completada");
+
+            itemsArrayText.setText("Insercion completada");
         }));
 
         timeline.play();
@@ -1374,7 +1361,6 @@ public class HashControllerExternal implements Initializable {
                 resetAllColors();
 
                 if (vp.pos == -2) {
-
                     itemsArrayText.setText("Cambiando a nivel " + (vp.structureLevel + 1));
                     return;
                 }
@@ -1401,7 +1387,8 @@ public class HashControllerExternal implements Initializable {
                     isViewingChainedList = true;
                     currentChainedPosition = vp.block;
                     actualizarVistaEncadenada();
-                    resaltarElementoEnLista(vp.pos, "GRAY");
+
+                    setChainedListColor(vp.block, vp.pos, "GRAY");
                 }
             }));
             delay = delay.add(step);
@@ -1434,7 +1421,8 @@ public class HashControllerExternal implements Initializable {
                     isViewingChainedList = true;
                     currentChainedPosition = foundBlock;
                     actualizarVistaEncadenada();
-                    resaltarElementoEnLista(foundPos, finalColor);
+
+                    setChainedListColor(foundBlock, foundPos, finalColor);
                 }
             } else if (!recorrido.isEmpty()) {
                 VisitedPos last = recorrido.get(recorrido.size() - 1);
@@ -1452,13 +1440,22 @@ public class HashControllerExternal implements Initializable {
                         isViewingChainedList = true;
                         currentChainedPosition = last.block;
                         actualizarVistaEncadenada();
-                        resaltarElementoEnLista(last.pos, "RED");
+
+                        setChainedListColor(last.block, last.pos, "RED");
                     }
                 }
             }
         }));
 
         timeline.play();
+    }
+
+    private void setChainedListColor(int blockIndex, int posZeroBased, String color) {
+        String[] colors = chainedListColors.get(blockIndex);
+        if (colors != null && posZeroBased >= 0 && posZeroBased < colors.length) {
+            colors[posZeroBased] = color;
+            miViewList.refresh();
+        }
     }
 
     private int getBlockCapacity(int blockIndex) {
@@ -1520,41 +1517,24 @@ public class HashControllerExternal implements Initializable {
         miViewList.getItems().clear();
         List<String> chain = chainedStructures.get(currentChainedPosition);
 
+        if (chain != null) {
+            String[] colors = chainedListColors.get(currentChainedPosition);
+            if (colors == null || colors.length != chain.size()) {
+                colors = new String[chain.size()];
+                Arrays.fill(colors, "WHITE");
+                chainedListColors.put(currentChainedPosition, colors);
+            }
+        }
+
         if (chain != null && !chain.isEmpty()) {
             for (int i = 0; i < chain.size(); i++) {
                 miViewList.getItems().add((i + 1) + ": " + chain.get(i));
             }
         } else {
-            miViewList.getItems().add("Lista encadenada vacía");
+            miViewList.getItems().add("Lista encadenada vacia");
         }
         miViewList.refresh();
         bloquesButton.setText("Lista Pos " + (currentChainedPosition + 1));
-    }
-
-    private void resaltarElementoEnLista(int pos, String color) {
-        if (pos >= 0) {
-            miViewList.getSelectionModel().select(pos);
-
-            String style = "";
-            switch (color) {
-                case "GRAY":
-                    style = "-fx-control-inner-background: lightgray;";
-                    break;
-                case "RED":
-                    style = "-fx-control-inner-background: lightcoral;";
-                    break;
-                case "YELLOW":
-                    style = "-fx-control-inner-background: yellow;";
-                    break;
-                case "GREEN":
-                    style = "-fx-control-inner-background: lightgreen;";
-                    break;
-                default:
-                    style = "-fx-control-inner-background: white;";
-                    break;
-            }
-            miViewList.setStyle(style);
-        }
     }
 
     private void populateBlocksMenu() {
@@ -1585,9 +1565,9 @@ public class HashControllerExternal implements Initializable {
                 actualizarVistaEncadenada();
 
                 bloquesButton.setText("Lista Pos " + (blockIndex + 1));
-                itemsArrayText.setText("Mostrando lista encadenada de la posición " + (blockIndex + 1));
+                itemsArrayText.setText("Mostrando lista encadenada de la posicion " + (blockIndex + 1));
             } else {
-                itemsArrayText.setText("No hay lista encadenada en la posición " + (blockIndex + 1));
+                itemsArrayText.setText("No hay lista encadenada en la posicion " + (blockIndex + 1));
             }
         } else {
 
@@ -1607,8 +1587,15 @@ public class HashControllerExternal implements Initializable {
         }
         resetAllAuxColors();
 
+        if (chainedListColors != null) {
+            for (String[] arr : chainedListColors.values()) {
+                Arrays.fill(arr, "WHITE");
+            }
+        }
+
         miViewList.getSelectionModel().clearSelection();
         miViewList.setStyle("");
+        miViewList.refresh();
     }
 
     private void resetAllAuxColors() {

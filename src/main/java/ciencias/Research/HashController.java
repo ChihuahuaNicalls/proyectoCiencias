@@ -352,8 +352,6 @@ public class HashController {
     }
 
     public void initData() {
-        if (researchController == null)
-            return;
         hashString = researchController.getHashString();
 
         switch (hashString) {
