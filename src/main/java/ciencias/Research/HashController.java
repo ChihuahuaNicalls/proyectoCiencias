@@ -440,14 +440,14 @@ public class HashController {
     }
 
     private void doInsert(String claveStr) {
-        System.out.println("Iniciando inserción de: " + claveStr);
+        System.out.println("Iniciando insercion de: " + claveStr);
         resetearAnimacion();
 
         int claveInt;
         try {
             claveInt = Integer.parseInt(claveStr);
         } catch (NumberFormatException e) {
-            itemsArrayText.setText("Error: La clave debe ser numérica.");
+            itemsArrayText.setText("Error: La clave debe ser numerica.");
             return;
         }
 
@@ -494,7 +494,7 @@ public class HashController {
                     "Clave " + claveStr + " insertada en pos " + pos + ".");
         } else {
             if (table[pos].equals(claveStr)) {
-                itemsArrayText.setText("Error: La clave " + claveStr + " ya existe en la posición " + pos + ".");
+                itemsArrayText.setText("Error: La clave " + claveStr + " ya existe en la posicion " + pos + ".");
                 return new InsertionResult(false, -1, 0, recorrido, "");
             }
 
@@ -536,7 +536,7 @@ public class HashController {
                 return new InsertionResult(true, pos, -1, recorrido,
                         "Clave " + claveStr + " insertada en lista de encadenamiento de la pos " + pos + ".");
             } else {
-                itemsArrayText.setText("Error inesperado en inserción con encadenamiento.");
+                itemsArrayText.setText("Error inesperado en insercion con encadenamiento.");
                 return new InsertionResult(false, -1, 0, recorrido, "");
             }
         }
@@ -646,8 +646,8 @@ public class HashController {
     }
 
     private void animateInsertion(List<Integer> recorrido, int finalPosition, int structureLevel) {
-        System.out.println("Iniciando animación de inserción ANIDAMIENTO - Recorrido: " + recorrido);
-        System.out.println("Posición final: " + finalPosition);
+        System.out.println("Iniciando animacion de insercion ANIDAMIENTO - Recorrido: " + recorrido);
+        System.out.println("Posicion final: " + finalPosition);
         System.out.println("Nivel estructura: " + structureLevel);
 
         resetearAnimacion();
@@ -665,7 +665,7 @@ public class HashController {
             final int currentCode = recorrido.get(i);
 
             KeyFrame keyFrame = new KeyFrame(delay, e -> {
-                System.out.println("Animando paso " + currentStep + ": código " + currentCode);
+                System.out.println("Animando paso " + currentStep + ": codigo " + currentCode);
 
                 if (currentCode >= 1000) {
 
@@ -680,7 +680,7 @@ public class HashController {
 
                         showAuxiliaryStructure(nivel);
                         marcarPosicionEnEstructuraAuxiliar(pos, "GRAY", nivel);
-                        itemsArrayText.setText("Buscando en " + getStructureName(nivel) + " posición " + pos);
+                        itemsArrayText.setText("Buscando en " + getStructureName(nivel) + " posicion " + pos);
                     }
                 } else if (currentCode >= 100) {
 
@@ -692,7 +692,7 @@ public class HashController {
 
                     showMainStructure();
                     marcarPosicion(currentCode, "GRAY");
-                    itemsArrayText.setText("Buscando en estructura principal posición " + currentCode);
+                    itemsArrayText.setText("Buscando en estructura principal posicion " + currentCode);
                 }
             });
 
@@ -701,7 +701,7 @@ public class HashController {
         }
 
         KeyFrame finalFrame = new KeyFrame(delay, e -> {
-            System.out.println("Animación finalizada en estructura: " + structureLevel);
+            System.out.println("Animacion finalizada en estructura: " + structureLevel);
 
             if (structureLevel == -1) {
 
@@ -712,18 +712,18 @@ public class HashController {
                         highlightChainElement(last % 100, "YELLOW");
                     }
                 }
-                itemsArrayText.setText("Inserción completada en lista encadenada");
+                itemsArrayText.setText("Insercion completada en lista encadenada");
             } else if (structureLevel > 0) {
 
                 showAuxiliaryStructure(structureLevel);
                 marcarPosicionEnEstructuraAuxiliar(finalPosition, "YELLOW", structureLevel);
                 itemsArrayText.setText(
-                        "Inserción completada en " + getStructureName(structureLevel) + " posición " + finalPosition);
+                        "Insercion completada en " + getStructureName(structureLevel) + " posicion " + finalPosition);
             } else {
 
                 showMainStructure();
                 marcarPosicion(finalPosition, "YELLOW");
-                itemsArrayText.setText("Inserción completada en estructura principal posición " + finalPosition);
+                itemsArrayText.setText("Insercion completada en estructura principal posicion " + finalPosition);
             }
 
             currentAnimation = null;
@@ -779,7 +779,7 @@ public class HashController {
     private void defineCollitions() {
         String selected = collisionHash.getText();
         if ("Elegir".equalsIgnoreCase(selected)) {
-            itemsArrayText.setText("Debe seleccionar un método válido.");
+            itemsArrayText.setText("Debe seleccionar un metodo valido.");
             return;
         }
 
@@ -802,7 +802,7 @@ public class HashController {
         rangeHash.setDisable(true);
 
         itemsArrayText.setText(
-                "Método de colisión '" + collisionString + "' definido.\nIntentando insertar clave pendiente...");
+                "Metodo de colision '" + collisionString + "' definido.\nIntentando insertar clave pendiente...");
 
         if (pendingKey != null) {
             String keyToInsert = pendingKey;
@@ -941,7 +941,7 @@ public class HashController {
     }
 
     private void resetearAnimacion() {
-        System.out.println("Reseteando animación...");
+        System.out.println("Reseteando animacion...");
 
         if (currentAnimation != null) {
             currentAnimation.stop();
@@ -1002,7 +1002,7 @@ public class HashController {
 
                         if (chain.get(i).equals(claveStr)) {
                             return new SearchResult(true, pos, recorrido,
-                                    "Lista de encadenamiento posición " + pos, claveStr, -1, chainIndices);
+                                    "Lista de encadenamiento posicion " + pos, claveStr, -1, chainIndices);
                         }
                     }
                 }
@@ -1058,7 +1058,7 @@ public class HashController {
 
     private void animateSearch(List<Integer> recorrido, boolean found, int foundPos, boolean eliminar,
             int structureLevel, List<Integer> chainIndices) {
-        System.out.println("Iniciando animación de búsqueda ANIDAMIENTO - Recorrido: " + recorrido);
+        System.out.println("Iniciando animacion de busqueda ANIDAMIENTO - Recorrido: " + recorrido);
         System.out.println("Encontrado: " + found + ", Estructura: " + structureLevel);
 
         resetearAnimacion();
@@ -1076,7 +1076,7 @@ public class HashController {
             final int currentCode = recorrido.get(i);
 
             KeyFrame keyFrame = new KeyFrame(delay, e -> {
-                System.out.println("Animando búsqueda paso " + currentStep + ": código " + currentCode);
+                System.out.println("Animando busqueda paso " + currentStep + ": codigo " + currentCode);
 
                 if (currentCode >= 1000) {
 
@@ -1091,7 +1091,7 @@ public class HashController {
 
                         showAuxiliaryStructure(nivel);
                         marcarPosicionEnEstructuraAuxiliar(pos, "GRAY", nivel);
-                        itemsArrayText.setText("Buscando en " + getStructureName(nivel) + " posición " + pos);
+                        itemsArrayText.setText("Buscando en " + getStructureName(nivel) + " posicion " + pos);
                     }
                 } else if (currentCode >= 100) {
 
@@ -1103,7 +1103,7 @@ public class HashController {
 
                     showMainStructure();
                     marcarPosicion(currentCode, "GRAY");
-                    itemsArrayText.setText("Buscando en estructura principal posición " + currentCode);
+                    itemsArrayText.setText("Buscando en estructura principal posicion " + currentCode);
                 }
             });
 
@@ -1112,7 +1112,7 @@ public class HashController {
         }
 
         KeyFrame finalFrame = new KeyFrame(delay, e -> {
-            System.out.println("Animación de búsqueda finalizada - Encontrado: " + found);
+            System.out.println("Animacion de busqueda finalizada - Encontrado: " + found);
 
             String colorFinal = found ? (eliminar ? "RED" : "GREEN") : "RED";
             String accion = eliminar ? "eliminado" : "encontrado";
@@ -1129,11 +1129,11 @@ public class HashController {
                     showAuxiliaryStructure(structureLevel);
                     marcarPosicionEnEstructuraAuxiliar(foundPos, colorFinal, structureLevel);
                     itemsArrayText.setText(
-                            "Elemento " + accion + " en " + getStructureName(structureLevel) + " posición " + foundPos);
+                            "Elemento " + accion + " en " + getStructureName(structureLevel) + " posicion " + foundPos);
                 } else {
                     showMainStructure();
                     marcarPosicion(foundPos, colorFinal);
-                    itemsArrayText.setText("Elemento " + accion + " en estructura principal posición " + foundPos);
+                    itemsArrayText.setText("Elemento " + accion + " en estructura principal posicion " + foundPos);
                 }
             } else {
                 if (!recorrido.isEmpty()) {
@@ -1155,7 +1155,7 @@ public class HashController {
                         marcarPosicion(last, "RED");
                     }
                 }
-                itemsArrayText.setText("Elemento no encontrado después de " + recorrido.size() + " intentos");
+                itemsArrayText.setText("Elemento no encontrado despues de " + recorrido.size() + " intentos");
             }
 
             currentAnimation = null;
@@ -1250,11 +1250,11 @@ public class HashController {
     private void searchItem() {
         String claveStr = modDeleteItem.getText();
         if (claveStr.isEmpty()) {
-            itemsArrayText.setText("Ingrese una clave válida.");
+            itemsArrayText.setText("Ingrese una clave valida.");
             return;
         }
         if (!claveStr.matches("\\d{" + maxDigits + "}")) {
-            itemsArrayText.setText("La clave debe tener " + maxDigits + " dígitos.");
+            itemsArrayText.setText("La clave debe tener " + maxDigits + " digitos.");
             return;
         }
         findItem(claveStr, false);
@@ -1264,11 +1264,11 @@ public class HashController {
     private void eliminateItem() {
         String claveStr = modDeleteItem.getText();
         if (claveStr.isEmpty()) {
-            itemsArrayText.setText("Ingrese una clave válida.");
+            itemsArrayText.setText("Ingrese una clave valida.");
             return;
         }
         if (!claveStr.matches("\\d{" + maxDigits + "}")) {
-            itemsArrayText.setText("La clave debe tener " + maxDigits + " dígitos.");
+            itemsArrayText.setText("La clave debe tener " + maxDigits + " digitos.");
             return;
         }
         findItem(claveStr, true);
@@ -1284,7 +1284,7 @@ public class HashController {
         }
 
         if (!input.matches("\\d{" + maxDigits + "}")) {
-            itemsArrayText.setText("Error: La clave debe tener exactamente " + maxDigits + " dígitos.");
+            itemsArrayText.setText("Error: La clave debe tener exactamente " + maxDigits + " digitos.");
             return;
         }
 
@@ -1565,7 +1565,7 @@ public class HashController {
             for (Integer position : chainedStructures.keySet()) {
                 List<String> chain = chainedStructures.get(position);
                 if (chain != null && !chain.isEmpty()) {
-                    MenuItem chainItem = new MenuItem("Lista auxiliar posición " + position);
+                    MenuItem chainItem = new MenuItem("Lista auxiliar posicion " + position);
                     final int pos = position;
                     chainItem.setOnAction(e -> showChainedList(pos));
                     collisionCustomButton.getItems().add(chainItem);
@@ -1620,7 +1620,7 @@ public class HashController {
         currentChainedPosition = position;
         highlightedChainIndex = -1;
         actualizarVistaEncadenamiento(position);
-        collisionCustomButton.setText("Lista auxiliar posición " + position);
+        collisionCustomButton.setText("Lista auxiliar posicion " + position);
     }
 
     private void setupTruncationUI() {

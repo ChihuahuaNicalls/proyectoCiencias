@@ -64,7 +64,6 @@ public class BinariaController {
     @FXML
     private MenuButton rangeBin;
 
-
     private String[] array;
     private int arraySize;
     private int maxDigits;
@@ -112,7 +111,8 @@ public class BinariaController {
     }
 
     private void marcarPosicion(int index, String color) {
-        if (index < 0 || index >= arraySize) return;
+        if (index < 0 || index >= arraySize)
+            return;
         cellColors[index] = color.toUpperCase();
         miViewList.refresh();
     }
@@ -188,7 +188,7 @@ public class BinariaController {
     }
 
     public void initData() {
-        titleBin.setText("Búsqueda Binaria");
+        titleBin.setText("Busqueda Binaria");
         functionBin.setText("O(n)=log(n)");
     }
 
@@ -202,20 +202,19 @@ public class BinariaController {
         try {
             arraySize = Integer.parseInt(rangoSeleccionado);
         } catch (NumberFormatException e) {
-            arrayLengthText.setText("Error: rango inválido.");
+            arrayLengthText.setText("Error: rango invalido.");
             return;
         }
 
         maxDigits = numberDigits.getValue();
 
-        // Crear array con tamaño arraySize
         array = new String[arraySize];
         cellColors = new String[arraySize];
         Arrays.fill(array, null);
         Arrays.fill(cellColors, "WHITE");
         currentIndex = 0;
 
-        saveState(-1); // -1 indica que no hay posición modificada
+        saveState(-1);
 
         createButton.setDisable(true);
         rangeBin.setDisable(true);
@@ -231,7 +230,7 @@ public class BinariaController {
         undoButton.setDisable(true);
         redoButton.setDisable(true);
 
-        arrayLengthText.setText("Array de " + arraySize + " posiciones creado. Claves de " + maxDigits + " dígitos.");
+        arrayLengthText.setText("Array de " + arraySize + " posiciones creado. Claves de " + maxDigits + " digitos.");
         actualizarVistaArray();
     }
 
@@ -243,33 +242,28 @@ public class BinariaController {
             return;
         }
 
-        // Validar que sea numérico y tenga exactamente maxDigits dígitos
         if (!input.matches("\\d{" + maxDigits + "}")) {
-            itemsArrayText.setText("Error: La clave debe tener exactamente " + maxDigits + " dígitos.");
+            itemsArrayText.setText("Error: La clave debe tener exactamente " + maxDigits + " digitos.");
             return;
         }
 
         if (currentIndex >= arraySize) {
-            itemsArrayText.setText("Array lleno. No se pueden insertar más elementos.");
+            itemsArrayText.setText("Array lleno. No se pueden insertar mas elementos.");
             return;
         }
 
-        // Verificar si la clave ya existe en el array
         int existingIndex = busquedaBinaria(input, 0, currentIndex - 1);
         if (existingIndex >= 0 && array[existingIndex] != null && array[existingIndex].equals(input)) {
             itemsArrayText.setText("Error: La clave " + input + " ya existe en el array.");
             return;
         }
 
-        // Encontrar la posición correcta para mantener el array ordenado
         int insertIndex = encontrarPosicionInsercion(input);
-        
-        // Desplazar elementos para hacer espacio
+
         for (int i = currentIndex; i > insertIndex; i--) {
             array[i] = array[i - 1];
         }
-        
-        // Insertar el nuevo elemento
+
         array[insertIndex] = input;
         currentIndex++;
 
@@ -279,29 +273,30 @@ public class BinariaController {
 
         saveState(insertIndex);
 
-        itemsArrayText.setText("Clave " + input + " insertada en la posición " + insertIndex + ".");
+        itemsArrayText.setText("Clave " + input + " insertada en la posicion " + insertIndex + ".");
         actualizarVistaArray();
     }
 
     private int encontrarPosicionInsercion(String clave) {
-        if (currentIndex == 0) return 0;
-        
+        if (currentIndex == 0)
+            return 0;
+
         int low = 0;
         int high = currentIndex - 1;
-        
+
         while (low <= high) {
             int mid = (low + high) / 2;
             int comparacion = array[mid].compareTo(clave);
-            
+
             if (comparacion < 0) {
                 low = mid + 1;
             } else if (comparacion > 0) {
                 high = mid - 1;
             } else {
-                return mid; // No debería ocurrir porque ya verificamos duplicados
+                return mid;
             }
         }
-        
+
         return low;
     }
 
@@ -309,22 +304,22 @@ public class BinariaController {
         while (low <= high) {
             int mid = (low + high) / 2;
             int comparacion = array[mid].compareTo(clave);
-            
+
             if (comparacion < 0) {
                 low = mid + 1;
             } else if (comparacion > 0) {
                 high = mid - 1;
             } else {
-                return mid; // Encontrado
+                return mid;
             }
         }
-        
-        return -1; // No encontrado
+
+        return -1;
     }
 
     private void findItem(String claveStr, boolean eliminar) {
         if (array == null || currentIndex == 0) {
-            itemsArrayText.setText("No hay array creado o está vacío.");
+            itemsArrayText.setText("No hay array creado o esta vacio.");
             return;
         }
 
@@ -336,17 +331,16 @@ public class BinariaController {
         java.util.List<Integer> recorrido = new java.util.ArrayList<>();
         boolean encontrado = false;
         int posicionEncontrada = -1;
-        
-        // Realizar búsqueda binaria
+
         int low = 0;
         int high = currentIndex - 1;
-        
+
         while (low <= high) {
             int mid = (low + high) / 2;
             recorrido.add(mid);
-            
+
             int comparacion = array[mid].compareTo(claveStr);
-            
+
             if (comparacion < 0) {
                 low = mid + 1;
             } else if (comparacion > 0) {
@@ -370,7 +364,7 @@ public class BinariaController {
 
         if (encontrado) {
             if (eliminar) {
-                // Eliminar el elemento desplazando los siguientes
+
                 for (int i = posicionEncontrada; i < currentIndex - 1; i++) {
                     array[i] = array[i + 1];
                 }
@@ -431,11 +425,11 @@ public class BinariaController {
     private void searchItem() {
         String claveStr = modDeleteItem.getText();
         if (claveStr.isEmpty()) {
-            itemsArrayText.setText("Ingrese una clave válida.");
+            itemsArrayText.setText("Ingrese una clave valida.");
             return;
         }
         if (!claveStr.matches("\\d{" + maxDigits + "}")) {
-            itemsArrayText.setText("La clave debe tener " + maxDigits + " dígitos.");
+            itemsArrayText.setText("La clave debe tener " + maxDigits + " digitos.");
             return;
         }
         findItem(claveStr, false);
@@ -445,11 +439,11 @@ public class BinariaController {
     private void eliminateItem() {
         String claveStr = modDeleteItem.getText();
         if (claveStr.isEmpty()) {
-            itemsArrayText.setText("Ingrese una clave válida.");
+            itemsArrayText.setText("Ingrese una clave valida.");
             return;
         }
         if (!claveStr.matches("\\d{" + maxDigits + "}")) {
-            itemsArrayText.setText("La clave debe tener " + maxDigits + " dígitos.");
+            itemsArrayText.setText("La clave debe tener " + maxDigits + " digitos.");
             return;
         }
         findItem(claveStr, true);
@@ -465,7 +459,8 @@ public class BinariaController {
 
     @FXML
     private void undoAction() {
-        if (undoStack.size() <= 1) return;
+        if (undoStack.size() <= 1)
+            return;
 
         ActionState currentState = undoStack.pop();
         redoStack.push(currentState);
@@ -477,7 +472,8 @@ public class BinariaController {
 
     @FXML
     private void redoAction() {
-        if (redoStack.isEmpty()) return;
+        if (redoStack.isEmpty())
+            return;
 
         ActionState nextState = redoStack.pop();
         undoStack.push(nextState);
@@ -492,13 +488,11 @@ public class BinariaController {
         this.maxDigits = state.getMaxDigitsSnapshot();
         this.currentIndex = state.getCurrentIndexSnapshot();
 
-        // Inicializar colores en blanco
         if (cellColors == null || cellColors.length != arraySize) {
             cellColors = new String[arraySize];
         }
         Arrays.fill(cellColors, "WHITE");
 
-        // Solo marcar la última posición modificada si se solicita
         int lastPos = state.getLastModifiedPosition();
         if (markLastModified && lastPos != -1) {
             marcarPosicion(lastPos, "GRAY");
@@ -507,7 +501,6 @@ public class BinariaController {
 
         actualizarVistaArray();
 
-        // Actualizar estado del botón de guardar
         saveButton.setDisable(array == null);
     }
 
@@ -545,7 +538,8 @@ public class BinariaController {
 
     private void actualizarVistaArray() {
         miViewList.getItems().clear();
-        if (array == null) return;
+        if (array == null)
+            return;
         for (int i = 0; i < arraySize; i++) {
             String valor = (array[i] == null) ? "-" : array[i];
             miViewList.getItems().add("Pos " + i + ": " + valor);
@@ -569,7 +563,7 @@ public class BinariaController {
         }
 
         FileChooser fileChooser = new FileChooser();
-        fileChooser.setTitle("Guardar Estado de Búsqueda Binaria");
+        fileChooser.setTitle("Guardar Estado de Busqueda Binaria");
         fileChooser.setInitialDirectory(new File("src/main/resources/docs"));
         fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Archivo de estado Binaria", "*.bin"));
         File file = fileChooser.showSaveDialog(miViewList.getScene().getWindow());
@@ -593,7 +587,7 @@ public class BinariaController {
     @FXML
     private void loadArray() {
         FileChooser fileChooser = new FileChooser();
-        fileChooser.setTitle("Cargar Estado de Búsqueda Binaria");
+        fileChooser.setTitle("Cargar Estado de Busqueda Binaria");
         fileChooser.setInitialDirectory(new File("src/main/resources/docs"));
         fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Archivo de estado Binaria", "*.bin"));
         File file = fileChooser.showOpenDialog(miViewList.getScene().getWindow());
@@ -613,7 +607,7 @@ public class BinariaController {
                         alert.setTitle("Error de Carga");
                         alert.setHeaderText("Tipo de estructura incompatible");
                         alert.setContentText("El archivo fue guardado para: " + savedType +
-                                "\nPero actualmente está seleccionada: Búsqueda Binaria");
+                                "\nPero actualmente esta seleccionada: Busqueda Binaria");
                         alert.showAndWait();
 
                         itemsArrayText.setText("Error: Tipo de estructura incompatible");
@@ -649,10 +643,10 @@ public class BinariaController {
                 Alert alert = new Alert(Alert.AlertType.ERROR);
                 alert.setTitle("Error de Carga");
                 alert.setHeaderText("No se pudo cargar el archivo");
-                alert.setContentText("El archivo seleccionado no es válido o está corrupto: " + e.getMessage());
+                alert.setContentText("El archivo seleccionado no es valido o esta corrupto: " + e.getMessage());
                 alert.showAndWait();
 
-                itemsArrayText.setText("Archivo no válido o corrupto");
+                itemsArrayText.setText("Archivo no valido o corrupto");
                 e.printStackTrace();
             }
         }

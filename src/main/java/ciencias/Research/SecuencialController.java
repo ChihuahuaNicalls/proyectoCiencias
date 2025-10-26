@@ -64,10 +64,10 @@ public class SecuencialController {
     @FXML
     private MenuButton rangeSec;
 
-    private String[] array; // Array para almacenar los elementos
+    private String[] array;
     private int arraySize;
     private int maxDigits;
-    private int currentIndex = 0; // Índice actual para inserción
+    private int currentIndex = 0;
 
     private String[] cellColors;
 
@@ -185,7 +185,7 @@ public class SecuencialController {
     }
 
     public void initData() {
-        titleSec.setText("Búsqueda Secuencial");
+        titleSec.setText("Busqueda Secuencial");
         functionSec.setText("O(n)=n");
     }
 
@@ -199,20 +199,19 @@ public class SecuencialController {
         try {
             arraySize = Integer.parseInt(rangoSeleccionado);
         } catch (NumberFormatException e) {
-            arrayLengthText.setText("Error: rango inválido.");
+            arrayLengthText.setText("Error: rango invalido.");
             return;
         }
 
         maxDigits = numberDigits.getValue();
 
-        // Crear array con tamaño arraySize
         array = new String[arraySize];
         cellColors = new String[arraySize];
         Arrays.fill(array, null);
         Arrays.fill(cellColors, "WHITE");
         currentIndex = 0;
 
-        saveState(-1); // -1 indica que no hay posición modificada
+        saveState(-1);
 
         createButton.setDisable(true);
         rangeSec.setDisable(true);
@@ -228,7 +227,7 @@ public class SecuencialController {
         undoButton.setDisable(true);
         redoButton.setDisable(true);
 
-        arrayLengthText.setText("Array de " + arraySize + " posiciones creado. Claves de " + maxDigits + " dígitos.");
+        arrayLengthText.setText("Array de " + arraySize + " posiciones creado. Claves de " + maxDigits + " digitos.");
         actualizarVistaArray();
     }
 
@@ -240,18 +239,16 @@ public class SecuencialController {
             return;
         }
 
-        // Validar que sea numérico y tenga exactamente maxDigits dígitos
         if (!input.matches("\\d{" + maxDigits + "}")) {
-            itemsArrayText.setText("Error: La clave debe tener exactamente " + maxDigits + " dígitos.");
+            itemsArrayText.setText("Error: La clave debe tener exactamente " + maxDigits + " digitos.");
             return;
         }
 
         if (currentIndex >= arraySize) {
-            itemsArrayText.setText("Array lleno. No se pueden insertar más elementos.");
+            itemsArrayText.setText("Array lleno. No se pueden insertar mas elementos.");
             return;
         }
 
-        // Verificar si la clave ya existe en el array
         for (int i = 0; i < currentIndex; i++) {
             if (input.equals(array[i])) {
                 itemsArrayText.setText("Error: La clave " + input + " ya existe en el array.");
@@ -259,30 +256,26 @@ public class SecuencialController {
             }
         }
 
-        // Encontrar la posición correcta para mantener el orden
         int posicionInsercion = 0;
         while (posicionInsercion < currentIndex
                 && Integer.parseInt(array[posicionInsercion]) < Integer.parseInt(input)) {
             posicionInsercion++;
         }
 
-        // Desplazar elementos a la derecha para hacer espacio
         for (int i = currentIndex; i > posicionInsercion; i--) {
             array[i] = array[i - 1];
         }
 
-        // Insertar en la posición correcta
         array[posicionInsercion] = input;
         currentIndex++;
 
-        // Actualizar interfaz
         Arrays.fill(cellColors, "WHITE");
         marcarPosicion(posicionInsercion, "YELLOW");
         scrollToPosition(posicionInsercion);
 
         saveState(posicionInsercion);
 
-        itemsArrayText.setText("Clave " + input + " insertada en posición " + (posicionInsercion + 1) + " (ordenada).");
+        itemsArrayText.setText("Clave " + input + " insertada en posicion " + (posicionInsercion + 1) + " (ordenada).");
         actualizarVistaArray();
         newItemArray.clear();
     }
@@ -302,9 +295,8 @@ public class SecuencialController {
         boolean encontrado = false;
         int posicionEncontrada = -1;
 
-        // Búsqueda secuencial desde la primera posición
         for (int i = 0; i < currentIndex; i++) {
-            recorrido.add(i); // Añadir cada posición visitada al recorrido
+            recorrido.add(i);
             if (claveStr.equals(array[i])) {
                 encontrado = true;
                 posicionEncontrada = i;
@@ -324,7 +316,7 @@ public class SecuencialController {
 
         if (encontrado) {
             if (eliminar) {
-                // Eliminar el elemento y mantener el orden
+
                 for (int i = posicionEncontrada; i < currentIndex - 1; i++) {
                     array[i] = array[i + 1];
                 }
@@ -369,7 +361,7 @@ public class SecuencialController {
             if (found) {
                 if (eliminar) {
                     marcarPosicion(foundPos, "RED");
-                    // Mostrar que el elemento fue eliminado
+
                     itemsArrayText.setText("Elemento eliminado. Array reorganizado.");
                 } else {
                     marcarPosicion(foundPos, "GREEN");
@@ -389,11 +381,11 @@ public class SecuencialController {
     private void searchItem() {
         String claveStr = modDeleteItem.getText();
         if (claveStr.isEmpty()) {
-            itemsArrayText.setText("Ingrese una clave válida.");
+            itemsArrayText.setText("Ingrese una clave valida.");
             return;
         }
         if (!claveStr.matches("\\d{" + maxDigits + "}")) {
-            itemsArrayText.setText("La clave debe tener " + maxDigits + " dígitos.");
+            itemsArrayText.setText("La clave debe tener " + maxDigits + " digitos.");
             return;
         }
         findItem(claveStr, false);
@@ -403,11 +395,11 @@ public class SecuencialController {
     private void eliminateItem() {
         String claveStr = modDeleteItem.getText();
         if (claveStr.isEmpty()) {
-            itemsArrayText.setText("Ingrese una clave válida.");
+            itemsArrayText.setText("Ingrese una clave valida.");
             return;
         }
         if (!claveStr.matches("\\d{" + maxDigits + "}")) {
-            itemsArrayText.setText("La clave debe tener " + maxDigits + " dígitos.");
+            itemsArrayText.setText("La clave debe tener " + maxDigits + " digitos.");
             return;
         }
         findItem(claveStr, true);
@@ -452,13 +444,11 @@ public class SecuencialController {
         this.maxDigits = state.getMaxDigitsSnapshot();
         this.currentIndex = state.getCurrentIndexSnapshot();
 
-        // Inicializar colores en blanco
         if (cellColors == null || cellColors.length != arraySize) {
             cellColors = new String[arraySize];
         }
         Arrays.fill(cellColors, "WHITE");
 
-        // Solo marcar la última posición modificada si se solicita
         int lastPos = state.getLastModifiedPosition();
         if (markLastModified && lastPos != -1) {
             marcarPosicion(lastPos, "GRAY");
@@ -467,7 +457,6 @@ public class SecuencialController {
 
         actualizarVistaArray();
 
-        // Actualizar estado del botón de guardar
         saveButton.setDisable(array == null);
     }
 
@@ -533,7 +522,7 @@ public class SecuencialController {
         }
 
         FileChooser fileChooser = new FileChooser();
-        fileChooser.setTitle("Guardar Estado de Búsqueda Secuencial");
+        fileChooser.setTitle("Guardar Estado de Busqueda Secuencial");
         fileChooser.setInitialDirectory(new File("src/main/resources/docs"));
         fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Archivo de estado Secuencial", "*.seq"));
         File file = fileChooser.showSaveDialog(miViewList.getScene().getWindow());
@@ -557,7 +546,7 @@ public class SecuencialController {
     @FXML
     private void loadArray() {
         FileChooser fileChooser = new FileChooser();
-        fileChooser.setTitle("Cargar Estado de Búsqueda Secuencial");
+        fileChooser.setTitle("Cargar Estado de Busqueda Secuencial");
         fileChooser.setInitialDirectory(new File("src/main/resources/docs"));
         fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Archivo de estado Secuencial", "*.seq"));
         File file = fileChooser.showOpenDialog(miViewList.getScene().getWindow());
@@ -577,7 +566,7 @@ public class SecuencialController {
                         alert.setTitle("Error de Carga");
                         alert.setHeaderText("Tipo de estructura incompatible");
                         alert.setContentText("El archivo fue guardado para: " + savedType +
-                                "\nPero actualmente está seleccionada: Búsqueda Secuencial");
+                                "\nPero actualmente esta seleccionada: Busqueda Secuencial");
                         alert.showAndWait();
 
                         itemsArrayText.setText("Error: Tipo de estructura incompatible");
@@ -613,10 +602,10 @@ public class SecuencialController {
                 Alert alert = new Alert(Alert.AlertType.ERROR);
                 alert.setTitle("Error de Carga");
                 alert.setHeaderText("No se pudo cargar el archivo");
-                alert.setContentText("El archivo seleccionado no es válido o está corrupto: " + e.getMessage());
+                alert.setContentText("El archivo seleccionado no es valido o esta corrupto: " + e.getMessage());
                 alert.showAndWait();
 
-                itemsArrayText.setText("Archivo no válido o corrupto");
+                itemsArrayText.setText("Archivo no valido o corrupto");
                 e.printStackTrace();
             }
         }

@@ -6,6 +6,7 @@ import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -75,6 +76,8 @@ public class TreesController {
     private ScrollPane treePane;
     @FXML
     private Pane principalPane;
+    @FXML
+    private Label keyLabel;
 
     private String treeString;
     private ResearchController researchController;
@@ -330,18 +333,21 @@ public class TreesController {
 
         switch (treeString) {
             case "Arboles de busqueda digital":
+                keyLabel.setText("Insertar clave");
                 treesTitle.setText("Arboles de busqueda digital");
                 treesDescription.setText(
                         "Todos los bits de la clave se representan explicitamente en el recorrido, aunque haya caminos con nodos de un solo hijo.");
                 digitalRoot = null;
                 break;
             case "Arboles de busqueda por residuos":
+                keyLabel.setText("Insertar clave");
                 treesTitle.setText("Arboles de busqueda por residuos");
                 treesDescription.setText(
                         "Si varias claves comparten prefijo el nodo se vuelve de enlace y se bifurca, mientras que los nodos hoja.");
                 residueRoot = new ResidueNode(true, null);
                 break;
             case "Arboles de busqueda por residuos multiple":
+                keyLabel.setText("Insertar clave");
                 treesTitle.setText("Arboles de busqueda por residuos multiple");
                 treesDescription.setText(
                         "En cada nivel se toman varios bits de la clave a la vez: el nodo se bifurca en tantas ramas como combinaciones de esos bits.");
@@ -349,10 +355,12 @@ public class TreesController {
                 multipleResidueRoot = new MultipleResidueNode(true, null);
                 break;
             case "Tablas de indices":
+                keyLabel.setText("Insertar clave");
                 treesTitle.setText("Tablas de indices");
                 treesDescription.setText(".");
                 break;
             case "Arboles de Huffman":
+                keyLabel.setText("Insertar mensaje");
                 treesTitle.setText("Arboles de Huffman");
                 treesDescription.setText(
                         "Es construido a partir de las frecuencias de aparicion de los simbolos donde se toman siempre los dos nodos de menor frecuencia.");
@@ -1232,51 +1240,6 @@ public class TreesController {
         isSearchInProgress = false;
     }
 
-    private DigitalNode cloneDigitalTree(DigitalNode original) {
-        if (original == null)
-            return null;
-        DigitalNode clone = new DigitalNode(original.letter);
-        clone.left = cloneDigitalTree(original.left);
-        clone.right = cloneDigitalTree(original.right);
-        clone.path = new ArrayList<>(original.path);
-        return clone;
-    }
-
-    private ResidueNode cloneResidueTree(ResidueNode original) {
-        if (original == null)
-            return null;
-        ResidueNode clone = new ResidueNode(original.isLink, original.letter);
-        clone.left = cloneResidueTree(original.left);
-        clone.right = cloneResidueTree(original.right);
-        clone.path = new ArrayList<>(original.path);
-        return clone;
-    }
-
-    private MultipleResidueNode cloneMultipleResidueTree(MultipleResidueNode original) {
-        if (original == null)
-            return null;
-        MultipleResidueNode clone = new MultipleResidueNode(original.isLink, original.letter);
-        for (int i = 0; i < 4; i++) {
-            clone.children[i] = cloneMultipleResidueTree(original.children[i]);
-        }
-        clone.path = new ArrayList<>(original.path);
-        return clone;
-    }
-
-    private HuffmanNode cloneHuffmanTree(HuffmanNode original) {
-        if (original == null)
-            return null;
-        HuffmanNode clone;
-        if (original.isLeaf()) {
-            clone = new HuffmanNode(original.letter, original.frequency, original.insertionOrder);
-        } else {
-            clone = new HuffmanNode(cloneHuffmanTree(original.left), cloneHuffmanTree(original.right),
-                    original.frequency, original.insertionOrder);
-        }
-        clone.path = new ArrayList<>(original.path);
-        return clone;
-    }
-
     private void saveState() {
         TreeState state = new TreeState(digitalInsertionOrder, residueInsertionOrder,
                 multipleResidueInsertionOrder, huffmanMessage);
@@ -1563,13 +1526,14 @@ public class TreesController {
 
         huffmanMessage = message;
 
-        Map<Character, Integer> charCount = new HashMap<>();
-        int totalChars = 0;
+        String reversedMessage = new StringBuilder(message).reverse().toString();
 
-        for (char c : message.toCharArray()) {
-            char upperChar = Character.toUpperCase(c);
-            if (upperChar >= 'A' && upperChar <= 'Z') {
-                charCount.put(upperChar, charCount.getOrDefault(upperChar, 0) + 1);
+        Map<Character, Integer> charCount = new LinkedHashMap<>();
+        int totalChars = 0;
+        for (char c : reversedMessage.toCharArray()) {
+            char upper = Character.toUpperCase(c);
+            if (upper >= 'A' && upper <= 'Z') {
+                charCount.put(upper, charCount.getOrDefault(upper, 0) + 1);
                 totalChars++;
             }
         }
@@ -1582,43 +1546,52 @@ public class TreesController {
             return;
         }
 
-        LinkedList<HuffmanNode> queue = new LinkedList<>();
+        LinkedList<HuffmanNode> nodeList = new LinkedList<>();
         int insertionOrder = 0;
+        for (Map.Entry<Character, Integer> entry : charCount.entrySet()) {
+            char letter = entry.getKey();
+            double freq = (double) entry.getValue() / totalChars;
+            nodeList.add(new HuffmanNode(letter, freq, insertionOrder++));
+        }
 
-        for (char c : message.toCharArray()) {
-            char upperChar = Character.toUpperCase(c);
-            if (upperChar >= 'A' && upperChar <= 'Z') {
+        nodeList.sort((a, b) -> {
+            int cmp = Double.compare(b.frequency, a.frequency);
+            if (cmp != 0)
+                return cmp;
+            return Integer.compare(a.insertionOrder, b.insertionOrder);
+        });
 
-                boolean exists = false;
-                for (HuffmanNode node : queue) {
-                    if (node.isLeaf() && node.letter == upperChar) {
-                        exists = true;
-                        break;
-                    }
-                }
-                if (!exists) {
-                    double frequency = (double) charCount.get(upperChar) / totalChars;
-                    queue.add(new HuffmanNode(upperChar, frequency, insertionOrder++));
+        int currentInsertion = insertionOrder;
+
+        while (nodeList.size() > 1) {
+
+            HuffmanNode last = nodeList.removeLast();
+            HuffmanNode secondLast = nodeList.removeLast();
+
+            double combinedFreq = last.frequency + secondLast.frequency;
+            HuffmanNode parent = new HuffmanNode(last, secondLast, combinedFreq, currentInsertion++);
+
+            boolean inserted = false;
+            for (int i = 0; i < nodeList.size(); i++) {
+                HuffmanNode current = nodeList.get(i);
+
+                if (parent.frequency > current.frequency) {
+                    nodeList.add(i, parent);
+                    inserted = true;
+                    break;
+                } else if (parent.frequency == current.frequency) {
+
+                    nodeList.add(i, parent);
+                    inserted = true;
+                    break;
                 }
             }
-        }
-
-        int currentInsertionOrder = insertionOrder;
-
-        while (queue.size() > 1) {
-
-            HuffmanNode first = queue.remove(0);
-            HuffmanNode second = queue.remove(0);
-
-            double combinedFrequency = first.frequency + second.frequency;
-            HuffmanNode parent = new HuffmanNode(first, second, combinedFrequency, currentInsertionOrder++);
-
-            queue.add(parent);
+            if (!inserted)
+                nodeList.addLast(parent);
 
         }
 
-        huffmanRoot = queue.isEmpty() ? null : queue.get(0);
-
+        huffmanRoot = nodeList.getFirst();
         huffmanCodes.clear();
         generateHuffmanCodes(huffmanRoot, "");
 
@@ -1645,6 +1618,7 @@ public class TreesController {
 
         if (node.isLeaf()) {
             huffmanCodes.put(node.letter, code);
+            System.out.println("Codigo para '" + node.letter + "': " + code);
             return;
         }
 
@@ -1841,7 +1815,7 @@ public class TreesController {
             circle.setStroke(strokeColor);
             canvas.getChildren().add(circle);
             node.circle = circle;
-            Text nodeText = new Text(x - 5, y + 5, "L");
+            Text nodeText = new Text(x - 5, y + 5, "");
             canvas.getChildren().add(nodeText);
         } else {
             if (node.isLink) {
@@ -1850,7 +1824,7 @@ public class TreesController {
                 circle.setStroke(strokeColor);
                 canvas.getChildren().add(circle);
                 node.circle = circle;
-                Text nodeText = new Text(x - 5, y + 5, "L");
+                Text nodeText = new Text(x - 5, y + 5, "");
                 canvas.getChildren().add(nodeText);
             } else {
                 Rectangle rect = new Rectangle(x - 20, y - 20, 40, 40);
@@ -1934,7 +1908,7 @@ public class TreesController {
             circle.setStroke(strokeColor);
             canvas.getChildren().add(circle);
             node.circle = circle;
-            Text nodeText = new Text(x - 5, y + 5, "L");
+            Text nodeText = new Text(x - 5, y + 5, "");
             nodeText.setFill(strokeColor);
             canvas.getChildren().add(nodeText);
         } else {
@@ -2463,7 +2437,7 @@ public class TreesController {
             circle.setStrokeWidth(1.8 * scale);
             canvas.getChildren().add(circle);
 
-            Text nodeText = new Text(x - (4 * scale), y + (5 * scale), "L");
+            Text nodeText = new Text(x - (4 * scale), y + (5 * scale), "");
             nodeText.setStyle("-fx-font-size: " + (11 * scale) + "px; -fx-font-weight: bold;");
             canvas.getChildren().add(nodeText);
         } else {
@@ -2529,7 +2503,7 @@ public class TreesController {
             circle.setStrokeWidth(1.8 * scale);
             canvas.getChildren().add(circle);
 
-            Text nodeText = new Text(x - (4 * scale), y + (5 * scale), "L");
+            Text nodeText = new Text(x - (4 * scale), y + (5 * scale), "");
             nodeText.setStyle("-fx-font-size: " + (11 * scale) + "px; -fx-font-weight: bold;");
             canvas.getChildren().add(nodeText);
         } else {
@@ -2905,7 +2879,7 @@ public class TreesController {
             circle.setStrokeWidth(2.5);
             canvas.getChildren().add(circle);
             node.circle = circle;
-            Text nodeText = new Text(x - 6, y + 7, "L");
+            Text nodeText = new Text(x - 6, y + 7, "");
             nodeText.setStyle("-fx-font-size: 14px; -fx-font-weight: bold;");
             canvas.getChildren().add(nodeText);
         } else {
@@ -2916,7 +2890,7 @@ public class TreesController {
                 circle.setStrokeWidth(2.5);
                 canvas.getChildren().add(circle);
                 node.circle = circle;
-                Text nodeText = new Text(x - 6, y + 7, "L");
+                Text nodeText = new Text(x - 6, y + 7, "");
                 nodeText.setStyle("-fx-font-size: 14px; -fx-font-weight: bold;");
                 canvas.getChildren().add(nodeText);
             } else {
@@ -3011,7 +2985,7 @@ public class TreesController {
             circle.setStrokeWidth(2.5);
             canvas.getChildren().add(circle);
             node.circle = circle;
-            Text nodeText = new Text(x - 6, y + 7, "L");
+            Text nodeText = new Text(x - 6, y + 7, "");
             nodeText.setStyle("-fx-font-size: 14px; -fx-font-weight: bold;");
             nodeText.setFill(strokeColor);
             canvas.getChildren().add(nodeText);
