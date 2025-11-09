@@ -57,6 +57,8 @@ public class ResearchController {
     private Tab tabSecuencialExt;
     @FXML
     private Tab tabBinariaExt;
+    @FXML
+    private Tab tabDinamicas;
 
     @FXML
     private TabPane tabPaneInternal;
@@ -68,7 +70,7 @@ public class ResearchController {
 
     private List<MenuButton> menuButtons;
     private List<Pane> panes;
-    
+
     private Map<Tab, Pane> tabPaneMapInternal;
     private Map<Tab, Pane> tabPaneMapExternal;
     private Map<Tab, String> fxmlMapInternal;
@@ -83,7 +85,7 @@ public class ResearchController {
     }
 
     private void initializeMappings() {
-        // Mapeo para Internal Tabs
+
         tabPaneMapInternal = new HashMap<>();
         tabPaneMapInternal.put(tabSecuencial, paneSecuencialInt);
         tabPaneMapInternal.put(tabBinaria, paneBinariaInt);
@@ -92,7 +94,6 @@ public class ResearchController {
         fxmlMapInternal.put(tabSecuencial, "secuencial.fxml");
         fxmlMapInternal.put(tabBinaria, "binaria.fxml");
 
-        // Mapeo para External Tabs
         tabPaneMapExternal = new HashMap<>();
         tabPaneMapExternal.put(tabSecuencialExt, paneSecuencialExt);
         tabPaneMapExternal.put(tabBinariaExt, paneBinariaExt);
@@ -122,28 +123,26 @@ public class ResearchController {
     }
 
     private void loadInitialContent() {
-        // Cargar contenido inicial para Internal
+
         loadTabContent(tabSecuencial, paneSecuencialInt, "secuencial.fxml");
         loadTabContent(tabBinaria, paneBinariaInt, "binaria.fxml");
-        
-        // Cargar contenido inicial para External
+
         loadTabContent(tabSecuencialExt, paneSecuencialExt, "secuencialExt.fxml");
         loadTabContent(tabBinariaExt, paneBinariaExt, "binariaExt.fxml");
-        
-        // Seleccionar pestañas iniciales
+
         tabPaneInternal.getSelectionModel().select(tabSecuencial);
         tabPaneExternal.getSelectionModel().select(tabSecuencialExt);
     }
 
     private void setupTabListeners() {
-        // Listeners para Internal Tabs
+
         tabSecuencial.setOnSelectionChanged(event -> {
             if (tabSecuencial.isSelected()) {
                 softRestart();
                 ensureTabContent(tabSecuencial, paneSecuencialInt, "secuencial.fxml");
             }
         });
-        
+
         tabBinaria.setOnSelectionChanged(event -> {
             if (tabBinaria.isSelected()) {
                 softRestart();
@@ -151,18 +150,24 @@ public class ResearchController {
             }
         });
 
-        // Listeners para External Tabs
         tabSecuencialExt.setOnSelectionChanged(event -> {
             if (tabSecuencialExt.isSelected()) {
                 softRestart();
                 ensureTabContent(tabSecuencialExt, paneSecuencialExt, "secuencialExt.fxml");
             }
         });
-        
+
         tabBinariaExt.setOnSelectionChanged(event -> {
             if (tabBinariaExt.isSelected()) {
                 softRestart();
                 ensureTabContent(tabBinariaExt, paneBinariaExt, "binariaExt.fxml");
+            }
+        });
+
+        tabDinamicas.setOnSelectionChanged(event -> {
+            if (tabDinamicas.isSelected()) {
+                softRestart();
+                ensureTabContent(tabDinamicas, paneDynamic, "dinamicas.fxml");
             }
         });
     }
@@ -180,7 +185,7 @@ public class ResearchController {
 
     private void ensureTabContent(Tab tab, Pane pane, String fxmlFile) {
         try {
-            // Solo carga si el pane está vacío
+
             if (pane.getChildren().isEmpty()) {
                 FXMLLoader loader = new FXMLLoader(getClass().getResource(fxmlFile));
                 Parent vista = loader.load();
@@ -199,7 +204,7 @@ public class ResearchController {
 
     @FXML
     private void softRestart() {
-        // Solo reinicia los menús, no limpia el contenido de los panes
+
         if (menuButtons != null) {
             menuButtons.forEach(button -> {
                 if (button != null) {
@@ -214,7 +219,7 @@ public class ResearchController {
 
     @FXML
     private void restart() {
-        // Versión original que limpia todo (para cuando sea necesario)
+
         if (menuButtons != null) {
             menuButtons.forEach(button -> {
                 if (button != null) {
@@ -238,8 +243,7 @@ public class ResearchController {
     private void internal() {
         softRestart();
         tabPaneInternal.getSelectionModel().select(tabSecuencial);
-        
-        // Asegurar que el contenido esté cargado
+
         ensureTabContent(tabSecuencial, paneSecuencialInt, "secuencial.fxml");
     }
 
@@ -247,14 +251,13 @@ public class ResearchController {
     private void external() {
         softRestart();
         tabPaneExternal.getSelectionModel().select(tabSecuencialExt);
-        
-        // Asegurar que el contenido esté cargado
+
         ensureTabContent(tabSecuencialExt, paneSecuencialExt, "secuencialExt.fxml");
     }
 
     @FXML
     private void index() {
-        // Método existente - mantener funcionalidad actual
+
     }
 
     @FXML
@@ -338,7 +341,6 @@ public class ResearchController {
         return menuButtonTrees.getText();
     }
 
-    // Método auxiliar para forzar recarga si es necesario
     public void reloadTabContent(Tab tab) {
         if (tabPaneMapInternal.containsKey(tab) && fxmlMapInternal.containsKey(tab)) {
             Pane pane = tabPaneMapInternal.get(tab);
