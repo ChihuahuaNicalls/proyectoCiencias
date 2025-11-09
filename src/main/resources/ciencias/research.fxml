@@ -169,7 +169,7 @@
                   </AnchorPane>
             </content>
           </Tab>
-            <Tab disable="true" onSelectionChanged="#index" text="Indices">
+            <Tab onSelectionChanged="#index" text="Indices">
                <content>
                   <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
                      <children>
@@ -185,9 +185,7 @@
                                                    <items>
                                                       <MenuItem mnemonicParsing="false" text="Primaria" />
                                                       <MenuItem mnemonicParsing="false" text="Secundaria" />
-                                                      <MenuItem mnemonicParsing="false" text="Agrupamiento" />
-                                                      <MenuItem mnemonicParsing="false" text="Denso" />
-                                                      <MenuItem mnemonicParsing="false" text="No denso" />
+
                                                    </items>
                                                    <font>
                                                       <Font size="20.0" />
@@ -213,6 +211,7 @@
                                                       <Font size="20.0" />
                                                    </font>
                                                 </MenuButton>
+                                                <Pane fx:id="paneIndex" layoutX="336.0" layoutY="14.0" prefHeight="440.0" prefWidth="730.0" />
                                              </children>
                                           </AnchorPane>
                                        </content>

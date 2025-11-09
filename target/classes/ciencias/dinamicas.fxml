@@ -85,7 +85,7 @@
       <Slider fx:id="sliderOcup" layoutX="373.0" layoutY="83.0" prefHeight="14.0" prefWidth="77.0" />
       <Label layoutX="289.0" layoutY="82.0" text="\%Ocupacion" />
       <Label fx:id="percentOcup" layoutX="403.0" layoutY="94.0" text="\%0" />
-      <Slider fx:id="sliderOrd" layoutX="371.0" layoutY="123.0" prefHeight="14.0" prefWidth="77.0" />
+      <Slider fx:id="sliderOrd" layoutX="373.0" layoutY="124.0" prefHeight="14.0" prefWidth="77.0" />
       <Label layoutX="279.0" layoutY="122.0" text="\%Ordenamiento" />
       <Label fx:id="percentOrd" layoutX="401.0" layoutY="134.0" text="\%0" />
    </children>
