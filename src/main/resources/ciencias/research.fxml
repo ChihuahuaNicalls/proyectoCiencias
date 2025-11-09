@@ -152,22 +152,11 @@
                                           </AnchorPane>
                                       </content>
                                     </Tab>
-                                    <Tab onSelectionChanged="#restart" text="Dinamicas">
+                                    <Tab fx:id="tabDinamicas" onSelectionChanged="#restart" text="Dinamicas">
                                       <content>
                                         <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
                                              <children>
-                                                <MenuButton fx:id="menuButtonClaves1" layoutX="22.0" layoutY="22.0" mnemonicParsing="false" prefHeight="44.0" prefWidth="300.0" text="Elegir">
-                                                   <items>
-                                                      <MenuItem mnemonicParsing="false" text="Expansiones parciales" />
-                                                      <MenuItem mnemonicParsing="false" text="Expansiones totales" />
-                                                      <MenuItem mnemonicParsing="false" text="Reducciones parciales" />
-                                                      <MenuItem mnemonicParsing="false" text="Reducciones totales" />
-                                                   </items>
-                                                   <font>
-                                                      <Font size="20.0" />
-                                                   </font>
-                                                </MenuButton>
-                                                <Pane fx:id="paneDynamic" layoutX="335.0" layoutY="15.0" prefHeight="440.0" prefWidth="730.0" />
+                                                <Pane fx:id="paneDynamic" layoutX="175.0" layoutY="15.0" prefHeight="440.0" prefWidth="730.0" />
                                              </children>
                                           </AnchorPane>
                                       </content>
