@@ -1,5 +1,6 @@
 package ciencias.Research;
 
+import ciencias.ResearchController;
 import javafx.beans.property.*;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -16,9 +17,8 @@ import java.util.*;
  * Controlador IndexController con carga dinámica según tipo de índice seleccionado
  * Sigue la estética del código guía HashControllerExternal
  */
-public class IndexController_Dinamico {
+public class IndexMonoController {
 
-    // ======================== CLASES INTERNAS (mismas que antes) ========================
 
     public static class Campo {
         private String nombre;
@@ -326,8 +326,15 @@ public class IndexController_Dinamico {
 
     // ======================== INICIALIZACIÓN ========================
 
+    private ResearchController researchController;
+
+    public void setResearchController(ResearchController researchController) {
+        this.researchController = researchController;
+    }
+
     @FXML
     public void initialize() {
+        researchController = new ResearchController();
         configurarComboTipoIndice();
         ocultarTodoExceptoCombo();
     }
@@ -623,6 +630,7 @@ public class IndexController_Dinamico {
             mostrarError("Valores numéricos inválidos");
         }
     }
+    
 
     private void mostrarResultados() {
         StringBuilder sb = new StringBuilder();

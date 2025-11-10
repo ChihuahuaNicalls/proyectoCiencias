@@ -31,6 +31,10 @@ public class ResearchController {
     private MenuButton menuButtonTrees;
     @FXML
     private MenuButton menuButtonClaves;
+    @FXML
+    private MenuButton menuButtonMono;
+    @FXML
+    private MenuButton menuButtonMulti;
 
     @FXML
     private Pane paneHashInt;
@@ -48,6 +52,10 @@ public class ResearchController {
     private Pane paneDynamic;
     @FXML
     private Pane paneTrees;
+    @FXML
+    private Pane paneIndexMono;
+    @FXML
+    private Pane paneIndexMulti;
 
     @FXML
     private Tab tabBinaria;
@@ -59,6 +67,7 @@ public class ResearchController {
     private Tab tabBinariaExt;
     @FXML
     private Tab tabDinamicas;
+
 
     @FXML
     private TabPane tabPaneInternal;
@@ -97,10 +106,12 @@ public class ResearchController {
         tabPaneMapExternal = new HashMap<>();
         tabPaneMapExternal.put(tabSecuencialExt, paneSecuencialExt);
         tabPaneMapExternal.put(tabBinariaExt, paneBinariaExt);
+        tabPaneMapExternal.put(tabDinamicas, paneDynamic);
 
         fxmlMapExternal = new HashMap<>();
         fxmlMapExternal.put(tabSecuencialExt, "secuencialExt.fxml");
-        fxmlMapExternal.put(tabBinariaExt, "binariaExt.fxml");
+        fxmlMapExternal.put(tabBinariaExt, "secuencialExt.fxml");
+        fxmlMapExternal.put(tabDinamicas, "dinamicas.fxml");
     }
 
     private void setupMenuButtonsAndPanes() {
@@ -110,7 +121,9 @@ public class ResearchController {
                 menuButtonHash,
                 menuButtonResiduos,
                 menuButtonTrees,
-                menuButtonClaves);
+                menuButtonClaves,
+                menuButtonMono,
+                menuButtonMulti);
         panes = Arrays.asList(
                 paneHashInt,
                 paneBinariaInt,
@@ -119,7 +132,9 @@ public class ResearchController {
                 paneBinariaExt,
                 paneSecuencialExt,
                 paneDynamic,
-                paneTrees);
+                paneTrees,
+                paneIndexMono,
+                paneIndexMulti);
     }
 
     private void loadInitialContent() {
@@ -129,6 +144,7 @@ public class ResearchController {
 
         loadTabContent(tabSecuencialExt, paneSecuencialExt, "secuencialExt.fxml");
         loadTabContent(tabBinariaExt, paneBinariaExt, "binariaExt.fxml");
+        loadTabContent(tabDinamicas, paneDynamic, "dinamicas.fxml");
 
         tabPaneInternal.getSelectionModel().select(tabSecuencial);
         tabPaneExternal.getSelectionModel().select(tabSecuencialExt);
@@ -169,6 +185,7 @@ public class ResearchController {
                 softRestart();
                 ensureTabContent(tabDinamicas, paneDynamic, "dinamicas.fxml");
             }
+
         });
     }
 
@@ -339,6 +356,28 @@ public class ResearchController {
     @FXML
     public String getTreesString() {
         return menuButtonTrees.getText();
+    }
+
+    @FXML
+    private void monoAction(javafx.event.ActionEvent event){
+        MenuItem source = (MenuItem) event.getSource();
+        String option = source.getText();
+        menuButtonMono.setText(option);
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("mono.fxml"));
+            Parent vista = loader.load();
+
+            IndexMonoController indexMonoController = new IndexMonoController();
+            indexMonoController.setResearchController(this);
+            paneIndexMono.getChildren().setAll(vista);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @FXML
+    private void multiAction(javafx.event.ActionEvent event){
+        //Llenar cuando fxml de multi este listo
     }
 
     public void reloadTabContent(Tab tab) {
