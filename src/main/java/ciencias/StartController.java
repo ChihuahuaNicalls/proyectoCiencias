@@ -12,6 +12,7 @@ public class StartController {
 
     @FXML
     private void toGraphs() throws IOException {
+        App.setRoot("graph");
     }
 
 }
