@@ -1,9 +1,7 @@
 package ciencias.Research;
 
 import ciencias.ResearchController;
-import javafx.beans.property.*;
 import javafx.collections.FXCollections;
-import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.scene.layout.Pane;
@@ -13,12 +11,7 @@ import javafx.scene.text.TextFlow;
 
 import java.util.*;
 
-/**
- * Controlador IndexController con carga dinámica según tipo de índice seleccionado
- * Sigue la estética del código guía HashControllerExternal
- */
 public class IndexMonoController {
-
 
     public static class Campo {
         private String nombre;
@@ -277,18 +270,9 @@ public class IndexMonoController {
         public int getLongitudPunteroBytes() { return longitudPunteroBytes; }
     }
 
-    // ======================== ATRIBUTOS DEL CONTROLADOR ========================
-
-    private EstructuraDatos estructuraDatos;
-    private EstructuraIndice estructuraIndice;
-    private TipoIndice tipoIndiceSeleccionado;
-
-    // FXML Components - Siempre Visibles
     @FXML private Label titleIndex;
     @FXML private ComboBox<String> cmbTipoIndice;
 
-    // Sección: Crear Estructura de Datos
-    @FXML private Label lblEstructuraDataHeader;
     @FXML private Label lblCantidadCampos;
     @FXML private TextField txtCantidadCampos;
     @FXML private Label lblLongitudRegistro;
@@ -299,14 +283,10 @@ public class IndexMonoController {
     @FXML private TextField txtCantidadRegistros;
     @FXML private Button btnCrearEstructura;
 
-    // Sección: Ingreso de Datos
-    @FXML private Label lblIngresoDataHeader;
     @FXML private Pane panelCamposVistaData;
     @FXML private Button btnAgregarRegistro;
     @FXML private Text txtRegistrosCount;
 
-    // Sección: Parámetros de Índice
-    @FXML private Label lblParametrosIndiceHeader;
     @FXML private TextFlow flowPrimarioInfo;
     @FXML private Label lblCampoSecundario;
     @FXML private ComboBox<String> cmbCampoIndexacion;
@@ -316,16 +296,15 @@ public class IndexMonoController {
     @FXML private TextField txtLongitudPuntero;
     @FXML private Button btnCrearIndice;
 
-    // Sección: Resultados
     @FXML private Label lblResultadosHeader;
     @FXML private Text txtResultados;
 
-    // Botones de Utilidad
     @FXML private Button btnReiniciar;
     @FXML private Button btnGuardar;
 
-    // ======================== INICIALIZACIÓN ========================
-
+    private EstructuraDatos estructuraDatos;
+    private EstructuraIndice estructuraIndice;
+    private TipoIndice tipoIndiceSeleccionado;
     private ResearchController researchController;
 
     public void setResearchController(ResearchController researchController) {
@@ -334,113 +313,17 @@ public class IndexMonoController {
 
     @FXML
     public void initialize() {
-        researchController = new ResearchController();
-        configurarComboTipoIndice();
-        ocultarTodoExceptoCombo();
+        cmbTipoIndice.setItems(FXCollections.observableArrayList("PRIMARIO", "SECUNDARIO"));
     }
-
-    private void configurarComboTipoIndice() {
-        if (cmbTipoIndice != null) {
-            cmbTipoIndice.setItems(FXCollections.observableArrayList("PRIMARIO", "SECUNDARIO"));
-        }
-    }
-
-    private void ocultarTodoExceptoCombo() {
-        lblEstructuraDataHeader.setVisible(false);
-        lblCantidadCampos.setVisible(false);
-        txtCantidadCampos.setVisible(false);
-        lblLongitudRegistro.setVisible(false);
-        txtLongitudRegistro.setVisible(false);
-        lblTamañoBloque.setVisible(false);
-        txtTamañoBloque.setVisible(false);
-        lblCantidadRegistros.setVisible(false);
-        txtCantidadRegistros.setVisible(false);
-        btnCrearEstructura.setVisible(false);
-
-        lblIngresoDataHeader.setVisible(false);
-        panelCamposVistaData.setVisible(false);
-        btnAgregarRegistro.setVisible(false);
-        txtRegistrosCount.getParent().setVisible(false);
-
-        lblParametrosIndiceHeader.setVisible(false);
-        flowPrimarioInfo.setVisible(false);
-        lblCampoSecundario.setVisible(false);
-        cmbCampoIndexacion.setVisible(false);
-        lblLongitudCampoIndice.setVisible(false);
-        txtLongitudCampoIndice.setVisible(false);
-        lblLongitudPuntero.setVisible(false);
-        txtLongitudPuntero.setVisible(false);
-        btnCrearIndice.setVisible(false);
-
-        lblResultadosHeader.getParent().setVisible(false);
-        txtResultados.getParent().setVisible(false);
-    }
-
-    // ======================== MANEJADOR DE CAMBIOS DE TIPO ========================
 
     @FXML
     public void onTipoIndiceChanged() {
         String tipoSeleccionado = cmbTipoIndice.getValue();
         if (tipoSeleccionado == null) {
-            ocultarTodoExceptoCombo();
             return;
         }
-
         tipoIndiceSeleccionado = TipoIndice.valueOf(tipoSeleccionado);
-
-        // Si no existe estructura de datos, mostrar opción de crear
-        if (estructuraDatos == null) {
-            mostrarPanelCrearEstructura();
-        } else {
-            // Si existe estructura, mostrar panel de ingreso de datos y parámetros de índice
-            mostrarPanelIngresoDatos();
-            mostrarPanelParametrosIndice();
-        }
     }
-
-    private void mostrarPanelCrearEstructura() {
-        ocultarTodoExceptoCombo();
-        lblEstructuraDataHeader.setVisible(true);
-        lblCantidadCampos.setVisible(true);
-        txtCantidadCampos.setVisible(true);
-        lblLongitudRegistro.setVisible(true);
-        txtLongitudRegistro.setVisible(true);
-        lblTamañoBloque.setVisible(true);
-        txtTamañoBloque.setVisible(true);
-        lblCantidadRegistros.setVisible(true);
-        txtCantidadRegistros.setVisible(true);
-        btnCrearEstructura.setVisible(true);
-    }
-
-    private void mostrarPanelIngresoDatos() {
-        lblIngresoDataHeader.setVisible(true);
-        panelCamposVistaData.setVisible(true);
-        btnAgregarRegistro.setVisible(true);
-        txtRegistrosCount.getParent().setVisible(true);
-        actualizarContadorRegistros();
-    }
-
-    private void mostrarPanelParametrosIndice() {
-        lblParametrosIndiceHeader.setVisible(true);
-        lblLongitudCampoIndice.setVisible(true);
-        txtLongitudCampoIndice.setVisible(true);
-        lblLongitudPuntero.setVisible(true);
-        txtLongitudPuntero.setVisible(true);
-        btnCrearIndice.setVisible(true);
-
-        if (tipoIndiceSeleccionado == TipoIndice.PRIMARIO) {
-            flowPrimarioInfo.setVisible(true);
-            lblCampoSecundario.setVisible(false);
-            cmbCampoIndexacion.setVisible(false);
-        } else {
-            flowPrimarioInfo.setVisible(false);
-            lblCampoSecundario.setVisible(true);
-            cmbCampoIndexacion.setVisible(true);
-            actualizarComboCampos();
-        }
-    }
-
-    // ======================== CREAR ESTRUCTURA DE DATOS ========================
 
     @FXML
     public void crearEstructuraDatos() {
@@ -465,12 +348,10 @@ public class IndexMonoController {
 
             estructuraDatos = new EstructuraDatos(campos, longitudRegistro, tamañoBloque, cantidadRegistros);
 
-            mostrarPanelIngresoDatos();
-            mostrarPanelParametrosIndice();
+            crearCamposEnPanel();
+            actualizarComboCampos();
             btnReiniciar.setDisable(false);
             btnGuardar.setDisable(false);
-
-            crearCamposEnPanel();
 
         } catch (NumberFormatException e) {
             mostrarError("Ingrese valores numéricos válidos");
@@ -538,10 +419,18 @@ public class IndexMonoController {
                 campos.add(c.getNombre());
             }
             cmbCampoIndexacion.setItems(FXCollections.observableArrayList(campos));
+
+            if (tipoIndiceSeleccionado == TipoIndice.PRIMARIO) {
+                flowPrimarioInfo.setVisible(true);
+                lblCampoSecundario.setVisible(false);
+                cmbCampoIndexacion.setVisible(false);
+            } else {
+                flowPrimarioInfo.setVisible(false);
+                lblCampoSecundario.setVisible(true);
+                cmbCampoIndexacion.setVisible(true);
+            }
         }
     }
-
-    // ======================== AGREGAR REGISTRO ========================
 
     @FXML
     public void agregarRegistro() {
@@ -591,8 +480,6 @@ public class IndexMonoController {
         }
     }
 
-    // ======================== CREAR ÍNDICE ========================
-
     @FXML
     public void crearEstructuraIndice() {
         if (estructuraDatos == null) {
@@ -630,7 +517,6 @@ public class IndexMonoController {
             mostrarError("Valores numéricos inválidos");
         }
     }
-    
 
     private void mostrarResultados() {
         StringBuilder sb = new StringBuilder();
@@ -658,12 +544,8 @@ public class IndexMonoController {
             sb.append("\n");
         }
 
-        lblResultadosHeader.getParent().setVisible(true);
-        txtResultados.getParent().setVisible(true);
         txtResultados.setText(sb.toString());
     }
-
-    // ======================== REINICIAR ========================
 
     @FXML
     public void reiniciar() {
@@ -678,8 +560,10 @@ public class IndexMonoController {
         txtCantidadRegistros.clear();
         txtLongitudCampoIndice.clear();
         txtLongitudPuntero.clear();
+        panelCamposVistaData.getChildren().clear();
+        txtRegistrosCount.setText("Registros: 0/0");
+        txtResultados.setText("");
 
-        ocultarTodoExceptoCombo();
         btnReiniciar.setDisable(true);
         btnGuardar.setDisable(true);
     }
@@ -692,8 +576,6 @@ public class IndexMonoController {
         }
         mostrarInfo("Funcionalidad de guardar implementar según necesidades");
     }
-
-    // ======================== UTILIDADES ========================
 
     private void mostrarError(String mensaje) {
         Alert alert = new Alert(Alert.AlertType.ERROR);
@@ -709,3 +591,4 @@ public class IndexMonoController {
         alert.showAndWait();
     }
 }
+
