@@ -102,7 +102,7 @@ BorderPane > .top > Label {
 
 /* ===== MODERN TABS ===== */
 .tab-pane {
-    -fx-background-color: #1e1e1f;
+    -fx-background-color: #e0e0e0;
     -fx-border-color: #e0e0e0;
 }
 

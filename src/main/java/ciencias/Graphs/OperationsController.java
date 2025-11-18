@@ -248,11 +248,11 @@ public class OperationsController {
         }
 
         public void addEdge(String source, String destination, String label, boolean isSumEdge) {
-            // Validar que no exista una arista con la misma notación en ningún lugar del grafo
+
             for (Edge existingEdge : edges) {
                 if (existingEdge.label.equals(label)) {
-                    throw new IllegalStateException("Ya existe una arista con la notación '" + label + 
-                        "' entre " + existingEdge.source + " y " + existingEdge.destination);
+                    throw new IllegalStateException("Ya existe una arista con la notación '" + label +
+                            "' entre " + existingEdge.source + " y " + existingEdge.destination);
                 }
             }
 
@@ -836,7 +836,8 @@ public class OperationsController {
             boolean isOperation = currentOperation != null && !currentOperation.isEmpty();
             int maxLoops = isOperation ? 4 : 2;
             if (loops.size() >= maxLoops) {
-                modificationText.setText("Error: No se pueden tener más de " + maxLoops + " bucles en el vértice " + source);
+                modificationText
+                        .setText("Error: No se pueden tener más de " + maxLoops + " bucles en el vértice " + source);
                 return;
             }
         }
@@ -1736,6 +1737,113 @@ public class OperationsController {
         centerGraphView(scrollPane);
     }
 
+    private void drawLoop(Pane canvas, Point2D vertex, double radius, boolean isDirected,
+            boolean isSumEdge, String label, int loopIndex, int totalLoops, List<String> allLabels,
+            List<EdgeLabelConnection> connections, List<Line> allEdges) {
+
+        Color[] loopColors = { Color.BLACK, Color.RED, Color.ORANGE, Color.GREEN };
+        Color edgeColor = loopIndex < loopColors.length ? loopColors[loopIndex] : Color.BLACK;
+        final Color hoverColor = HOVER_COLORS[loopIndex % HOVER_COLORS.length];
+
+        double loopSize = 40 + loopIndex * 15;
+
+        double startX = vertex.getX();
+        double startY = vertex.getY() - radius;
+
+        Path loop = new Path();
+
+        MoveTo moveTo = new MoveTo(startX, startY);
+
+        VLineTo upLine = new VLineTo(startY - loopSize);
+
+        HLineTo leftLine = new HLineTo(startX - loopSize);
+
+        VLineTo downLine = new VLineTo(startY);
+
+        HLineTo rightLine = new HLineTo(startX - radius);
+
+        loop.getElements().addAll(moveTo, upLine, leftLine, downLine, rightLine);
+
+        loop.setFill(Color.TRANSPARENT);
+        if (isSumEdge) {
+            loop.getStrokeDashArray().addAll(5d, 5d);
+            loop.setStroke(Color.BLUE);
+        } else {
+            loop.setStroke(edgeColor);
+        }
+        loop.setStrokeWidth(2);
+
+        final Path finalLoop = loop;
+        loop.setOnMouseEntered(e -> {
+            finalLoop.setStroke(hoverColor);
+            finalLoop.setStrokeWidth(3);
+        });
+
+        loop.setOnMouseExited(e -> {
+            finalLoop.setStroke(isSumEdge ? Color.BLUE : edgeColor);
+            finalLoop.setStrokeWidth(2);
+        });
+
+        canvas.getChildren().add(loop);
+
+        if (isDirected && !isSumEdge) {
+            double arrowLength = 10;
+            double arrowX = startX - radius;
+            double arrowY = startY;
+
+            double angle = 0;
+
+            Polygon arrowHead = new Polygon();
+            arrowHead.getPoints().addAll(
+                    arrowX, arrowY,
+                    arrowX + arrowLength * Math.cos(angle - Math.PI / 6),
+                    arrowY + arrowLength * Math.sin(angle - Math.PI / 6),
+                    arrowX + arrowLength * Math.cos(angle + Math.PI / 6),
+                    arrowY + arrowLength * Math.sin(angle + Math.PI / 6));
+            arrowHead.setFill(edgeColor);
+
+            arrowHead.setOnMouseEntered(e -> {
+                arrowHead.setFill(hoverColor);
+                finalLoop.setStroke(hoverColor);
+                finalLoop.setStrokeWidth(3);
+            });
+
+            arrowHead.setOnMouseExited(e -> {
+                arrowHead.setFill(edgeColor);
+                finalLoop.setStroke(edgeColor);
+                finalLoop.setStrokeWidth(2);
+            });
+
+            canvas.getChildren().add(arrowHead);
+        }
+
+        if (loopIndex == 0 && allLabels != null && !allLabels.isEmpty()) {
+            List<String> nonEmptyLabels = new ArrayList<>();
+            for (String lbl : allLabels) {
+                if (lbl != null && !lbl.trim().isEmpty()) {
+                    nonEmptyLabels.add(lbl);
+                }
+            }
+
+            if (!nonEmptyLabels.isEmpty()) {
+
+                double labelX = vertex.getX() - loopSize / 2 - 20;
+                double labelY = vertex.getY() - loopSize / 2 - radius - 5;
+
+                List<Color> textColors = Arrays.asList(loopColors);
+
+                Line dummyEdge = new Line();
+                dummyEdge.setStroke(edgeColor);
+                allEdges.add(dummyEdge);
+
+                drawMultiColorText(canvas, labelX, labelY, nonEmptyLabels, textColors, isSumEdge, connections,
+                        allEdges);
+            }
+        }
+
+        connections.add(new EdgeLabelConnection(null, null, loopIndex));
+    }
+
     private void centerGraphView(ScrollPane scrollPane) {
         if (scrollPane.getContent() != null) {
             javafx.application.Platform.runLater(() -> {
@@ -1755,7 +1863,6 @@ public class OperationsController {
                 final Color normalColor = EDGE_COLORS[edgeIndex % EDGE_COLORS.length];
                 final Color hoverColor = HOVER_COLORS[edgeIndex % HOVER_COLORS.length];
 
-                // Configurar hover para la etiqueta
                 labelPart.setOnMouseEntered(e -> {
                     labelPart.setFill(hoverColor);
                     if (edge != null) {
@@ -1772,7 +1879,6 @@ public class OperationsController {
                     }
                 });
 
-                // Configurar hover para la arista
                 if (edge != null) {
                     edge.setOnMouseEntered(e -> {
                         edge.setStroke(hoverColor);
@@ -1814,11 +1920,10 @@ public class OperationsController {
             textPart.setFill(textColor);
             textPart.setStyle("-fx-font-weight: bold; -fx-font-size: 11;");
 
-            // Configurar efecto hover para cada parte individual de la etiqueta
             final int edgeIndex = i;
             textPart.setOnMouseEntered(e -> {
                 textPart.setFill(hoverColor);
-                // Encontrar y resaltar la arista correspondiente
+
                 if (associatedEdges != null && edgeIndex < associatedEdges.size()) {
                     Line correspondingEdge = associatedEdges.get(edgeIndex);
                     if (correspondingEdge != null) {
@@ -1830,7 +1935,7 @@ public class OperationsController {
 
             textPart.setOnMouseExited(e -> {
                 textPart.setFill(textColor);
-                // Restaurar la arista correspondiente
+
                 if (associatedEdges != null && edgeIndex < associatedEdges.size()) {
                     Line correspondingEdge = associatedEdges.get(edgeIndex);
                     if (correspondingEdge != null) {
@@ -1874,14 +1979,14 @@ public class OperationsController {
         double unitX = dx / distance;
         double unitY = dy / distance;
 
-        double adjustedTargetX = target.getX() - unitX * radius;
-        double adjustedTargetY = target.getY() - unitY * radius;
-        double adjustedSourceX = source.getX() + unitX * radius;
-        double adjustedSourceY = source.getY() + unitY * radius;
+        double adjustedTargetX = target.getX() - unitX * (radius + 2);
+        double adjustedTargetY = target.getY() - unitY * (radius + 2);
+        double adjustedSourceX = source.getX() + unitX * (radius + 2);
+        double adjustedSourceY = source.getY() + unitY * (radius + 2);
 
         double offset = 0;
         if (totalEdges > 1) {
-            double maxOffset = 25.0;
+            double maxOffset = 30.0;
             offset = (parallelIndex - (totalEdges - 1) / 2.0) * (maxOffset / Math.max(1, totalEdges - 1));
         }
 
@@ -1902,13 +2007,12 @@ public class OperationsController {
         }
 
         line.setStrokeWidth(2);
-        
-        // Configurar efecto hover para la arista
+
         line.setOnMouseEntered(e -> {
             line.setStroke(hoverColor);
             line.setStrokeWidth(3);
         });
-        
+
         line.setOnMouseExited(e -> {
             line.setStroke(isSumEdge ? Color.BLUE : edgeColor);
             line.setStrokeWidth(2);
@@ -1938,14 +2042,13 @@ public class OperationsController {
                     x2, y2,
                     x3, y3);
             arrowHead.setFill(edgeColor);
-            
-            // Efecto hover para la flecha
+
             arrowHead.setOnMouseEntered(e -> {
                 arrowHead.setFill(hoverColor);
                 line.setStroke(hoverColor);
                 line.setStrokeWidth(3);
             });
-            
+
             arrowHead.setOnMouseExited(e -> {
                 arrowHead.setFill(edgeColor);
                 line.setStroke(edgeColor);
@@ -1968,8 +2071,8 @@ public class OperationsController {
                 double midX = (adjustedSourceX + adjustedTargetX) / 2 + offsetX;
                 double midY = (adjustedSourceY + adjustedTargetY) / 2 + offsetY;
 
-                double textOffsetX = -unitY * (20 + Math.abs(offset));
-                double textOffsetY = unitX * (20 + Math.abs(offset));
+                double textOffsetX = -unitY * (25 + Math.abs(offset));
+                double textOffsetY = unitX * (25 + Math.abs(offset));
 
                 List<Color> textColors = Arrays.asList(EDGE_COLORS);
 
@@ -1981,122 +2084,14 @@ public class OperationsController {
         connections.add(new EdgeLabelConnection(line, null, parallelIndex));
     }
 
-    private void drawLoop(Pane canvas, Point2D vertex, double radius, boolean isDirected,
-            boolean isSumEdge, String label, int loopIndex, int totalLoops, List<String> allLabels,
-            List<EdgeLabelConnection> connections, List<Line> allEdges) {
-
-        // Definir colores para bucles (máximo 4 en operaciones)
-        Color[] loopColors = { Color.BLACK, Color.RED, Color.ORANGE, Color.GREEN };
-        Color edgeColor = loopIndex < loopColors.length ? loopColors[loopIndex] : Color.BLACK;
-        final Color hoverColor = HOVER_COLORS[loopIndex % HOVER_COLORS.length];
-
-        // Configuración del bucle como cuarto de círculo
-        double loopRadius = 30 + loopIndex * 15; // Radio más grande para mejor visualización
-        
-        // Crear un Path para el cuarto de círculo
-        Path loop = new Path();
-        
-        // Punto de inicio: parte superior del vértice
-        double startX = vertex.getX();
-        double startY = vertex.getY() - radius;
-        MoveTo moveTo = new MoveTo(startX, startY);
-        
-        // Crear un arco de 90 grados (cuarto de círculo) desde la parte superior hasta la izquierda
-        ArcTo arcTo = new ArcTo();
-        arcTo.setX(vertex.getX() - radius); // Punto final: parte izquierda del vértice
-        arcTo.setY(vertex.getY());
-        arcTo.setRadiusX(loopRadius);
-        arcTo.setRadiusY(loopRadius);
-        arcTo.setSweepFlag(false); // Sentido horario
-        arcTo.setLargeArcFlag(false); // Arco pequeño (90 grados)
-        
-        loop.getElements().addAll(moveTo, arcTo);
-        
-        loop.setFill(Color.TRANSPARENT);
-        if (isSumEdge) {
-            loop.getStrokeDashArray().addAll(5d, 5d);
-            loop.setStroke(Color.BLUE);
-        } else {
-            loop.setStroke(edgeColor);
-        }
-        loop.setStrokeWidth(2);
-        
-        // Configurar efecto hover para el bucle
-        final Path finalLoop = loop;
-        loop.setOnMouseEntered(e -> {
-            finalLoop.setStroke(hoverColor);
-            finalLoop.setStrokeWidth(3);
-        });
-        
-        loop.setOnMouseExited(e -> {
-            finalLoop.setStroke(isSumEdge ? Color.BLUE : edgeColor);
-            finalLoop.setStrokeWidth(2);
-        });
-
-        canvas.getChildren().add(loop);
-
-        // Flecha para bucles dirigidos (en el punto final del cuarto de círculo)
-        if (isDirected && !isSumEdge) {
-            double arrowX = vertex.getX() - radius;
-            double arrowY = vertex.getY();
-            
-            // Calcular ángulo para la flecha (tangente al cuarto de círculo en el punto final)
-            double angle = Math.PI; // Apuntando hacia la izquierda
-            
-            Polygon arrowHead = new Polygon();
-            arrowHead.getPoints().addAll(
-                    arrowX, arrowY,
-                    arrowX + 8 * Math.cos(angle - Math.PI/6), arrowY + 8 * Math.sin(angle - Math.PI/6),
-                    arrowX + 8 * Math.cos(angle + Math.PI/6), arrowY + 8 * Math.sin(angle + Math.PI/6));
-            arrowHead.setFill(edgeColor);
-            
-            // Efecto hover para la flecha
-            arrowHead.setOnMouseEntered(e -> {
-                arrowHead.setFill(hoverColor);
-                finalLoop.setStroke(hoverColor);
-                finalLoop.setStrokeWidth(3);
-            });
-            
-            arrowHead.setOnMouseExited(e -> {
-                arrowHead.setFill(edgeColor);
-                finalLoop.setStroke(edgeColor);
-                finalLoop.setStrokeWidth(2);
-            });
-
-            canvas.getChildren().add(arrowHead);
-        }
-
-        // Etiquetas para bucles
-        if (loopIndex == 0 && allLabels != null && !allLabels.isEmpty()) {
-            List<String> nonEmptyLabels = new ArrayList<>();
-            for (String lbl : allLabels) {
-                if (lbl != null && !lbl.trim().isEmpty()) {
-                    nonEmptyLabels.add(lbl);
-                }
-            }
-
-            if (!nonEmptyLabels.isEmpty()) {
-                double labelX = vertex.getX() - loopRadius - 20;
-                double labelY = vertex.getY() - loopRadius / 2;
-
-                List<Color> textColors = Arrays.asList(loopColors);
-
-                // Crear una línea ficticia para la conexión de hover con las etiquetas
-                Line dummyEdge = new Line();
-                dummyEdge.setStroke(edgeColor);
-                allEdges.add(dummyEdge);
-                
-                drawMultiColorText(canvas, labelX, labelY, nonEmptyLabels, textColors, isSumEdge, connections, allEdges);
-            }
-        }
-    }
-
     private void drawVertex(Pane canvas, double x, double y, double radius, String label) {
+
         Circle circle = new Circle(x, y, radius);
         circle.setFill(Color.WHITE);
         circle.setStroke(Color.BLACK);
         circle.setStrokeWidth(2);
-        canvas.getChildren().add(circle);
+
+        circle.setViewOrder(1);
 
         Text text = new Text(label);
         text.setStyle("-fx-font-weight: bold;");
@@ -2107,7 +2102,9 @@ public class OperationsController {
         text.setX(x - textWidth / 2);
         text.setY(y + textHeight / 4);
 
-        canvas.getChildren().add(text);
+        text.setViewOrder(0);
+
+        canvas.getChildren().addAll(circle, text);
     }
 
     private Map<String, List<Edge>> groupParallelEdges(Graph graph) {
