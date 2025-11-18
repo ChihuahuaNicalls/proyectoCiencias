@@ -9,13 +9,17 @@ import javafx.scene.text.Text;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Polygon;
 import javafx.geometry.Point2D;
-import javafx.scene.shape.StrokeType;
-import javafx.scene.shape.StrokeLineCap;
-import javafx.scene.shape.StrokeLineJoin;
 import java.util.*;
 import java.io.*;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
+import javafx.scene.shape.Path;
+import javafx.scene.shape.MoveTo;
+import javafx.scene.shape.QuadCurveTo;
+import javafx.scene.shape.ArcTo;
+import javafx.scene.shape.HLineTo;
+import javafx.scene.shape.VLineTo;
+import javafx.scene.input.ScrollEvent;
 
 public class OperationsController {
 
@@ -62,7 +66,9 @@ public class OperationsController {
     @FXML
     private Button edgeDeleteButton;
     @FXML
-    private TextField edgeWeight;
+    private Text textWeightNotation;
+    @FXML
+    private TextField edgeWeightNotation;
     @FXML
     private Button undoButton;
     @FXML
@@ -75,6 +81,10 @@ public class OperationsController {
     private Button saveButton;
     @FXML
     private Button loadButton;
+    @FXML
+    private CheckBox edgePonderation;
+    @FXML
+    private Button restartOpButton;
 
     private Graph graph1Data;
     private Graph graph2Data;
@@ -93,36 +103,79 @@ public class OperationsController {
     private static final double CANVAS_WIDTH = 800;
     private static final double CANVAS_HEIGHT = 600;
 
+    private double currentScaleGraph1 = 1.0;
+    private double currentScaleGraph2 = 1.0;
+    private double currentScaleResult = 1.0;
+    private final double SCALE_DELTA = 0.1;
+    private final double MAX_SCALE = 3.0;
+    private final double MIN_SCALE = 0.5;
+
+    private final Color[] EDGE_COLORS = {
+            Color.BLACK, Color.RED, Color.ORANGE, Color.GREEN, Color.PURPLE, Color.BROWN
+    };
+
+    private final Color[] HOVER_COLORS = {
+            Color.GRAY, Color.DARKRED, Color.DARKORANGE, Color.DARKGREEN, Color.DARKMAGENTA, Color.SADDLEBROWN
+    };
+
+    private class EdgeLabelConnection {
+        Line edge;
+        Text labelPart;
+        int edgeIndex;
+
+        EdgeLabelConnection(Line edge, Text labelPart, int edgeIndex) {
+            this.edge = edge;
+            this.labelPart = labelPart;
+            this.edgeIndex = edgeIndex;
+        }
+    }
+
     private class GraphState implements Serializable {
+        private static final long serialVersionUID = 1L;
         Set<String> vertices;
         List<Edge> edges;
         boolean isDirected;
+        boolean isWeighted;
 
-        public GraphState(Set<String> vertices, List<Edge> edges, boolean isDirected) {
+        public GraphState() {
+            this.vertices = new HashSet<>();
+            this.edges = new ArrayList<>();
+        }
+
+        public GraphState(Set<String> vertices, List<Edge> edges, boolean isDirected, boolean isWeighted) {
             this.vertices = new HashSet<>(vertices);
             this.edges = new ArrayList<>(edges);
             this.isDirected = isDirected;
+            this.isWeighted = isWeighted;
         }
     }
 
     private class Edge implements Serializable {
+        private static final long serialVersionUID = 1L;
         String source;
         String destination;
-        double weight;
+        String label;
         boolean isSumEdge;
+        boolean isLoop;
 
-        public Edge(String source, String destination, double weight) {
-            this.source = source;
-            this.destination = destination;
-            this.weight = weight;
-            this.isSumEdge = false;
+        public Edge() {
+            this("", "", "");
         }
 
-        public Edge(String source, String destination, double weight, boolean isSumEdge) {
+        public Edge(String source, String destination, String label) {
             this.source = source;
             this.destination = destination;
-            this.weight = weight;
+            this.label = label;
+            this.isSumEdge = false;
+            this.isLoop = source.equals(destination);
+        }
+
+        public Edge(String source, String destination, String label, boolean isSumEdge) {
+            this.source = source;
+            this.destination = destination;
+            this.label = label;
             this.isSumEdge = isSumEdge;
+            this.isLoop = source.equals(destination);
         }
 
         @Override
@@ -133,12 +186,12 @@ public class OperationsController {
                 return false;
             Edge edge = (Edge) obj;
             return source.equals(edge.source) && destination.equals(edge.destination) &&
-                    weight == edge.weight && isSumEdge == edge.isSumEdge;
+                    label.equals(edge.label) && isSumEdge == edge.isSumEdge;
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(source, destination, weight, isSumEdge);
+            return Objects.hash(source, destination, label, isSumEdge);
         }
     }
 
@@ -146,34 +199,38 @@ public class OperationsController {
         private Set<String> vertices;
         private List<Edge> edges;
         private boolean isDirected;
+        private boolean isWeighted;
         private boolean hasEdges;
 
         public Graph() {
             this.vertices = new HashSet<>();
             this.edges = new ArrayList<>();
             this.isDirected = false;
+            this.isWeighted = true;
             this.hasEdges = false;
         }
 
-        public Graph(Set<String> vertices, List<Edge> edges, boolean isDirected) {
+        public Graph(Set<String> vertices, List<Edge> edges, boolean isDirected, boolean isWeighted) {
             this.vertices = new HashSet<>(vertices);
             this.edges = new ArrayList<>(edges);
             this.isDirected = isDirected;
+            this.isWeighted = isWeighted;
             this.hasEdges = !edges.isEmpty();
         }
 
         public Graph copy() {
-            return new Graph(this.vertices, this.edges, this.isDirected);
+            return new Graph(this.vertices, this.edges, this.isDirected, this.isWeighted);
         }
 
         public GraphState getState() {
-            return new GraphState(vertices, edges, isDirected);
+            return new GraphState(vertices, edges, isDirected, isWeighted);
         }
 
         public void setState(GraphState state) {
             this.vertices = new HashSet<>(state.vertices);
             this.edges = new ArrayList<>(state.edges);
             this.isDirected = state.isDirected;
+            this.isWeighted = state.isWeighted;
             this.hasEdges = !state.edges.isEmpty();
         }
 
@@ -186,50 +243,74 @@ public class OperationsController {
             edges.removeIf(edge -> edge.source.equals(vertex) || edge.destination.equals(vertex));
         }
 
-        public void addEdge(String source, String destination, double weight) {
-            addEdge(source, destination, weight, false);
+        public void addEdge(String source, String destination, String label) {
+            addEdge(source, destination, label, false);
         }
 
-        public void addEdge(String source, String destination, double weight, boolean isSumEdge) {
+        public void addEdge(String source, String destination, String label, boolean isSumEdge) {
+            // Validar que no exista una arista con la misma notación en ningún lugar del grafo
+            for (Edge existingEdge : edges) {
+                if (existingEdge.label.equals(label)) {
+                    throw new IllegalStateException("Ya existe una arista con la notación '" + label + 
+                        "' entre " + existingEdge.source + " y " + existingEdge.destination);
+                }
+            }
+
+            List<Edge> edgesBetween = getEdgesBetween(source, destination);
+            boolean isOperation = isSumEdge || (currentOperation != null && !currentOperation.isEmpty());
+            int maxEdges = isOperation ? 6 : 3;
+            int maxLoops = isOperation ? 4 : 2;
+
+            if (source.equals(destination)) {
+                if (edgesBetween.size() >= maxLoops) {
+                    throw new IllegalStateException(
+                            "No se pueden tener más de " + maxLoops + " bucles en el vértice " + source);
+                }
+            } else {
+                if (edgesBetween.size() >= maxEdges && !isOperation) {
+                    throw new IllegalStateException(
+                            "No se pueden tener más de " + maxEdges + " aristas entre " + source + " y " + destination);
+                }
+            }
 
             if (hasEdges) {
-
-                Edge newEdge = new Edge(source, destination, weight, isSumEdge);
                 if (isDirected != edgeDirection.isSelected()) {
                     throw new IllegalStateException(
                             "No se pueden mezclar aristas dirigidas y no dirigidas en el mismo grafo");
                 }
+                if (isWeighted != edgePonderation.isSelected()) {
+                    throw new IllegalStateException(
+                            "No se pueden mezclar aristas ponderadas y no ponderadas en el mismo grafo");
+                }
             } else {
-
                 isDirected = edgeDirection.isSelected();
+                isWeighted = edgePonderation.isSelected();
                 hasEdges = true;
             }
 
-            edges.add(new Edge(source, destination, weight, isSumEdge));
+            edges.add(new Edge(source, destination, label, isSumEdge));
         }
 
         public void removeEdge(String source, String destination) {
-            removeEdge(source, destination, 1.0, false);
+            removeEdge(source, destination, "1", false);
         }
 
-        public void removeEdge(String source, String destination, double weight, boolean isSumEdge) {
-
+        public void removeEdge(String source, String destination, String label, boolean isSumEdge) {
             if (!isDirected) {
                 for (Iterator<Edge> it = edges.iterator(); it.hasNext();) {
                     Edge edge = it.next();
                     if ((edge.source.equals(source) && edge.destination.equals(destination) ||
                             edge.source.equals(destination) && edge.destination.equals(source)) &&
-                            edge.weight == weight && edge.isSumEdge == isSumEdge) {
+                            edge.label.equals(label) && edge.isSumEdge == isSumEdge) {
                         it.remove();
                         break;
                     }
                 }
             } else {
-
                 for (Iterator<Edge> it = edges.iterator(); it.hasNext();) {
                     Edge edge = it.next();
                     if (edge.source.equals(source) && edge.destination.equals(destination) &&
-                            edge.weight == weight && edge.isSumEdge == isSumEdge) {
+                            edge.label.equals(label) && edge.isSumEdge == isSumEdge) {
                         it.remove();
                         break;
                     }
@@ -252,6 +333,23 @@ public class OperationsController {
                 return edges.stream()
                         .anyMatch(edge -> edge.source.equals(source) && edge.destination.equals(destination));
             }
+        }
+
+        public boolean hasEdgeWithLabel(String source, String destination, String label) {
+            if (!isDirected) {
+                return edges.stream()
+                        .anyMatch(edge -> ((edge.source.equals(source) && edge.destination.equals(destination)) ||
+                                (edge.source.equals(destination) && edge.destination.equals(source))) &&
+                                edge.label.equals(label));
+            } else {
+                return edges.stream()
+                        .anyMatch(edge -> edge.source.equals(source) && edge.destination.equals(destination) &&
+                                edge.label.equals(label));
+            }
+        }
+
+        public boolean hasLoop(String vertex) {
+            return edges.stream().anyMatch(edge -> edge.source.equals(vertex) && edge.destination.equals(vertex));
         }
 
         public List<Edge> getEdgesBetween(String source, String destination) {
@@ -283,11 +381,22 @@ public class OperationsController {
             }
             return adjacent;
         }
+
+        public boolean isEmpty() {
+            return vertices.isEmpty();
+        }
+
+        public boolean isWeighted() {
+            return isWeighted;
+        }
+
+        public boolean isDirected() {
+            return isDirected;
+        }
     }
 
     @FXML
     private void initialize() {
-
         graph1Data = new Graph();
         graph2Data = new Graph();
         graphResultData = new Graph();
@@ -298,15 +407,211 @@ public class OperationsController {
         graph2RedoStack = new Stack<>();
 
         setInitialState();
-
         setupListeners();
 
-        SpinnerValueFactory<Integer> valueFactory = new SpinnerValueFactory.IntegerSpinnerValueFactory(1, 100, 1);
+        SpinnerValueFactory<Integer> valueFactory = new SpinnerValueFactory.IntegerSpinnerValueFactory(1,
+                Integer.MAX_VALUE, 1);
         vertNum.setValueFactory(valueFactory);
+
+        vertNum.setEditable(true);
+
+        TextFormatter<Integer> textFormatter = new TextFormatter<>(change -> {
+            String newText = change.getControlNewText();
+            if (newText.isEmpty()) {
+
+                return change;
+            }
+            try {
+                int value = Integer.parseInt(newText);
+                if (value >= 1) {
+                    return change;
+                }
+            } catch (NumberFormatException e) {
+
+            }
+            return null;
+        });
+
+        vertNum.getEditor().setTextFormatter(textFormatter);
+
+        vertNum.getEditor().textProperty().addListener((obs, oldValue, newValue) -> {
+            if (newValue == null || newValue.isEmpty()) {
+
+                javafx.application.Platform.runLater(() -> {
+                    if (vertNum.getEditor().getText().isEmpty()) {
+                        vertNum.getValueFactory().setValue(1);
+                        vertNum.getEditor().setText("1");
+                    }
+                });
+            }
+        });
+
+        vertNum.getEditor().focusedProperty().addListener((obs, oldVal, newVal) -> {
+            if (!newVal) {
+                String text = vertNum.getEditor().getText();
+                if (text == null || text.isEmpty()) {
+                    vertNum.getValueFactory().setValue(1);
+                    vertNum.getEditor().setText("1");
+                } else {
+                    try {
+                        int value = Integer.parseInt(text);
+                        if (value < 1) {
+                            vertNum.getValueFactory().setValue(1);
+                            vertNum.getEditor().setText("1");
+                        }
+                    } catch (NumberFormatException e) {
+                        vertNum.getValueFactory().setValue(1);
+                        vertNum.getEditor().setText("1");
+                    }
+                }
+            }
+        });
+
+        vertNum.valueProperty().addListener((obs, oldValue, newValue) -> {
+            if (newValue == null || newValue < 1) {
+                vertNum.getValueFactory().setValue(1);
+            }
+        });
+
+        setupSpinnerArrows();
+
+        edgePonderation.selectedProperty().addListener((observable, oldValue, newValue) -> {
+            updateWeightNotation();
+        });
+
+        updateWeightNotation();
+
+        setupZoomAndScroll(graph1, "graph1");
+        setupZoomAndScroll(graph2, "graph2");
+        setupZoomAndScroll(graphResult, "result");
+
+        updateOperationState();
+    }
+
+    private void setupSpinnerArrows() {
+
+        vertNum.increment();
+
+        vertNum.getEditor().setOnKeyPressed(event -> {
+            switch (event.getCode()) {
+                case UP:
+                    vertNum.increment();
+                    event.consume();
+                    break;
+                case DOWN:
+                    vertNum.decrement();
+                    event.consume();
+                    break;
+            }
+        });
+
+        vertNum.setStyle("-fx-background-color: white; -fx-border-color: #cccccc;");
+    }
+
+    private void setupZoomAndScroll(ScrollPane scrollPane, String graphType) {
+        scrollPane.addEventFilter(ScrollEvent.SCROLL, event -> {
+            if (event.isControlDown()) {
+                event.consume();
+
+                double zoomFactor = (event.getDeltaY() > 0) ? 1 + SCALE_DELTA : 1 - SCALE_DELTA;
+                double newScale = getCurrentScale(graphType) * zoomFactor;
+                newScale = Math.max(MIN_SCALE, Math.min(MAX_SCALE, newScale));
+
+                if (scrollPane.getContent() != null) {
+                    double hValue = scrollPane.getHvalue();
+                    double vValue = scrollPane.getVvalue();
+
+                    scrollPane.getContent().setScaleX(newScale);
+                    scrollPane.getContent().setScaleY(newScale);
+                    setCurrentScale(graphType, newScale);
+
+                    scrollPane.setHvalue(hValue);
+                    scrollPane.setVvalue(vValue);
+                }
+            }
+        });
+
+        scrollPane.contentProperty().addListener((obs, oldContent, newContent) -> {
+            if (newContent != null) {
+                double scale = getCurrentScale(graphType);
+                newContent.setScaleX(scale);
+                newContent.setScaleY(scale);
+            }
+        });
+
+        scrollPane.setFitToWidth(false);
+        scrollPane.setFitToHeight(false);
+        scrollPane.setPannable(true);
+
+        setupKeyboardPan(scrollPane);
+    }
+
+    private void setupKeyboardPan(ScrollPane scrollPane) {
+        scrollPane.setOnKeyPressed(event -> {
+            if (event.isControlDown()) {
+                double delta = 50;
+                switch (event.getCode()) {
+                    case LEFT:
+                        scrollPane.setHvalue(scrollPane.getHvalue() - delta / scrollPane.getWidth());
+                        break;
+                    case RIGHT:
+                        scrollPane.setHvalue(scrollPane.getHvalue() + delta / scrollPane.getWidth());
+                        break;
+                    case UP:
+                        scrollPane.setVvalue(scrollPane.getVvalue() - delta / scrollPane.getHeight());
+                        break;
+                    case DOWN:
+                        scrollPane.setVvalue(scrollPane.getVvalue() + delta / scrollPane.getHeight());
+                        break;
+                    default:
+                        break;
+                }
+                event.consume();
+            }
+        });
+
+        scrollPane.setFocusTraversable(true);
+        scrollPane.setOnMouseClicked(event -> scrollPane.requestFocus());
+    }
+
+    private double getCurrentScale(String graphType) {
+        switch (graphType) {
+            case "graph1":
+                return currentScaleGraph1;
+            case "graph2":
+                return currentScaleGraph2;
+            case "result":
+                return currentScaleResult;
+            default:
+                return 1.0;
+        }
+    }
+
+    private void setCurrentScale(String graphType, double scale) {
+        switch (graphType) {
+            case "graph1":
+                currentScaleGraph1 = scale;
+                break;
+            case "graph2":
+                currentScaleGraph2 = scale;
+                break;
+            case "result":
+                currentScaleResult = scale;
+                break;
+        }
+    }
+
+    private void updateWeightNotation() {
+        if (edgePonderation.isSelected()) {
+            textWeightNotation.setText("Peso:");
+            edgeWeightNotation.setPromptText("Ej: 1");
+        } else {
+            textWeightNotation.setText("Notacion:");
+            edgeWeightNotation.setPromptText("Ej: a");
+        }
     }
 
     private void setInitialState() {
-
         setModificationControlsEnabled(false);
         setOperationControlsEnabled(false);
 
@@ -334,7 +639,8 @@ public class OperationsController {
         edgeDirection.setDisable(!enabled);
         edgeAddButton.setDisable(!enabled);
         edgeDeleteButton.setDisable(!enabled);
-        edgeWeight.setDisable(!enabled);
+        edgeWeightNotation.setDisable(!enabled);
+        edgePonderation.setDisable(!enabled);
         undoButton.setDisable(!enabled);
         redoButton.setDisable(!enabled);
         restartButton.setDisable(!enabled);
@@ -344,7 +650,18 @@ public class OperationsController {
     private void setOperationControlsEnabled(boolean enabled) {
         graphOperate.setDisable(!enabled);
         operations.setDisable(!enabled);
-        operateButton.setDisable(!enabled);
+        operateButton.setDisable(!enabled || currentOperation == null);
+        restartOpButton.setDisable(!enabled);
+
+        if (!enabled) {
+            graphOperate.setText("Elegir opcion");
+            operations.setText("Elegir operacion");
+            currentOperatingGraph = null;
+            currentOperation = null;
+            fusionContractionText.setVisible(false);
+            fusionContractionItem1.setVisible(false);
+            fusionContractionItem2.setVisible(false);
+        }
     }
 
     private void setupGraphModifyMenu() {
@@ -364,7 +681,6 @@ public class OperationsController {
             item.setOnAction(e -> {
                 currentOperatingGraph = item.getText();
                 graphOperate.setText(currentOperatingGraph);
-                setOperationControlsEnabled(true);
                 updateOperationsMenu();
                 operationText.setText("Operando sobre: " + currentOperatingGraph);
 
@@ -373,6 +689,8 @@ public class OperationsController {
                 fusionContractionItem2.setVisible(false);
                 fusionContractionItem1.clear();
                 fusionContractionItem2.clear();
+
+                updateOperationState();
             });
         }
     }
@@ -433,6 +751,7 @@ public class OperationsController {
         }
 
         operationText.setText("Operación seleccionada: " + operation);
+        updateOperationState();
     }
 
     @FXML
@@ -490,7 +809,7 @@ public class OperationsController {
     private void edgeAdd() {
         String source = edgeOrg.getText().trim().toUpperCase();
         String destination = edgeDest.getText().trim().toUpperCase();
-        String weightText = edgeWeight.getText().trim();
+        String weightText = edgeWeightNotation.getText().trim();
         Graph currentGraph = getCurrentModifyingGraph();
 
         if (currentGraph == null) {
@@ -498,9 +817,13 @@ public class OperationsController {
             return;
         }
 
-        if (source.isEmpty() || destination.isEmpty()) {
-            modificationText.setText("Error: Ingrese origen y destino");
+        if (source.isEmpty()) {
+            modificationText.setText("Error: Ingrese al menos el vértice origen");
             return;
+        }
+
+        if (destination.isEmpty()) {
+            destination = source;
         }
 
         if (!currentGraph.hasVertex(source) || !currentGraph.hasVertex(destination)) {
@@ -509,29 +832,54 @@ public class OperationsController {
         }
 
         if (source.equals(destination)) {
-            modificationText.setText("Error: No se permiten bucles (mismo origen y destino)");
-            return;
+            List<Edge> loops = currentGraph.getEdgesBetween(source, source);
+            boolean isOperation = currentOperation != null && !currentOperation.isEmpty();
+            int maxLoops = isOperation ? 4 : 2;
+            if (loops.size() >= maxLoops) {
+                modificationText.setText("Error: No se pueden tener más de " + maxLoops + " bucles en el vértice " + source);
+                return;
+            }
         }
 
-        double weight = 1.0;
-        if (!weightText.isEmpty()) {
-            try {
-                weight = Double.parseDouble(weightText);
-                if (weight <= 0) {
-                    modificationText.setText("Error: El peso debe ser positivo");
+        String label;
+        if (edgePonderation.isSelected()) {
+            if (weightText.isEmpty()) {
+                label = "1";
+            } else {
+                try {
+                    double weight = Double.parseDouble(weightText);
+                    if (weight <= 0) {
+                        modificationText.setText("Error: El peso debe ser positivo");
+                        return;
+                    }
+                    label = weightText;
+                } catch (NumberFormatException e) {
+                    modificationText.setText("Error: Peso debe ser un número");
                     return;
                 }
-            } catch (NumberFormatException e) {
-                modificationText.setText("Error: Peso debe ser un número");
-                return;
+            }
+        } else {
+            if (weightText.isEmpty()) {
+                label = "";
+            } else {
+                if (weightText.length() != 1 || !Character.isLetter(weightText.charAt(0))) {
+                    modificationText.setText("Error: La notación debe ser una letra (a-z)");
+                    return;
+                }
+                label = weightText.toLowerCase();
             }
         }
 
         try {
             saveGraphState();
-            currentGraph.addEdge(source, destination, weight);
+            currentGraph.addEdge(source, destination, label);
             updateGraphDisplay();
-            modificationText.setText("Arista añadida: " + source + " → " + destination + " (peso: " + weight + ")");
+            String labelDisplay = label.isEmpty() ? "sin etiqueta" : label;
+            String edgeType = source.equals(destination) ? "Bucle en " + source : source + " → " + destination;
+            modificationText.setText("Arista añadida: " + edgeType +
+                    (edgePonderation.isSelected() ? " (peso: " + labelDisplay + ")"
+                            : " (notación: " + labelDisplay + ")"));
+            updateOperationState();
         } catch (IllegalStateException e) {
             modificationText.setText("Error: " + e.getMessage());
         }
@@ -541,7 +889,7 @@ public class OperationsController {
     private void edgeDelete() {
         String source = edgeOrg.getText().trim().toUpperCase();
         String destination = edgeDest.getText().trim().toUpperCase();
-        String weightText = edgeWeight.getText().trim();
+        String weightText = edgeWeightNotation.getText().trim();
         Graph currentGraph = getCurrentModifyingGraph();
 
         if (currentGraph == null) {
@@ -549,18 +897,33 @@ public class OperationsController {
             return;
         }
 
-        if (source.isEmpty() || destination.isEmpty()) {
-            modificationText.setText("Error: Ingrese origen y destino");
+        if (source.isEmpty()) {
+            modificationText.setText("Error: Ingrese al menos el vértice origen");
             return;
         }
 
-        double weight = 1.0;
-        if (!weightText.isEmpty()) {
-            try {
-                weight = Double.parseDouble(weightText);
-            } catch (NumberFormatException e) {
-                modificationText.setText("Error: Peso debe ser un número");
-                return;
+        if (destination.isEmpty()) {
+            destination = source;
+        }
+
+        String label;
+        if (edgePonderation.isSelected()) {
+            if (weightText.isEmpty()) {
+                label = "1";
+            } else {
+                try {
+                    Double.parseDouble(weightText);
+                    label = weightText;
+                } catch (NumberFormatException e) {
+                    modificationText.setText("Error: Peso debe ser un número");
+                    return;
+                }
+            }
+        } else {
+            if (weightText.isEmpty()) {
+                label = "";
+            } else {
+                label = weightText.toLowerCase();
             }
         }
 
@@ -570,10 +933,25 @@ public class OperationsController {
             return;
         }
 
+        boolean found = false;
+        for (Edge edge : edgesBetween) {
+            if (edge.label.equals(label)) {
+                found = true;
+                break;
+            }
+        }
+
+        if (!found) {
+            modificationText.setText("Error: No existe arista con la " +
+                    (edgePonderation.isSelected() ? "peso" : "notación") + " especificada");
+            return;
+        }
+
         saveGraphState();
-        currentGraph.removeEdge(source, destination, weight, false);
+        currentGraph.removeEdge(source, destination, label, false);
         updateGraphDisplay();
         modificationText.setText("Arista eliminada: " + source + " → " + destination);
+        updateOperationState();
     }
 
     @FXML
@@ -581,6 +959,28 @@ public class OperationsController {
         if (currentOperation == null) {
             operationText.setText("Error: Seleccione una operación");
             return;
+        }
+
+        if ("Entre los 2 grafos".equals(currentOperatingGraph)) {
+            if (graph1Data.isEmpty() || graph2Data.isEmpty()) {
+                operationText.setText("Error: Ambos grafos deben contener vértices para operar entre ellos");
+                return;
+            }
+
+            if (graph1Data.isDirected() != graph2Data.isDirected()) {
+                operationText.setText("Error: No se pueden operar grafos con diferente tipo de dirección");
+                return;
+            }
+            if (graph1Data.isWeighted() != graph2Data.isWeighted()) {
+                operationText.setText("Error: No se pueden operar grafos con diferente tipo de ponderación");
+                return;
+            }
+        } else {
+            Graph targetGraph = "Grafo 1".equals(currentOperatingGraph) ? graph1Data : graph2Data;
+            if (targetGraph.isEmpty()) {
+                operationText.setText("Error: El grafo operado está vacío");
+                return;
+            }
         }
 
         try {
@@ -658,21 +1058,57 @@ public class OperationsController {
     private Graph createLineGraph(Graph original) {
         Graph lineGraph = new Graph();
         lineGraph.isDirected = original.isDirected;
+        lineGraph.isWeighted = original.isWeighted;
 
-        Map<Edge, String> edgeToVertex = new HashMap<>();
+        Map<String, String> edgeToVertex = new HashMap<>();
+        int edgeCounter = 1;
 
         for (Edge edge : original.edges) {
+            if (!edge.isLoop) {
+                String vertexName = edge.source + edge.destination;
+                if (lineGraph.hasVertex(vertexName)) {
+                    vertexName = edge.source + edge.destination + edgeCounter;
+                }
 
-            String vertexName = edge.source + edge.destination;
-            lineGraph.addVertex(vertexName);
-            edgeToVertex.put(edge, vertexName);
+                lineGraph.addVertex(vertexName);
+                edgeToVertex.put(edge.source + "," + edge.destination, vertexName);
+                if (!original.isDirected) {
+                    edgeToVertex.put(edge.destination + "," + edge.source, vertexName);
+                }
+                edgeCounter++;
+            }
         }
 
-        for (Edge e1 : original.edges) {
-            for (Edge e2 : original.edges) {
-                if (e1 != e2 && (e1.source.equals(e2.source) || e1.source.equals(e2.destination) ||
-                        e1.destination.equals(e2.source) || e1.destination.equals(e2.destination))) {
-                    lineGraph.addEdge(edgeToVertex.get(e1), edgeToVertex.get(e2), 1.0);
+        Set<String> addedEdges = new HashSet<>();
+
+        for (Edge edge1 : original.edges) {
+            for (Edge edge2 : original.edges) {
+                if (edge1 == edge2 || edge1.isLoop || edge2.isLoop)
+                    continue;
+
+                String vertex1 = edgeToVertex.get(edge1.source + "," + edge1.destination);
+                String vertex2 = edgeToVertex.get(edge2.source + "," + edge2.destination);
+
+                if (vertex1 != null && vertex2 != null && !vertex1.equals(vertex2)) {
+                    String sharedVertex = null;
+                    if (edge1.source.equals(edge2.source))
+                        sharedVertex = edge1.source;
+                    else if (edge1.source.equals(edge2.destination))
+                        sharedVertex = edge1.source;
+                    else if (edge1.destination.equals(edge2.source))
+                        sharedVertex = edge1.destination;
+                    else if (edge1.destination.equals(edge2.destination))
+                        sharedVertex = edge1.destination;
+
+                    if (sharedVertex != null) {
+                        String edgeKey = vertex1.compareTo(vertex2) < 0 ? vertex1 + "|" + vertex2
+                                : vertex2 + "|" + vertex1;
+
+                        if (!addedEdges.contains(edgeKey)) {
+                            lineGraph.addEdge(vertex1, vertex2, sharedVertex.toLowerCase());
+                            addedEdges.add(edgeKey);
+                        }
+                    }
                 }
             }
         }
@@ -683,13 +1119,21 @@ public class OperationsController {
     private Graph createComplementGraph(Graph original) {
         Graph complement = new Graph();
         complement.isDirected = original.isDirected;
+        complement.isWeighted = original.isWeighted;
 
         complement.vertices.addAll(original.vertices);
 
         for (String v1 : original.vertices) {
             for (String v2 : original.vertices) {
-                if (!v1.equals(v2) && !original.hasEdge(v1, v2)) {
-                    complement.addEdge(v1, v2, 1.0);
+
+                if (!v1.equals(v2)) {
+                    if (!original.isDirected && v1.compareTo(v2) > 0) {
+                        continue;
+                    }
+
+                    if (!original.hasEdge(v1, v2)) {
+                        complement.addEdge(v1, v2, "");
+                    }
                 }
             }
         }
@@ -704,6 +1148,7 @@ public class OperationsController {
 
         Graph result = new Graph();
         result.isDirected = original.isDirected;
+        result.isWeighted = original.isWeighted;
         String fusedVertex = v1 + v2;
 
         for (String vertex : original.vertices) {
@@ -718,8 +1163,8 @@ public class OperationsController {
             String newDest = edge.destination.equals(v1) || edge.destination.equals(v2) ? fusedVertex
                     : edge.destination;
 
-            if (!newSource.equals(newDest) && !result.hasEdge(newSource, newDest)) {
-                result.addEdge(newSource, newDest, edge.weight);
+            if (!newSource.equals(newDest)) {
+                result.addEdge(newSource, newDest, edge.label);
             }
         }
 
@@ -727,7 +1172,6 @@ public class OperationsController {
     }
 
     private Graph contractEdge(Graph original, String v1, String v2) {
-
         boolean edgeExists = original.hasEdge(v1, v2);
         if (!edgeExists) {
             throw new IllegalArgumentException("La arista entre " + v1 + " y " + v2 + " no existe");
@@ -735,6 +1179,7 @@ public class OperationsController {
 
         Graph result = new Graph();
         result.isDirected = original.isDirected;
+        result.isWeighted = original.isWeighted;
         String contractedVertex = v1 + v2;
 
         for (String vertex : original.vertices) {
@@ -755,7 +1200,7 @@ public class OperationsController {
                     (currentSource.equals(v2) && currentDest.equals(v1));
 
             if (!isContractedEdge && !newSource.equals(newDest)) {
-                result.addEdge(newSource, newDest, edge.weight);
+                result.addEdge(newSource, newDest, edge.label);
             }
         }
 
@@ -764,16 +1209,26 @@ public class OperationsController {
 
     private Graph union(Graph g1, Graph g2) {
         Graph union = new Graph();
-        union.isDirected = g1.isDirected || g2.isDirected;
+        union.isDirected = g1.isDirected;
+        union.isWeighted = g1.isWeighted;
 
         union.vertices.addAll(g1.vertices);
         union.vertices.addAll(g2.vertices);
 
         for (Edge edge : g1.edges) {
-            union.addEdge(edge.source, edge.destination, edge.weight);
+            try {
+                union.addEdge(edge.source, edge.destination, edge.label, edge.isSumEdge);
+            } catch (IllegalStateException e) {
+
+            }
         }
+
         for (Edge edge : g2.edges) {
-            union.addEdge(edge.source, edge.destination, edge.weight);
+            try {
+                union.addEdge(edge.source, edge.destination, edge.label, edge.isSumEdge);
+            } catch (IllegalStateException e) {
+
+            }
         }
 
         return union;
@@ -781,7 +1236,8 @@ public class OperationsController {
 
     private Graph intersection(Graph g1, Graph g2) {
         Graph intersection = new Graph();
-        intersection.isDirected = g1.isDirected && g2.isDirected;
+        intersection.isDirected = g1.isDirected;
+        intersection.isWeighted = g1.isWeighted;
 
         for (String vertex : g1.vertices) {
             if (g2.vertices.contains(vertex)) {
@@ -790,10 +1246,10 @@ public class OperationsController {
         }
 
         for (Edge edge : g1.edges) {
-            if (g2.hasEdge(edge.source, edge.destination) &&
+            if (g2.hasEdgeWithLabel(edge.source, edge.destination, edge.label) &&
                     intersection.vertices.contains(edge.source) &&
                     intersection.vertices.contains(edge.destination)) {
-                intersection.addEdge(edge.source, edge.destination, edge.weight);
+                intersection.addEdge(edge.source, edge.destination, edge.label);
             }
         }
 
@@ -801,12 +1257,21 @@ public class OperationsController {
     }
 
     private Graph ringSum(Graph g1, Graph g2) {
+        Graph ringSum = new Graph();
+        ringSum.isDirected = g1.isDirected;
+        ringSum.isWeighted = g1.isWeighted;
 
-        Graph ringSum = union(g1, g2);
+        ringSum.vertices.addAll(g1.vertices);
+        ringSum.vertices.addAll(g2.vertices);
 
         for (Edge edge : g1.edges) {
-            if (g2.hasEdge(edge.source, edge.destination)) {
-                ringSum.removeEdge(edge.source, edge.destination, edge.weight, false);
+            if (!g2.hasEdgeWithLabel(edge.source, edge.destination, edge.label)) {
+                ringSum.addEdge(edge.source, edge.destination, edge.label);
+            }
+        }
+        for (Edge edge : g2.edges) {
+            if (!g1.hasEdgeWithLabel(edge.source, edge.destination, edge.label)) {
+                ringSum.addEdge(edge.source, edge.destination, edge.label);
             }
         }
 
@@ -814,23 +1279,37 @@ public class OperationsController {
     }
 
     private Graph sum(Graph g1, Graph g2) {
-        Graph sum = union(g1, g2);
+        Graph sumGraph = new Graph();
+        sumGraph.isDirected = false;
+        sumGraph.isWeighted = g1.isWeighted;
+
+        for (String v : g1.vertices) {
+            sumGraph.addVertex("G1_" + v);
+        }
+        for (String v : g2.vertices) {
+            sumGraph.addVertex("G2_" + v);
+        }
+
+        for (Edge edge : g1.edges) {
+            sumGraph.addEdge("G1_" + edge.source, "G1_" + edge.destination, edge.label);
+        }
+        for (Edge edge : g2.edges) {
+            sumGraph.addEdge("G2_" + edge.source, "G2_" + edge.destination, edge.label);
+        }
 
         for (String v1 : g1.vertices) {
             for (String v2 : g2.vertices) {
-                if (!sum.hasEdge(v1, v2)) {
-
-                    sum.addEdge(v1, v2, 1.0, true);
-                }
+                sumGraph.addEdge("G1_" + v1, "G2_" + v2, "", true);
             }
         }
 
-        return sum;
+        return sumGraph;
     }
 
     private Graph cartesianProduct(Graph g1, Graph g2) {
         Graph product = new Graph();
-        product.isDirected = g1.isDirected || g2.isDirected;
+        product.isDirected = false;
+        product.isWeighted = false;
 
         for (String v1 : g1.vertices) {
             for (String v2 : g2.vertices) {
@@ -838,14 +1317,30 @@ public class OperationsController {
             }
         }
 
+        Set<String> addedEdges = new HashSet<>();
+
         for (String v1 : g1.vertices) {
             for (String v2 : g2.vertices) {
                 for (String u1 : g1.vertices) {
                     for (String u2 : g2.vertices) {
                         if (v1.equals(u1) && g2.hasEdge(v2, u2)) {
-                            product.addEdge("(" + v1 + "," + v2 + ")", "(" + u1 + "," + u2 + ")", 1.0);
+                            String vertex1 = "(" + v1 + "," + v2 + ")";
+                            String vertex2 = "(" + u1 + "," + u2 + ")";
+                            String edgeKey = getUndirectedEdgeKey(vertex1, vertex2);
+
+                            if (!addedEdges.contains(edgeKey)) {
+                                product.addEdge(vertex1, vertex2, "");
+                                addedEdges.add(edgeKey);
+                            }
                         } else if (v2.equals(u2) && g1.hasEdge(v1, u1)) {
-                            product.addEdge("(" + v1 + "," + v2 + ")", "(" + u1 + "," + u2 + ")", 1.0);
+                            String vertex1 = "(" + v1 + "," + v2 + ")";
+                            String vertex2 = "(" + u1 + "," + u2 + ")";
+                            String edgeKey = getUndirectedEdgeKey(vertex1, vertex2);
+
+                            if (!addedEdges.contains(edgeKey)) {
+                                product.addEdge(vertex1, vertex2, "");
+                                addedEdges.add(edgeKey);
+                            }
                         }
                     }
                 }
@@ -857,7 +1352,8 @@ public class OperationsController {
 
     private Graph tensorProduct(Graph g1, Graph g2) {
         Graph product = new Graph();
-        product.isDirected = g1.isDirected || g2.isDirected;
+        product.isDirected = false;
+        product.isWeighted = false;
 
         for (String v1 : g1.vertices) {
             for (String v2 : g2.vertices) {
@@ -865,12 +1361,21 @@ public class OperationsController {
             }
         }
 
+        Set<String> addedEdges = new HashSet<>();
+
         for (String v1 : g1.vertices) {
             for (String v2 : g2.vertices) {
                 for (String u1 : g1.vertices) {
                     for (String u2 : g2.vertices) {
                         if (g1.hasEdge(v1, u1) && g2.hasEdge(v2, u2)) {
-                            product.addEdge("(" + v1 + "," + v2 + ")", "(" + u1 + "," + u2 + ")", 1.0);
+                            String vertex1 = "(" + v1 + "," + v2 + ")";
+                            String vertex2 = "(" + u1 + "," + u2 + ")";
+                            String edgeKey = getUndirectedEdgeKey(vertex1, vertex2);
+
+                            if (!addedEdges.contains(edgeKey)) {
+                                product.addEdge(vertex1, vertex2, "");
+                                addedEdges.add(edgeKey);
+                            }
                         }
                     }
                 }
@@ -882,7 +1387,8 @@ public class OperationsController {
 
     private Graph composition(Graph g1, Graph g2) {
         Graph comp = new Graph();
-        comp.isDirected = g1.isDirected || g2.isDirected;
+        comp.isDirected = false;
+        comp.isWeighted = false;
 
         for (String v1 : g1.vertices) {
             for (String v2 : g2.vertices) {
@@ -890,12 +1396,21 @@ public class OperationsController {
             }
         }
 
+        Set<String> addedEdges = new HashSet<>();
+
         for (String v1 : g1.vertices) {
             for (String v2 : g2.vertices) {
                 for (String u1 : g1.vertices) {
                     for (String u2 : g2.vertices) {
                         if (g1.hasEdge(v1, u1) || (v1.equals(u1) && g2.hasEdge(v2, u2))) {
-                            comp.addEdge("(" + v1 + "," + v2 + ")", "(" + u1 + "," + u2 + ")", 1.0);
+                            String vertex1 = "(" + v1 + "," + v2 + ")";
+                            String vertex2 = "(" + u1 + "," + u2 + ")";
+                            String edgeKey = getUndirectedEdgeKey(vertex1, vertex2);
+
+                            if (!addedEdges.contains(edgeKey)) {
+                                comp.addEdge(vertex1, vertex2, "");
+                                addedEdges.add(edgeKey);
+                            }
                         }
                     }
                 }
@@ -903,6 +1418,64 @@ public class OperationsController {
         }
 
         return comp;
+    }
+
+    private String getUndirectedEdgeKey(String vertex1, String vertex2) {
+        if (vertex1.compareTo(vertex2) < 0) {
+            return vertex1 + "|" + vertex2;
+        } else {
+            return vertex2 + "|" + vertex1;
+        }
+    }
+
+    private String getEdgeKey(String source, String destination, boolean isDirected) {
+        if (isDirected) {
+            return source + "->" + destination;
+        } else {
+            String sorted1 = source.compareTo(destination) < 0 ? source : destination;
+            String sorted2 = source.compareTo(destination) < 0 ? destination : source;
+            return sorted1 + "-" + sorted2;
+        }
+    }
+
+    private void updateOperationState() {
+        boolean graph1HasData = !graph1Data.isEmpty();
+        boolean graph2HasData = !graph2Data.isEmpty();
+        boolean anyGraphHasData = graph1HasData || graph2HasData;
+
+        setOperationControlsEnabled(anyGraphHasData);
+
+        if (!anyGraphHasData) {
+            operationText.setText("Agregue vértices a los grafos para habilitar operaciones");
+        } else {
+            if (currentOperatingGraph != null && currentOperation != null) {
+                if ("Entre los 2 grafos".equals(currentOperatingGraph)) {
+                    if (!graph1HasData || !graph2HasData) {
+                        operationText.setText("Error: Para operar entre los 2 grafos, ambos deben contener vértices");
+                        operateButton.setDisable(true);
+                    } else {
+                        operateButton.setDisable(false);
+                        operationText.setText("Listo para operar: " + currentOperation);
+                    }
+                } else {
+                    Graph targetGraph = "Grafo 1".equals(currentOperatingGraph) ? graph1Data : graph2Data;
+                    if (targetGraph.isEmpty()) {
+                        operationText.setText("Error: El grafo operado está vacío");
+                        operateButton.setDisable(true);
+                    } else {
+                        operateButton.setDisable(false);
+                        operationText.setText("Listo para operar: " + currentOperation);
+                    }
+                }
+            } else {
+                operateButton.setDisable(true);
+                if (currentOperatingGraph == null) {
+                    operationText.setText("Seleccione un grafo para operar");
+                } else if (currentOperation == null) {
+                    operationText.setText("Seleccione una operación");
+                }
+            }
+        }
     }
 
     @FXML
@@ -947,19 +1520,27 @@ public class OperationsController {
 
     @FXML
     private void restart() {
-        graph1Data = new Graph();
-        graph2Data = new Graph();
+        Graph currentGraph = getCurrentModifyingGraph();
+        if (currentGraph != null) {
+            saveGraphState();
+            currentGraph.vertices.clear();
+            currentGraph.edges.clear();
+            currentGraph.hasEdges = false;
+            currentGraph.isDirected = false;
+            currentGraph.isWeighted = true;
+            updateGraphDisplay();
+            modificationText.setText("Grafo reiniciado: " + currentModifyingGraph);
+            updateOperationState();
+        } else {
+            modificationText.setText("Error: Seleccione un grafo para reiniciar");
+        }
+    }
+
+    @FXML
+    private void restartOp() {
         graphResultData = new Graph();
-
-        graph1History.clear();
-        graph2History.clear();
-        graph1RedoStack.clear();
-        graph2RedoStack.clear();
-
-        setInitialState();
-        updateAllGraphDisplays();
-        modificationText.setText("Sistema reiniciado");
-        operationText.setText("");
+        updateResultGraphDisplay();
+        operationText.setText("Grafo resultado reiniciado");
     }
 
     @FXML
@@ -974,11 +1555,9 @@ public class OperationsController {
 
             if (file != null) {
                 try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(file))) {
-
                     oos.writeObject(graph1Data.getState());
                     oos.writeObject(graph2Data.getState());
                     oos.writeObject(graphResultData.getState());
-
                     modificationText.setText("Grafos guardados en: " + file.getName());
                 }
             }
@@ -1000,11 +1579,9 @@ public class OperationsController {
 
             if (file != null) {
                 try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(file))) {
-
                     graph1Data.setState((GraphState) ois.readObject());
                     graph2Data.setState((GraphState) ois.readObject());
                     graphResultData.setState((GraphState) ois.readObject());
-
                     updateAllGraphDisplays();
                     modificationText.setText("Grafos cargados desde: " + file.getName());
                     updateOperationState();
@@ -1064,7 +1641,6 @@ public class OperationsController {
                 return "AA";
             }
         } else {
-
             char[] chars = lastVertex.toCharArray();
             for (int i = chars.length - 1; i >= 0; i--) {
                 if (chars[i] < 'Z') {
@@ -1075,18 +1651,6 @@ public class OperationsController {
                 }
             }
             return lastVertex + "A";
-        }
-    }
-
-    private void updateOperationState() {
-
-        boolean bothGraphsHaveData = !graph1Data.vertices.isEmpty() && !graph2Data.vertices.isEmpty();
-        graphOperate.setDisable(!bothGraphsHaveData);
-
-        if (!bothGraphsHaveData) {
-            graphOperate.setText("Elegir opcion");
-            operations.setText("Elegir operacion");
-            setOperationControlsEnabled(false);
         }
     }
 
@@ -1117,38 +1681,50 @@ public class OperationsController {
 
         Map<String, Point2D> vertexPositions = calculateGraphLayout(graph, centerX, centerY, VERTEX_RADIUS);
 
-        Map<String, List<Edge>> edgesByPair = new HashMap<>();
-        for (Edge edge : graph.edges) {
-            String key = graph.isDirected ? edge.source + "->" + edge.destination
-                    : (edge.source.compareTo(edge.destination) < 0 ? edge.source + "-" + edge.destination
-                            : edge.destination + "-" + edge.source);
+        Map<String, List<Edge>> edgesByPair = groupParallelEdges(graph);
 
-            edgesByPair.computeIfAbsent(key, k -> new ArrayList<>()).add(edge);
-        }
+        List<EdgeLabelConnection> edgeLabelConnections = new ArrayList<>();
 
         for (List<Edge> parallelEdges : edgesByPair.values()) {
             if (parallelEdges.isEmpty())
                 continue;
 
             Edge firstEdge = parallelEdges.get(0);
-            Point2D sourcePos = vertexPositions.get(firstEdge.source);
-            Point2D destPos = vertexPositions.get(firstEdge.destination);
 
-            if (sourcePos != null && destPos != null) {
-                if (parallelEdges.size() == 1) {
+            List<String> allLabels = new ArrayList<>();
+            for (Edge edge : parallelEdges) {
+                allLabels.add(edge.label != null ? edge.label : "");
+            }
 
-                    drawEdge(canvas, sourcePos, destPos, firstEdge.weight,
-                            graph.isDirected, VERTEX_RADIUS, firstEdge.isSumEdge, 0);
-                } else {
+            List<Line> allEdgesInGroup = new ArrayList<>();
+
+            if (firstEdge.isLoop) {
+
+                Point2D vertexPos = vertexPositions.get(firstEdge.source);
+                if (vertexPos != null) {
+                    for (int i = 0; i < parallelEdges.size(); i++) {
+                        Edge edge = parallelEdges.get(i);
+                        drawLoop(canvas, vertexPos, VERTEX_RADIUS, graph.isDirected, edge.isSumEdge,
+                                edge.label, i, parallelEdges.size(), allLabels, edgeLabelConnections, allEdgesInGroup);
+                    }
+                }
+            } else {
+                Point2D sourcePos = vertexPositions.get(firstEdge.source);
+                Point2D destPos = vertexPositions.get(firstEdge.destination);
+
+                if (sourcePos != null && destPos != null) {
 
                     for (int i = 0; i < parallelEdges.size(); i++) {
                         Edge edge = parallelEdges.get(i);
-                        drawEdge(canvas, sourcePos, destPos, edge.weight,
-                                graph.isDirected, VERTEX_RADIUS, edge.isSumEdge, i);
+                        drawEdge(canvas, sourcePos, destPos, edge.label,
+                                graph.isDirected, VERTEX_RADIUS, edge.isSumEdge, i, parallelEdges.size(),
+                                allLabels, edgeLabelConnections, allEdgesInGroup);
                     }
                 }
             }
         }
+
+        setupEdgeLabelConnections(edgeLabelConnections);
 
         for (Map.Entry<String, Point2D> entry : vertexPositions.entrySet()) {
             String vertex = entry.getKey();
@@ -1157,6 +1733,402 @@ public class OperationsController {
         }
 
         scrollPane.setContent(canvas);
+        centerGraphView(scrollPane);
+    }
+
+    private void centerGraphView(ScrollPane scrollPane) {
+        if (scrollPane.getContent() != null) {
+            javafx.application.Platform.runLater(() -> {
+                scrollPane.setHvalue(0.5);
+                scrollPane.setVvalue(0.3);
+            });
+        }
+    }
+
+    private void setupEdgeLabelConnections(List<EdgeLabelConnection> connections) {
+        for (EdgeLabelConnection connection : connections) {
+            final Line edge = connection.edge;
+            final Text labelPart = connection.labelPart;
+            final int edgeIndex = connection.edgeIndex;
+
+            if (edge != null && labelPart != null) {
+                final Color normalColor = EDGE_COLORS[edgeIndex % EDGE_COLORS.length];
+                final Color hoverColor = HOVER_COLORS[edgeIndex % HOVER_COLORS.length];
+
+                // Configurar hover para la etiqueta
+                labelPart.setOnMouseEntered(e -> {
+                    labelPart.setFill(hoverColor);
+                    if (edge != null) {
+                        edge.setStroke(hoverColor);
+                        edge.setStrokeWidth(3);
+                    }
+                });
+
+                labelPart.setOnMouseExited(e -> {
+                    labelPart.setFill(normalColor);
+                    if (edge != null) {
+                        edge.setStroke(normalColor);
+                        edge.setStrokeWidth(2);
+                    }
+                });
+
+                // Configurar hover para la arista
+                if (edge != null) {
+                    edge.setOnMouseEntered(e -> {
+                        edge.setStroke(hoverColor);
+                        edge.setStrokeWidth(3);
+                        if (labelPart != null) {
+                            labelPart.setFill(hoverColor);
+                        }
+                    });
+
+                    edge.setOnMouseExited(e -> {
+                        edge.setStroke(normalColor);
+                        edge.setStrokeWidth(2);
+                        if (labelPart != null) {
+                            labelPart.setFill(normalColor);
+                        }
+                    });
+                }
+            }
+        }
+    }
+
+    private void drawMultiColorText(Pane canvas, double x, double y, List<String> labels,
+            List<Color> colors, boolean isSumEdge, List<EdgeLabelConnection> connections,
+            List<Line> associatedEdges) {
+        if (labels.isEmpty())
+            return;
+
+        double currentX = x;
+
+        for (int i = 0; i < labels.size(); i++) {
+            String label = labels.get(i);
+            if (label == null || label.trim().isEmpty())
+                continue;
+
+            Color textColor = isSumEdge ? Color.BLUE : colors.get(i % colors.size());
+            final Color hoverColor = HOVER_COLORS[i % HOVER_COLORS.length];
+
+            Text textPart = new Text(currentX, y, label);
+            textPart.setFill(textColor);
+            textPart.setStyle("-fx-font-weight: bold; -fx-font-size: 11;");
+
+            // Configurar efecto hover para cada parte individual de la etiqueta
+            final int edgeIndex = i;
+            textPart.setOnMouseEntered(e -> {
+                textPart.setFill(hoverColor);
+                // Encontrar y resaltar la arista correspondiente
+                if (associatedEdges != null && edgeIndex < associatedEdges.size()) {
+                    Line correspondingEdge = associatedEdges.get(edgeIndex);
+                    if (correspondingEdge != null) {
+                        correspondingEdge.setStroke(hoverColor);
+                        correspondingEdge.setStrokeWidth(3);
+                    }
+                }
+            });
+
+            textPart.setOnMouseExited(e -> {
+                textPart.setFill(textColor);
+                // Restaurar la arista correspondiente
+                if (associatedEdges != null && edgeIndex < associatedEdges.size()) {
+                    Line correspondingEdge = associatedEdges.get(edgeIndex);
+                    if (correspondingEdge != null) {
+                        correspondingEdge.setStroke(isSumEdge ? Color.BLUE : colors.get(edgeIndex % colors.size()));
+                        correspondingEdge.setStrokeWidth(2);
+                    }
+                }
+            });
+
+            canvas.getChildren().add(textPart);
+
+            if (associatedEdges != null && i < associatedEdges.size()) {
+                Line edge = associatedEdges.get(i);
+                if (edge != null) {
+                    connections.add(new EdgeLabelConnection(edge, textPart, i));
+                }
+            }
+
+            if (i < labels.size() - 1) {
+                Text comma = new Text(currentX + textPart.getLayoutBounds().getWidth(), y, ", ");
+                comma.setFill(Color.BLACK);
+                comma.setStyle("-fx-font-weight: bold; -fx-font-size: 11;");
+                canvas.getChildren().add(comma);
+                currentX += textPart.getLayoutBounds().getWidth() + comma.getLayoutBounds().getWidth();
+            } else {
+                currentX += textPart.getLayoutBounds().getWidth();
+            }
+        }
+    }
+
+    private void drawEdge(Pane canvas, Point2D source, Point2D target, String label,
+            boolean isDirected, double radius, boolean isSumEdge, int parallelIndex, int totalEdges,
+            List<String> allLabels, List<EdgeLabelConnection> connections, List<Line> allEdges) {
+
+        double arrowLength = 15;
+        double arrowWidth = 8;
+
+        double dx = target.getX() - source.getX();
+        double dy = target.getY() - source.getY();
+        double distance = Math.sqrt(dx * dx + dy * dy);
+        double unitX = dx / distance;
+        double unitY = dy / distance;
+
+        double adjustedTargetX = target.getX() - unitX * radius;
+        double adjustedTargetY = target.getY() - unitY * radius;
+        double adjustedSourceX = source.getX() + unitX * radius;
+        double adjustedSourceY = source.getY() + unitY * radius;
+
+        double offset = 0;
+        if (totalEdges > 1) {
+            double maxOffset = 25.0;
+            offset = (parallelIndex - (totalEdges - 1) / 2.0) * (maxOffset / Math.max(1, totalEdges - 1));
+        }
+
+        double offsetX = -unitY * offset;
+        double offsetY = unitX * offset;
+
+        Color edgeColor = parallelIndex < EDGE_COLORS.length ? EDGE_COLORS[parallelIndex] : Color.BLACK;
+        final Color hoverColor = HOVER_COLORS[parallelIndex % HOVER_COLORS.length];
+
+        Line line = new Line(adjustedSourceX + offsetX, adjustedSourceY + offsetY,
+                adjustedTargetX + offsetX, adjustedTargetY + offsetY);
+
+        if (isSumEdge) {
+            line.getStrokeDashArray().addAll(5d, 5d);
+            line.setStroke(Color.BLUE);
+        } else {
+            line.setStroke(edgeColor);
+        }
+
+        line.setStrokeWidth(2);
+        
+        // Configurar efecto hover para la arista
+        line.setOnMouseEntered(e -> {
+            line.setStroke(hoverColor);
+            line.setStrokeWidth(3);
+        });
+        
+        line.setOnMouseExited(e -> {
+            line.setStroke(isSumEdge ? Color.BLUE : edgeColor);
+            line.setStrokeWidth(2);
+        });
+
+        canvas.getChildren().add(line);
+
+        if (allEdges != null) {
+            allEdges.add(line);
+        }
+
+        if (isDirected && !isSumEdge) {
+            double angle = Math.atan2(adjustedTargetY - adjustedSourceY, adjustedTargetX - adjustedSourceX);
+
+            double arrowX = adjustedTargetX + offsetX - arrowLength * Math.cos(angle);
+            double arrowY = adjustedTargetY + offsetY - arrowLength * Math.sin(angle);
+
+            double x2 = arrowX + arrowWidth * Math.cos(angle + Math.PI / 2);
+            double y2 = arrowY + arrowWidth * Math.sin(angle + Math.PI / 2);
+
+            double x3 = arrowX + arrowWidth * Math.cos(angle - Math.PI / 2);
+            double y3 = arrowY + arrowWidth * Math.sin(angle - Math.PI / 2);
+
+            Polygon arrowHead = new Polygon();
+            arrowHead.getPoints().addAll(
+                    adjustedTargetX + offsetX, adjustedTargetY + offsetY,
+                    x2, y2,
+                    x3, y3);
+            arrowHead.setFill(edgeColor);
+            
+            // Efecto hover para la flecha
+            arrowHead.setOnMouseEntered(e -> {
+                arrowHead.setFill(hoverColor);
+                line.setStroke(hoverColor);
+                line.setStrokeWidth(3);
+            });
+            
+            arrowHead.setOnMouseExited(e -> {
+                arrowHead.setFill(edgeColor);
+                line.setStroke(edgeColor);
+                line.setStrokeWidth(2);
+            });
+
+            canvas.getChildren().add(arrowHead);
+        }
+
+        if (parallelIndex == 0 && allLabels != null && !allLabels.isEmpty()) {
+            List<String> nonEmptyLabels = new ArrayList<>();
+            for (String lbl : allLabels) {
+                if (lbl != null && !lbl.trim().isEmpty()) {
+                    nonEmptyLabels.add(lbl);
+                }
+            }
+
+            if (!nonEmptyLabels.isEmpty()) {
+
+                double midX = (adjustedSourceX + adjustedTargetX) / 2 + offsetX;
+                double midY = (adjustedSourceY + adjustedTargetY) / 2 + offsetY;
+
+                double textOffsetX = -unitY * (20 + Math.abs(offset));
+                double textOffsetY = unitX * (20 + Math.abs(offset));
+
+                List<Color> textColors = Arrays.asList(EDGE_COLORS);
+
+                drawMultiColorText(canvas, midX + textOffsetX, midY + textOffsetY,
+                        nonEmptyLabels, textColors, isSumEdge, connections, allEdges);
+            }
+        }
+
+        connections.add(new EdgeLabelConnection(line, null, parallelIndex));
+    }
+
+    private void drawLoop(Pane canvas, Point2D vertex, double radius, boolean isDirected,
+            boolean isSumEdge, String label, int loopIndex, int totalLoops, List<String> allLabels,
+            List<EdgeLabelConnection> connections, List<Line> allEdges) {
+
+        // Definir colores para bucles (máximo 4 en operaciones)
+        Color[] loopColors = { Color.BLACK, Color.RED, Color.ORANGE, Color.GREEN };
+        Color edgeColor = loopIndex < loopColors.length ? loopColors[loopIndex] : Color.BLACK;
+        final Color hoverColor = HOVER_COLORS[loopIndex % HOVER_COLORS.length];
+
+        // Configuración del bucle como cuarto de círculo
+        double loopRadius = 30 + loopIndex * 15; // Radio más grande para mejor visualización
+        
+        // Crear un Path para el cuarto de círculo
+        Path loop = new Path();
+        
+        // Punto de inicio: parte superior del vértice
+        double startX = vertex.getX();
+        double startY = vertex.getY() - radius;
+        MoveTo moveTo = new MoveTo(startX, startY);
+        
+        // Crear un arco de 90 grados (cuarto de círculo) desde la parte superior hasta la izquierda
+        ArcTo arcTo = new ArcTo();
+        arcTo.setX(vertex.getX() - radius); // Punto final: parte izquierda del vértice
+        arcTo.setY(vertex.getY());
+        arcTo.setRadiusX(loopRadius);
+        arcTo.setRadiusY(loopRadius);
+        arcTo.setSweepFlag(false); // Sentido horario
+        arcTo.setLargeArcFlag(false); // Arco pequeño (90 grados)
+        
+        loop.getElements().addAll(moveTo, arcTo);
+        
+        loop.setFill(Color.TRANSPARENT);
+        if (isSumEdge) {
+            loop.getStrokeDashArray().addAll(5d, 5d);
+            loop.setStroke(Color.BLUE);
+        } else {
+            loop.setStroke(edgeColor);
+        }
+        loop.setStrokeWidth(2);
+        
+        // Configurar efecto hover para el bucle
+        final Path finalLoop = loop;
+        loop.setOnMouseEntered(e -> {
+            finalLoop.setStroke(hoverColor);
+            finalLoop.setStrokeWidth(3);
+        });
+        
+        loop.setOnMouseExited(e -> {
+            finalLoop.setStroke(isSumEdge ? Color.BLUE : edgeColor);
+            finalLoop.setStrokeWidth(2);
+        });
+
+        canvas.getChildren().add(loop);
+
+        // Flecha para bucles dirigidos (en el punto final del cuarto de círculo)
+        if (isDirected && !isSumEdge) {
+            double arrowX = vertex.getX() - radius;
+            double arrowY = vertex.getY();
+            
+            // Calcular ángulo para la flecha (tangente al cuarto de círculo en el punto final)
+            double angle = Math.PI; // Apuntando hacia la izquierda
+            
+            Polygon arrowHead = new Polygon();
+            arrowHead.getPoints().addAll(
+                    arrowX, arrowY,
+                    arrowX + 8 * Math.cos(angle - Math.PI/6), arrowY + 8 * Math.sin(angle - Math.PI/6),
+                    arrowX + 8 * Math.cos(angle + Math.PI/6), arrowY + 8 * Math.sin(angle + Math.PI/6));
+            arrowHead.setFill(edgeColor);
+            
+            // Efecto hover para la flecha
+            arrowHead.setOnMouseEntered(e -> {
+                arrowHead.setFill(hoverColor);
+                finalLoop.setStroke(hoverColor);
+                finalLoop.setStrokeWidth(3);
+            });
+            
+            arrowHead.setOnMouseExited(e -> {
+                arrowHead.setFill(edgeColor);
+                finalLoop.setStroke(edgeColor);
+                finalLoop.setStrokeWidth(2);
+            });
+
+            canvas.getChildren().add(arrowHead);
+        }
+
+        // Etiquetas para bucles
+        if (loopIndex == 0 && allLabels != null && !allLabels.isEmpty()) {
+            List<String> nonEmptyLabels = new ArrayList<>();
+            for (String lbl : allLabels) {
+                if (lbl != null && !lbl.trim().isEmpty()) {
+                    nonEmptyLabels.add(lbl);
+                }
+            }
+
+            if (!nonEmptyLabels.isEmpty()) {
+                double labelX = vertex.getX() - loopRadius - 20;
+                double labelY = vertex.getY() - loopRadius / 2;
+
+                List<Color> textColors = Arrays.asList(loopColors);
+
+                // Crear una línea ficticia para la conexión de hover con las etiquetas
+                Line dummyEdge = new Line();
+                dummyEdge.setStroke(edgeColor);
+                allEdges.add(dummyEdge);
+                
+                drawMultiColorText(canvas, labelX, labelY, nonEmptyLabels, textColors, isSumEdge, connections, allEdges);
+            }
+        }
+    }
+
+    private void drawVertex(Pane canvas, double x, double y, double radius, String label) {
+        Circle circle = new Circle(x, y, radius);
+        circle.setFill(Color.WHITE);
+        circle.setStroke(Color.BLACK);
+        circle.setStrokeWidth(2);
+        canvas.getChildren().add(circle);
+
+        Text text = new Text(label);
+        text.setStyle("-fx-font-weight: bold;");
+
+        double textWidth = text.getLayoutBounds().getWidth();
+        double textHeight = text.getLayoutBounds().getHeight();
+
+        text.setX(x - textWidth / 2);
+        text.setY(y + textHeight / 4);
+
+        canvas.getChildren().add(text);
+    }
+
+    private Map<String, List<Edge>> groupParallelEdges(Graph graph) {
+        Map<String, List<Edge>> edgesByPair = new HashMap<>();
+
+        for (Edge edge : graph.edges) {
+            String key;
+            if (edge.isLoop) {
+                key = edge.source + "::LOOP";
+            } else if (graph.isDirected) {
+                key = edge.source + "->" + edge.destination;
+            } else {
+
+                String sorted1 = edge.source.compareTo(edge.destination) < 0 ? edge.source : edge.destination;
+                String sorted2 = edge.source.compareTo(edge.destination) < 0 ? edge.destination : edge.source;
+                key = sorted1 + "-" + sorted2;
+            }
+            edgesByPair.computeIfAbsent(key, k -> new ArrayList<>()).add(edge);
+        }
+
+        return edgesByPair;
     }
 
     private Map<String, Point2D> calculateGraphLayout(Graph graph, double centerX, double centerY, double radius) {
@@ -1167,9 +2139,21 @@ public class OperationsController {
             return positions;
         }
 
-        if (vertices.size() <= 10) {
+        if (vertices.size() > 10 || vertices.stream().anyMatch(v -> v.contains(","))) {
 
-            double layoutRadius = Math.min(150, vertices.size() * 20);
+            int gridSize = (int) Math.ceil(Math.sqrt(vertices.size()));
+            double spacing = Math.min(100, 500.0 / gridSize);
+
+            for (int i = 0; i < vertices.size(); i++) {
+                int row = i / gridSize;
+                int col = i % gridSize;
+                double x = centerX - (gridSize * spacing / 2) + col * spacing;
+                double y = centerY - (gridSize * spacing / 2) + row * spacing;
+                positions.put(vertices.get(i), new Point2D(x, y));
+            }
+        } else if (vertices.size() <= 10) {
+
+            double layoutRadius = Math.min(200, Math.max(100, vertices.size() * 25));
             for (int i = 0; i < vertices.size(); i++) {
                 double angle = 2 * Math.PI * i / vertices.size();
                 double x = centerX + layoutRadius * Math.cos(angle);
@@ -1178,17 +2162,17 @@ public class OperationsController {
             }
         } else {
 
-            double area = 1000 * vertices.size();
+            double area = 1500 * vertices.size();
             double k = Math.sqrt(area / vertices.size());
 
             Random rand = new Random();
             for (String vertex : vertices) {
-                double x = centerX + (rand.nextDouble() - 0.5) * 300;
-                double y = centerY + (rand.nextDouble() - 0.5) * 300;
+                double x = centerX + (rand.nextDouble() - 0.5) * 400;
+                double y = centerY + (rand.nextDouble() - 0.5) * 400;
                 positions.put(vertex, new Point2D(x, y));
             }
 
-            for (int iter = 0; iter < 100; iter++) {
+            for (int iter = 0; iter < 150; iter++) {
                 Map<String, Point2D> displacements = new HashMap<>();
 
                 for (String v1 : vertices) {
@@ -1212,116 +2196,38 @@ public class OperationsController {
                 for (Edge edge : graph.edges) {
                     Point2D pos1 = positions.get(edge.source);
                     Point2D pos2 = positions.get(edge.destination);
-                    Point2D diff = pos2.subtract(pos1);
-                    double distance = diff.magnitude();
-                    if (distance > 0) {
-                        double force = (distance * distance) / k;
-                        Point2D disp1 = displacements.get(edge.source).add(diff.normalize().multiply(force));
-                        Point2D disp2 = displacements.get(edge.destination).subtract(diff.normalize().multiply(force));
-                        displacements.put(edge.source, disp1);
-                        displacements.put(edge.destination, disp2);
+                    if (pos1 != null && pos2 != null && !edge.isLoop) {
+                        Point2D diff = pos2.subtract(pos1);
+                        double distance = diff.magnitude();
+                        if (distance > 0) {
+                            double force = (distance * distance) / k;
+                            Point2D disp1 = displacements.getOrDefault(edge.source, new Point2D(0, 0))
+                                    .add(diff.normalize().multiply(force));
+                            Point2D disp2 = displacements.getOrDefault(edge.destination, new Point2D(0, 0))
+                                    .subtract(diff.normalize().multiply(force));
+                            displacements.put(edge.source, disp1);
+                            displacements.put(edge.destination, disp2);
+                        }
                     }
                 }
 
                 for (String vertex : vertices) {
-                    Point2D disp = displacements.get(vertex);
+                    Point2D disp = displacements.getOrDefault(vertex, new Point2D(0, 0));
                     double length = disp.magnitude();
                     if (length > 0) {
-                        disp = disp.normalize().multiply(Math.min(length, 10));
+                        disp = disp.normalize().multiply(Math.min(length, 15));
                     }
                     Point2D newPos = positions.get(vertex).add(disp);
 
                     newPos = new Point2D(
-                            Math.max(radius + 10, Math.min(CANVAS_WIDTH - radius - 10, newPos.getX())),
-                            Math.max(radius + 10, Math.min(CANVAS_HEIGHT - radius - 10, newPos.getY())));
+                            Math.max(radius + 20, Math.min(CANVAS_WIDTH - radius - 20, newPos.getX())),
+                            Math.max(radius + 20, Math.min(CANVAS_HEIGHT - radius - 20, newPos.getY())));
                     positions.put(vertex, newPos);
                 }
             }
         }
 
         return positions;
-    }
-
-    private void drawVertex(Pane canvas, double x, double y, double radius, String label) {
-        Circle circle = new Circle(x, y, radius);
-        circle.setFill(Color.WHITE);
-        circle.setStroke(Color.BLACK);
-        circle.setStrokeWidth(2);
-        canvas.getChildren().add(circle);
-
-        Text text = new Text(x - 5, y + 5, label);
-        canvas.getChildren().add(text);
-    }
-
-    private void drawEdge(Pane canvas, Point2D source, Point2D target, double weight,
-            boolean isDirected, double radius, boolean isSumEdge, int parallelIndex) {
-
-        double arrowLength = 15;
-        double arrowWidth = 8;
-
-        double dx = target.getX() - source.getX();
-        double dy = target.getY() - source.getY();
-        double distance = Math.sqrt(dx * dx + dy * dy);
-        double unitX = dx / distance;
-        double unitY = dy / distance;
-
-        double adjustedTargetX = target.getX() - unitX * radius;
-        double adjustedTargetY = target.getY() - unitY * radius;
-        double adjustedSourceX = source.getX() + unitX * radius;
-        double adjustedSourceY = source.getY() + unitY * radius;
-
-        double offset = (parallelIndex - 0.5) * 8;
-        double offsetX = -unitY * offset;
-        double offsetY = unitX * offset;
-
-        Line line = new Line(adjustedSourceX + offsetX, adjustedSourceY + offsetY,
-                adjustedTargetX + offsetX, adjustedTargetY + offsetY);
-
-        if (isSumEdge) {
-
-            line.getStrokeDashArray().addAll(5d, 5d);
-            line.setStroke(Color.BLUE);
-        } else {
-            line.setStroke(Color.BLACK);
-        }
-
-        line.setStrokeWidth(2);
-        canvas.getChildren().add(line);
-
-        if (isDirected) {
-            double angle = Math.atan2(adjustedTargetY - adjustedSourceY, adjustedTargetX - adjustedSourceX);
-
-            double arrowX = adjustedTargetX + offsetX - arrowLength * Math.cos(angle);
-            double arrowY = adjustedTargetY + offsetY - arrowLength * Math.sin(angle);
-
-            double x2 = arrowX + arrowWidth * Math.cos(angle + Math.PI / 2);
-            double y2 = arrowY + arrowWidth * Math.sin(angle + Math.PI / 2);
-
-            double x3 = arrowX + arrowWidth * Math.cos(angle - Math.PI / 2);
-            double y3 = arrowY + arrowWidth * Math.sin(angle - Math.PI / 2);
-
-            Polygon arrowHead = new Polygon();
-            arrowHead.getPoints().addAll(
-                    adjustedTargetX + offsetX, adjustedTargetY + offsetY,
-                    x2, y2,
-                    x3, y3);
-            arrowHead.setFill(isSumEdge ? Color.BLUE : Color.BLACK);
-            canvas.getChildren().add(arrowHead);
-        }
-
-        if (weight != 1.0 || parallelIndex > 0) {
-            double midX = (adjustedSourceX + adjustedTargetX) / 2 + offsetX;
-            double midY = (adjustedSourceY + adjustedTargetY) / 2 + offsetY;
-
-            double textOffsetX = -unitY * 15;
-            double textOffsetY = unitX * 15;
-
-            Text weightText = new Text(midX + textOffsetX, midY + textOffsetY,
-                    parallelIndex > 0 ? String.valueOf(parallelIndex + 1) : String.valueOf(weight));
-            weightText.setFill(isSumEdge ? Color.BLUE : Color.RED);
-            weightText.setStyle("-fx-font-weight: bold;");
-            canvas.getChildren().add(weightText);
-        }
     }
 
     private void setupListeners() {

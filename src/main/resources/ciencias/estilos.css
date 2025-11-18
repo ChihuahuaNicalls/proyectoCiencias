@@ -1,0 +1,329 @@
+/* estilos.css - Modern JavaFX CSS with rounded elements and default sizing */
+
+.root {
+    -fx-background-color: #ffffff;
+}
+
+/* ===== MAIN TITLE - Preserving original 58px size from Start.fxml ===== */
+.label {
+    -fx-text-fill: #2c3e50;
+}
+
+/* Specific selector for the main title to keep 58px size */
+BorderPane > .top > Label {
+    -fx-font-size: 58px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #2c3e50;
+}
+
+/* ===== MODERN ROUNDED BUTTONS - Using default JavaFX sizing ===== */
+.button {
+    -fx-background-color: #f8f9fa;
+    -fx-text-fill: #2c3e50;
+    -fx-border-color: #1e1e1f;
+    -fx-border-width: 1.5px;
+    -fx-border-radius: 8px;
+    -fx-background-radius: 8px;
+    -fx-cursor: hand;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.08), 3, 0, 0, 1);
+}
+
+.button:hover {
+    -fx-background-color: #e9ecef;
+    -fx-border-color: #adb5bd;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.12), 4, 0, 0, 2);
+}
+
+.button:pressed {
+    -fx-background-color: #dee2e6;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.06), 2, 0, 0, 1);
+}
+
+.button:disabled {
+    -fx-background-color: #f8f9fa;
+    -fx-text-fill: #6c757d;
+    -fx-border-color: #e9ecef;
+}
+
+/* ===== ROUNDED INPUT FIELDS - Using default JavaFX sizing ===== */
+.text-field, .spinner {
+    -fx-background-color: white;
+    -fx-border-color: #1e1e1f;
+    -fx-border-width: 1.5px;
+    -fx-border-radius: 6px;
+    -fx-background-radius: 6px;
+    -fx-text-fill: #2c3e50;
+}
+
+.text-field:focused, .spinner:focused {
+    -fx-border-color: #4285f4;
+    -fx-effect: dropshadow(gaussian, rgba(66, 133, 244, 0.2), 4, 0, 0, 0);
+}
+
+/* ===== MENU BUTTONS GENERALES - Tamaño por defecto ===== */
+.menu-button {
+    -fx-background-color: white;
+    -fx-border-color: #1e1e1f;
+    -fx-border-width: 1.5px;
+    -fx-border-radius: 6px;
+    -fx-background-radius: 6px;
+    -fx-text-fill: #2c3e50;
+    /* Sin ancho fijo - tamaño por defecto */
+}
+
+.menu-button:focused {
+    -fx-border-color: #4285f4;
+    -fx-effect: dropshadow(gaussian, rgba(66, 133, 244, 0.2), 4, 0, 0, 0);
+}
+
+/* ===== MENU BUTTONS ESPECÍFICOS - Ancho fijo de 200px ===== */
+#menuButtonHash, #menuButtonTrees, #menuButtonClaves, #menuButtonMono, #menuButtonMulti {
+    -fx-pref-width: 200px;
+    -fx-max-width: 200px;
+}
+
+/* ===== SPINNER SPECIFIC STYLES ===== */
+.spinner {
+    -fx-background-color: white;
+    -fx-border-color: #e0e0e0;
+    -fx-border-radius: 6px;
+    -fx-background-radius: 6px;
+}
+
+.spinner .increment-arrow-button, .spinner .decrement-arrow-button {
+    -fx-background-color: #f8f9fa;
+    -fx-border-color: #e0e0e0;
+    -fx-background-radius: 0 6px 6px 0;
+}
+
+.spinner .increment-arrow-button:hover, .spinner .decrement-arrow-button:hover {
+    -fx-background-color: #e9ecef;
+}
+
+/* ===== MODERN TABS ===== */
+.tab-pane {
+    -fx-background-color: #1e1e1f;
+    -fx-border-color: #e0e0e0;
+}
+
+.tab {
+    -fx-background-color: #f8f9fa;
+    -fx-background-radius: 8px 8px 0px 0px;
+    -fx-border-color: #e0e0e0;
+    -fx-border-radius: 8px 8px 0px 0px;
+}
+
+.tab:selected {
+    -fx-background-color: white;
+    -fx-border-color: #4285f4;
+}
+
+.tab .tab-label {
+    -fx-text-fill: #2c3e50;
+    -fx-font-weight: normal;
+}
+
+.tab:selected .tab-label {
+    -fx-text-fill: #4285f4;
+    -fx-font-weight: bold;
+}
+
+/* ===== LISTS AND CONTAINERS ===== */
+.list-view {
+    -fx-background-color: white;
+    -fx-border-color: #e0e0e0;
+    -fx-border-radius: 6px;
+    -fx-background-radius: 6px;
+}
+
+.list-cell {
+    -fx-background-color: white;
+    -fx-text-fill: #2c3e50;
+    -fx-border-color: #f8f9fa;
+}
+
+.list-cell:filled:selected {
+    -fx-background-color: #e8f0fe;
+    -fx-text-fill: #2c3e50;
+}
+
+.list-cell:filled:hover {
+    -fx-background-color: #f8f9fa;
+}
+
+/* ===== MENU COMPONENTS ===== */
+.menu-item {
+    -fx-background-color: white;
+}
+
+.menu-item:focused {
+    -fx-background-color: #e8f0fe;
+}
+
+.context-menu {
+    -fx-background-color: white;
+    -fx-border-color: #e0e0e0;
+    -fx-border-radius: 6px;
+    -fx-background-radius: 6px;
+}
+
+/* ===== SPECIAL BUTTONS ===== */
+.button#saveButton {
+    -fx-background-color: #e8f5e8;
+    -fx-border-color: #1e1e1f;
+    -fx-text-fill: #2e7d32;
+}
+
+.button#saveButton:hover {
+    -fx-background-color: #dcedc8;
+}
+
+.button#reiniciarButton {
+    -fx-background-color: #fff3e0;
+    -fx-border-color: #1e1e1f;
+    -fx-text-fill: #ef6c00;
+}
+
+.button#reiniciarButton:hover {
+    -fx-background-color: #ffecb3;
+}
+
+/* ===== SCROLL PANE ===== */
+.scroll-pane {
+    -fx-background-color: transparent;
+    -fx-border-color: #e0e0e0;
+    -fx-border-radius: 6px;
+}
+
+.scroll-pane .viewport {
+    -fx-background-color: white;
+}
+
+.scroll-pane .scroll-bar {
+    -fx-background-color: #f8f9fa;
+}
+
+.scroll-pane .scroll-bar .thumb {
+    -fx-background-color: #c0c0c0;
+    -fx-background-radius: 4px;
+}
+
+/* ===== TABLE VIEW ===== */
+.table-view {
+    -fx-background-color: white;
+    -fx-border-color: #e0e0e0;
+    -fx-border-radius: 6px;
+}
+
+.table-view .column-header {
+    -fx-background-color: #f8f9fa;
+    -fx-border-color: #e0e0e0;
+}
+
+/* ===== TEXT FLOW ===== */
+.text-flow {
+    -fx-background-color: transparent;
+}
+
+.text {
+    -fx-fill: #2c3e50;
+}
+
+/* ===== BUTTON BAR ===== */
+.button-bar {
+    -fx-background-color: #f8f9fa;
+    -fx-border-color: #e0e0e0;
+    -fx-border-width: 1px 0px 0px 0px;
+}
+
+/* ===== SMOOTH TRANSITIONS ===== */
+* {
+    -fx-transition: all 0.2s ease;
+}
+
+/* ===== SPECIFIC STYLES FOR DIFFERENT CONTROLLERS ===== */
+
+/* Research Binaria Controller specific styles */
+#titleBin, #titleSec, #titleHash, #titleIndex {
+    -fx-font-size: 23px;
+    -fx-font-weight: bold;
+}
+
+#functionBin, #functionSec, #functionHash {
+    -fx-font-size: 20px;
+    -fx-font-weight: bold;
+}
+
+/* Operations Controller specific styles */
+.scroll-pane#graph1, .scroll-pane#graph2, .scroll-pane#graphResult {
+    -fx-background-color: white;
+    -fx-border-color: #e0e0e0;
+    -fx-border-radius: 8px;
+}
+
+/* Index Mono Controller specific styles */
+#titleIndex {
+    -fx-font-size: 23px;
+}
+
+#lblEstructuraDataHeader, #lblIngresoDataHeader, #lblParametrosIndiceHeader {
+    -fx-font-weight: bold;
+}
+
+/* Trees Controller specific styles */
+#treesTitle {
+    -fx-font-size: 23px;
+}
+
+#treesDescription {
+    -fx-font-size: 13px;
+    -fx-font-weight: bold;
+}
+
+/* ===== CORRECCIÓN ESPECÍFICA PARA BOTÓN "BÚSQUEDA" EN INICIO ===== */
+/* Botón "Búsqueda" más ancho en la pantalla de inicio */
+BorderPane > .center > AnchorPane > Button {
+    -fx-font-size: 39px;
+    -fx-background-radius: 12px;
+    -fx-border-radius: 12px;
+    -fx-padding: 20px 40px; /* Más padding horizontal */
+    -fx-min-width: 300px; /* Ancho mínimo garantizado */
+}
+
+/* Selectores adicionales por texto del botón para hacerlo más ancho */
+.button:contains("Búsqueda"),
+.button:contains("Busqueda"),
+.button:contains("Búsqueda Binaria"),
+.button:contains("Busqueda Binaria") {
+    -fx-min-width: 350px;
+    -fx-pref-width: 350px;
+}
+
+/* Ensure all original font sizes are preserved */
+Font[size="58.0"] {
+    -fx-font-size: 58px;
+}
+
+Font[size="39.0"] {
+    -fx-font-size: 39px;
+}
+
+Font[size="23.0"] {
+    -fx-font-size: 23px;
+}
+
+Font[size="20.0"] {
+    -fx-font-size: 20px;
+}
+
+Font[size="18.0"] {
+    -fx-font-size: 18px;
+}
+
+Font[size="14.0"] {
+    -fx-font-size: 14px;
+}
+
+Font[size="13.0"] {
+    -fx-font-size: 13px;
+}
