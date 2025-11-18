@@ -8,7 +8,7 @@
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.text.Font?>
 
-<BorderPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="620.0" prefWidth="1080.0" xmlns="http://javafx.com/javafx/24.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="ciencias.StartController">
+<BorderPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="620.0" prefWidth="1080.0" stylesheets="@estilos.css" xmlns="http://javafx.com/javafx/24.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="ciencias.StartController">
    <top>
       <Label prefHeight="89.0" prefWidth="749.0" text="Ciencias de la computacion II" translateY="10.0" BorderPane.alignment="CENTER">
          <font>
@@ -24,7 +24,7 @@
                   <Image url="@../images/Escudo_UD.svg.png" />
                </image>
             </ImageView>
-            <Button layoutX="127.0" layoutY="316.0" mnemonicParsing="false" onAction="#toResearch" prefHeight="104.0" prefWidth="239.0" text="Busquedas">
+            <Button layoutX="127.0" layoutY="316.0" mnemonicParsing="false" onAction="#toResearch" prefHeight="104.0" prefWidth="253.0" text="Busquedas">
                <font>
                   <Font size="39.0" />
                </font>

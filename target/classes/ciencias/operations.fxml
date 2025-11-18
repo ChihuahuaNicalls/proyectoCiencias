@@ -14,7 +14,6 @@
 <?import javafx.scene.text.Text?>
 <?import javafx.scene.text.TextFlow?>
 
-
 <Pane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="870.0" prefWidth="1020.0" xmlns="http://javafx.com/javafx/24.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="ciencias.Graphs.OperationsController">
    <children>
       <TextFlow layoutX="387.0" layoutY="14.0" prefHeight="35.0" prefWidth="246.0" textAlignment="CENTER">
@@ -129,17 +128,17 @@
             <Text strokeType="OUTSIDE" strokeWidth="0.0" text="Destino:" textAlignment="CENTER" />
          </children>
       </TextFlow>
-      <CheckBox fx:id="edgeDirection" layoutX="528.0" layoutY="148.0" mnemonicParsing="false" text="Direccionado" />
+      <CheckBox fx:id="edgeDirection" layoutX="417.0" layoutY="149.0" mnemonicParsing="false" text="Direccionado" />
       <TextField fx:id="edgeOrg" alignment="CENTER" layoutX="513.0" layoutY="113.0" prefHeight="25.0" prefWidth="120.0" promptText="Ej: A" />
-      <TextField fx:id="edgeDest" alignment="CENTER" layoutX="686.0" layoutY="113.0" prefHeight="25.0" prefWidth="120.0" promptText="Ej: B" />
+      <TextField fx:id="edgeDest" alignment="CENTER" layoutX="693.0" layoutY="113.0" prefHeight="25.0" prefWidth="113.0" promptText="Ej: B" />
       <Button fx:id="edgeAddButton" layoutX="825.0" layoutY="113.0" mnemonicParsing="false" onAction="#edgeAdd" text="Agregar Arista" />
       <Button fx:id="edgeDeleteButton" layoutX="825.0" layoutY="145.0" mnemonicParsing="false" onAction="#edgeDelete" text="Eliminar Arista" />
-      <TextFlow layoutX="627.0" layoutY="149.0" prefHeight="16.0" prefWidth="69.0" textAlignment="CENTER">
+      <TextFlow layoutX="627.0" layoutY="150.0" prefHeight="16.0" prefWidth="69.0" textAlignment="CENTER">
          <children>
-            <Text strokeType="OUTSIDE" strokeWidth="0.0" text="Peso:" textAlignment="CENTER" />
+            <Text fx:id="textWeightNotation" strokeType="OUTSIDE" strokeWidth="0.0" text="Notacion:" textAlignment="CENTER" />
          </children>
       </TextFlow>
-      <TextField fx:id="edgeWeight" alignment="CENTER" layoutX="686.0" layoutY="145.0" prefHeight="25.0" prefWidth="120.0" promptText="Ej: 1" />
+      <TextField fx:id="edgeWeightNotation" alignment="CENTER" layoutX="693.0" layoutY="145.0" prefHeight="25.0" prefWidth="113.0" promptText="Ej: 1" />
       <Line endX="-6.0" endY="17.0" layoutX="402.0" layoutY="160.0" startX="-6.0" startY="-63.0" />
       <Button fx:id="undoButton" layoutX="271.0" layoutY="61.0" mnemonicParsing="false" onAction="#undo" text="Deshacer" />
       <Button fx:id="redoButton" layoutX="349.0" layoutY="61.0" mnemonicParsing="false" onAction="#redo" text="Rehacer" />
@@ -152,5 +151,7 @@
       <Button fx:id="saveButton" layoutX="825.0" layoutY="61.0" mnemonicParsing="false" onAction="#save" text="Guardar" />
       <Button fx:id="loadButton" layoutX="897.0" layoutY="61.0" mnemonicParsing="false" onAction="#load" text="Cargar" />
       <Line endX="-338.0" endY="-75.0" layoutX="412.0" layoutY="170.0" startX="540.0" startY="-75.0" />
+      <CheckBox fx:id="edgePonderation" layoutX="533.0" layoutY="149.0" mnemonicParsing="false" text="Ponderado" />
+      <Button fx:id="restartOpButton" layoutX="698.0" layoutY="520.0" mnemonicParsing="false" onAction="#restartOp" text="Reiniciar" />
    </children>
 </Pane>
