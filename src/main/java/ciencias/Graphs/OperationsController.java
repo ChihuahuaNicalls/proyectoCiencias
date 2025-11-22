@@ -82,6 +82,8 @@ public class OperationsController {
     @FXML
     private Button loadButton;
     @FXML
+    private Button saveButtonResult;
+    @FXML
     private CheckBox edgePonderation;
     @FXML
     private Button restartOpButton;
@@ -130,7 +132,7 @@ public class OperationsController {
         }
     }
 
-    private class GraphState implements Serializable {
+    private static class GraphState implements Serializable {
         private static final long serialVersionUID = 1L;
         Set<String> vertices;
         List<Edge> edges;
@@ -150,7 +152,7 @@ public class OperationsController {
         }
     }
 
-    private class Edge implements Serializable {
+    private static class Edge implements Serializable {
         private static final long serialVersionUID = 1L;
         String source;
         String destination;
@@ -249,8 +251,17 @@ public class OperationsController {
 
         public void addEdge(String source, String destination, String label, boolean isSumEdge) {
 
+            // Only disallow duplicate labels for the same vertex pair (and same sum flag).
             for (Edge existingEdge : edges) {
-                if (existingEdge.label.equals(label)) {
+                boolean samePair;
+                if (!isDirected) {
+                    samePair = (existingEdge.source.equals(source) && existingEdge.destination.equals(destination))
+                            || (existingEdge.source.equals(destination) && existingEdge.destination.equals(source));
+                } else {
+                    samePair = existingEdge.source.equals(source) && existingEdge.destination.equals(destination);
+                }
+
+                if (samePair && existingEdge.label.equals(label) && existingEdge.isSumEdge == isSumEdge) {
                     throw new IllegalStateException("Ya existe una arista con la notación '" + label +
                             "' entre " + existingEdge.source + " y " + existingEdge.destination);
                 }
@@ -627,6 +638,10 @@ public class OperationsController {
         operationText.setText("");
 
         updateOperationState();
+        // Initially disable saving the result (no result graph yet)
+        if (saveButtonResult != null) {
+            saveButtonResult.setDisable(true);
+        }
     }
 
     private void setModificationControlsEnabled(boolean enabled) {
@@ -1546,22 +1561,30 @@ public class OperationsController {
 
     @FXML
     private void save() {
-        try {
-            FileChooser fileChooser = new FileChooser();
-            fileChooser.setTitle("Guardar grafos");
-            fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Graph Files", "*.graph"));
+        Graph currentGraph = getCurrentModifyingGraph();
+        if (currentGraph == null) {
+            Alert alert = new Alert(Alert.AlertType.WARNING);
+            alert.setTitle("Guardar grafo");
+            alert.setHeaderText(null);
+            alert.setContentText("Seleccione 'Grafo 1' o 'Grafo 2' en 'Modificar' para guardar.");
+            alert.showAndWait();
+            return;
+        }
 
-            Stage stage = (Stage) saveButton.getScene().getWindow();
-            File file = fileChooser.showSaveDialog(stage);
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Guardar grafo");
+        fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Graph Files", "*.graph"));
 
-            if (file != null) {
-                try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(file))) {
-                    oos.writeObject(graph1Data.getState());
-                    oos.writeObject(graph2Data.getState());
-                    oos.writeObject(graphResultData.getState());
-                    modificationText.setText("Grafos guardados en: " + file.getName());
-                }
-            }
+        Stage stage = (Stage) saveButton.getScene().getWindow();
+        File file = fileChooser.showSaveDialog(stage);
+
+        if (file == null) {
+            return;
+        }
+
+        try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(file))) {
+            oos.writeObject(currentGraph.getState());
+            modificationText.setText("Grafo guardado: " + file.getName());
         } catch (Exception e) {
             modificationText.setText("Error al guardar: " + e.getMessage());
             e.printStackTrace();
@@ -1570,26 +1593,120 @@ public class OperationsController {
 
     @FXML
     private void load() {
-        try {
-            FileChooser fileChooser = new FileChooser();
-            fileChooser.setTitle("Cargar grafos");
-            fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Graph Files", "*.graph"));
+        Graph currentGraph = getCurrentModifyingGraph();
+        if (currentGraph == null) {
+            Alert alert = new Alert(Alert.AlertType.WARNING);
+            alert.setTitle("Cargar grafo");
+            alert.setHeaderText(null);
+            alert.setContentText("Seleccione 'Grafo 1' o 'Grafo 2' en 'Modificar' para cargar.");
+            alert.showAndWait();
+            return;
+        }
 
-            Stage stage = (Stage) loadButton.getScene().getWindow();
-            File file = fileChooser.showOpenDialog(stage);
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Cargar grafo");
+        fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Graph Files", "*.graph"));
 
-            if (file != null) {
-                try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(file))) {
-                    graph1Data.setState((GraphState) ois.readObject());
-                    graph2Data.setState((GraphState) ois.readObject());
-                    graphResultData.setState((GraphState) ois.readObject());
-                    updateAllGraphDisplays();
-                    modificationText.setText("Grafos cargados desde: " + file.getName());
-                    updateOperationState();
+        Stage stage = (Stage) loadButton.getScene().getWindow();
+        File file = fileChooser.showOpenDialog(stage);
+
+        if (file == null) {
+            return;
+        }
+
+        try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(file))) {
+            List<GraphState> states = new ArrayList<>();
+            try {
+                while (true) {
+                    Object obj = ois.readObject();
+                    if (obj instanceof GraphState) {
+                        states.add((GraphState) obj);
+                    }
                 }
+            } catch (EOFException eof) {
+                // finished reading
             }
+
+            if (states.isEmpty()) {
+                throw new IllegalArgumentException("Archivo no contiene grafos válidos");
+            }
+
+            if (states.size() >= 3) {
+                // legacy file with three graphs saved: restore all
+                graph1Data = new Graph();
+                graph1Data.setState(states.get(0));
+                graph2Data = new Graph();
+                graph2Data.setState(states.get(1));
+                graphResultData = new Graph();
+                graphResultData.setState(states.get(2));
+
+                // clear histories for a fresh load
+                graph1History.clear();
+                graph2History.clear();
+                graph1RedoStack.clear();
+                graph2RedoStack.clear();
+
+                updateAllGraphDisplays();
+                modificationText.setText("Grafos cargados desde: " + file.getName());
+                updateOperationState();
+                return;
+            }
+
+            // Single graph in file: load into currently selected modifying graph
+            GraphState loadedState = states.get(0);
+
+            // Replace the target graph with a fresh Graph built from the loaded state
+            if ("Grafo 1".equals(currentModifyingGraph)) {
+                graph1Data = new Graph();
+                graph1Data.setState(loadedState);
+                graph1History.clear();
+                graph1RedoStack.clear();
+                currentScaleGraph1 = 1.0;
+                drawGraph(graph1Data, graph1);
+            } else if ("Grafo 2".equals(currentModifyingGraph)) {
+                graph2Data = new Graph();
+                graph2Data.setState(loadedState);
+                graph2History.clear();
+                graph2RedoStack.clear();
+                currentScaleGraph2 = 1.0;
+                drawGraph(graph2Data, graph2);
+            }
+
+            modificationText.setText("Grafo cargado: " + file.getName());
+            updateOperationState();
         } catch (Exception e) {
             modificationText.setText("Error al cargar: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    @FXML
+    private void saveResult() {
+        if (graphResultData == null || graphResultData.isEmpty()) {
+            Alert alert = new Alert(Alert.AlertType.WARNING);
+            alert.setTitle("Guardar resultado");
+            alert.setHeaderText(null);
+            alert.setContentText("No hay grafo resultado para guardar.");
+            alert.showAndWait();
+            return;
+        }
+
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Guardar grafo resultado");
+        fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Graph Files", "*.graph"));
+
+        Stage stage = (Stage) saveButtonResult.getScene().getWindow();
+        File file = fileChooser.showSaveDialog(stage);
+
+        if (file == null) {
+            return;
+        }
+
+        try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(file))) {
+            oos.writeObject(graphResultData.getState());
+            modificationText.setText("Grafo resultado guardado: " + file.getName());
+        } catch (Exception e) {
+            modificationText.setText("Error al guardar resultado: " + e.getMessage());
             e.printStackTrace();
         }
     }
@@ -1665,12 +1782,19 @@ public class OperationsController {
 
     private void updateResultGraphDisplay() {
         drawGraph(graphResultData, graphResult);
+        // Enable save button only when result graph has content
+        if (saveButtonResult != null) {
+            saveButtonResult.setDisable(graphResultData == null || graphResultData.isEmpty());
+        }
     }
 
     private void updateAllGraphDisplays() {
         drawGraph(graph1Data, graph1);
         drawGraph(graph2Data, graph2);
         drawGraph(graphResultData, graphResult);
+        if (saveButtonResult != null) {
+            saveButtonResult.setDisable(graphResultData == null || graphResultData.isEmpty());
+        }
     }
 
     private void drawGraph(Graph graph, ScrollPane scrollPane) {

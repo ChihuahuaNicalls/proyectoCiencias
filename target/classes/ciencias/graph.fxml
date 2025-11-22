@@ -12,7 +12,7 @@
 <BorderPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" 
             stylesheets="@estilos.css"
             prefHeight="620.0" prefWidth="1080.0" 
-            xmlns="http://javafx.com/javafx/24.0.1" 
+            xmlns="http://javafx.com/javafx/22.0.2" 
             xmlns:fx="http://javafx.com/fxml/1"
             fx:controller="ciencias.GraphController">
    
@@ -50,11 +50,7 @@
                   <ScrollPane fx:id="scrollRepresentation" prefHeight="480.0" prefWidth="1020.0" />
                </content>
             </Tab>
-            <Tab fx:id="tabColor" text="Coloreado de grafos">
-               <content>
-                  <ScrollPane fx:id="scrollColor" prefHeight="480.0" prefWidth="1020.0" />
-               </content>
-            </Tab>
+            <!-- Tab "Coloreado de grafos" removed -->
          </tabs>
       </TabPane>
    </center>

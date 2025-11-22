@@ -22,8 +22,7 @@ public class GraphController {
     private Tab tabTrees;
     @FXML
     private Tab tabRepresentation;
-    @FXML
-    private Tab tabColor;
+
 
     @FXML
     private ScrollPane scrollOperations;
@@ -31,8 +30,6 @@ public class GraphController {
     private ScrollPane scrollTrees;
     @FXML
     private ScrollPane scrollRepresentation;
-    @FXML
-    private ScrollPane scrollColor;
 
     private Map<Tab, String> fxmlMap;
 
@@ -50,7 +47,6 @@ public class GraphController {
         fxmlMap.put(tabOperations, "operations.fxml");
         fxmlMap.put(tabTrees, "treesGraph.fxml");
         fxmlMap.put(tabRepresentation, "representation.fxml");
-        fxmlMap.put(tabColor, "color.fxml");
     }
 
     private void setupTabListeners() {
@@ -77,9 +73,6 @@ public class GraphController {
                     break;
                 case "Representacion de grafos":
                     scrollRepresentation.setContent(vista);
-                    break;
-                case "Coloreado de grafos":
-                    scrollColor.setContent(vista);
                     break;
             }
         } catch (IOException e) {
