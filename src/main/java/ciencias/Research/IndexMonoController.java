@@ -1,699 +1,365 @@
 package ciencias.Research;
 
 import ciencias.ResearchController;
-import javafx.beans.property.*;
-import javafx.collections.FXCollections;
-import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
+import javafx.geometry.Bounds;
+import javafx.scene.canvas.Canvas;
+import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.*;
-import javafx.scene.layout.Pane;
 import javafx.scene.layout.VBox;
-import javafx.scene.text.Text;
-import javafx.scene.text.TextFlow;
+import javafx.scene.paint.Color;
+import javafx.scene.text.Font;
 
 import java.util.*;
 
-/**
- * Controlador IndexController con carga dinámica según tipo de índice seleccionado
- * Sigue la estética del código guía HashControllerExternal
- */
 public class IndexMonoController {
 
-
-    public static class Campo {
-        private String nombre;
-        private boolean esClavePrimaria;
-
-        public Campo(String nombre, boolean esClavePrimaria) {
-            this.nombre = nombre;
-            this.esClavePrimaria = esClavePrimaria;
-        }
-
-        public String getNombre() { return nombre; }
-        public void setNombre(String nombre) { this.nombre = nombre; }
-        public boolean isEsClavePrimaria() { return esClavePrimaria; }
-        public void setEsClavePrimaria(boolean esClavePrimaria) { this.esClavePrimaria = esClavePrimaria; }
-    }
-
-    public static class Registro {
-        private Map<String, String> valores;
-        private int posicionBloque;
-        private int posicionRegistro;
-
-        public Registro() {
-            this.valores = new HashMap<>();
-        }
-
-        public void setValor(String campo, String valor) {
-            valores.put(campo, valor);
-        }
-
-        public String getValor(String campo) {
-            return valores.get(campo);
-        }
-
-        public Map<String, String> getValores() { return valores; }
-        public int getPosicionBloque() { return posicionBloque; }
-        public void setPosicionBloque(int posicionBloque) { this.posicionBloque = posicionBloque; }
-        public int getPosicionRegistro() { return posicionRegistro; }
-        public void setPosicionRegistro(int posicionRegistro) { this.posicionRegistro = posicionRegistro; }
-    }
-
-    public static class BloqueDatos {
-        private int numeroBloque;
-        private List<Registro> registros;
-        private int capacidadMaxima;
-
-        public BloqueDatos(int numeroBloque, int capacidadMaxima) {
-            this.numeroBloque = numeroBloque;
-            this.capacidadMaxima = capacidadMaxima;
-            this.registros = new ArrayList<>();
-        }
-
-        public boolean agregarRegistro(Registro registro) {
-            if (registros.size() < capacidadMaxima) {
-                registros.add(registro);
-                registro.setPosicionBloque(numeroBloque);
-                registro.setPosicionRegistro(registros.size() - 1);
-                return true;
-            }
-            return false;
-        }
-
-        public int getNumeroBloque() { return numeroBloque; }
-        public List<Registro> getRegistros() { return registros; }
-        public int getCantidadRegistros() { return registros.size(); }
-        public int getCapacidadMaxima() { return capacidadMaxima; }
-    }
-
-    public static class EstructuraDatos {
-        private List<Campo> campos;
-        private List<BloqueDatos> bloques;
-        private int longitudRegistroBytes;
-        private int tamañoBloqueBytes;
-        private int registrosPorBloque;
-        private int cantidadTotalRegistros;
-        private int cantidadBloques;
-        private String campoClavePrimaria;
-
-        public EstructuraDatos(List<Campo> campos, int longitudRegistroBytes, 
-                              int tamañoBloqueBytes, int cantidadTotalRegistros) {
-            this.campos = campos;
-            this.longitudRegistroBytes = longitudRegistroBytes;
-            this.tamañoBloqueBytes = tamañoBloqueBytes;
-            this.cantidadTotalRegistros = cantidadTotalRegistros;
-
-            this.registrosPorBloque = tamañoBloqueBytes / longitudRegistroBytes;
-            this.cantidadBloques = (int) Math.ceil((double) cantidadTotalRegistros / registrosPorBloque);
-
-            this.bloques = new ArrayList<>();
-            for (int i = 0; i < cantidadBloques; i++) {
-                bloques.add(new BloqueDatos(i, registrosPorBloque));
-            }
-
-            for (Campo campo : campos) {
-                if (campo.isEsClavePrimaria()) {
-                    this.campoClavePrimaria = campo.getNombre();
-                    break;
-                }
-            }
-        }
-
-        public boolean agregarRegistro(Registro registro) {
-            for (BloqueDatos bloque : bloques) {
-                if (bloque.agregarRegistro(registro)) {
-                    return true;
-                }
-            }
-            return false;
-        }
-
-        public int getTotalRegistrosActuales() {
-            return bloques.stream().mapToInt(BloqueDatos::getCantidadRegistros).sum();
-        }
-
-        public List<Campo> getCampos() { return campos; }
-        public List<BloqueDatos> getBloques() { return bloques; }
-        public int getLongitudRegistroBytes() { return longitudRegistroBytes; }
-        public int getTamañoBloqueBytes() { return tamañoBloqueBytes; }
-        public int getRegistrosPorBloque() { return registrosPorBloque; }
-        public int getCantidadTotalRegistros() { return cantidadTotalRegistros; }
-        public int getCantidadBloques() { return cantidadBloques; }
-        public String getCampoClavePrimaria() { return campoClavePrimaria; }
-    }
-
-    public static class EntradaIndice {
-        private String valorCampoIndexacion;
-        private int puntero;
-
-        public EntradaIndice(String valorCampoIndexacion, int puntero) {
-            this.valorCampoIndexacion = valorCampoIndexacion;
-            this.puntero = puntero;
-        }
-
-        public String getValorCampoIndexacion() { return valorCampoIndexacion; }
-        public void setValorCampoIndexacion(String valor) { this.valorCampoIndexacion = valor; }
-        public int getPuntero() { return puntero; }
-        public void setPuntero(int puntero) { this.puntero = puntero; }
-    }
-
-    public static class BloqueIndice {
-        private int numeroBloque;
-        private List<EntradaIndice> entradas;
-        private int capacidadMaxima;
-
-        public BloqueIndice(int numeroBloque, int capacidadMaxima) {
-            this.numeroBloque = numeroBloque;
-            this.capacidadMaxima = capacidadMaxima;
-            this.entradas = new ArrayList<>();
-        }
-
-        public boolean agregarEntrada(EntradaIndice entrada) {
-            if (entradas.size() < capacidadMaxima) {
-                entradas.add(entrada);
-                return true;
-            }
-            return false;
-        }
-
-        public int getNumeroBloque() { return numeroBloque; }
-        public List<EntradaIndice> getEntradas() { return entradas; }
-        public int getCantidadEntradas() { return entradas.size(); }
-    }
-
-    public enum TipoIndice {
-        PRIMARIO,
-        SECUNDARIO
-    }
-
-    public static class EstructuraIndice {
-        private TipoIndice tipo;
-        private String campoIndexacion;
-        private int longitudCampoIndexacionBytes;
-        private int longitudPunteroBytes;
-        private int tamañoEntradaBytes;
-        private int tamañoBloqueBytes;
-        private int entradasPorBloque;
-        private int cantidadRegistrosIndice;
-        private int cantidadBloquesIndice;
-        private List<BloqueIndice> bloques;
-        private EstructuraDatos estructuraDatos;
-
-        public EstructuraIndice(TipoIndice tipo, String campoIndexacion,
-                               int longitudCampoIndexacionBytes, int longitudPunteroBytes,
-                               EstructuraDatos estructuraDatos) {
-            this.tipo = tipo;
-            this.campoIndexacion = campoIndexacion;
-            this.longitudCampoIndexacionBytes = longitudCampoIndexacionBytes;
-            this.longitudPunteroBytes = longitudPunteroBytes;
-            this.estructuraDatos = estructuraDatos;
-
-            this.tamañoEntradaBytes = longitudCampoIndexacionBytes + longitudPunteroBytes;
-            this.tamañoBloqueBytes = estructuraDatos.getTamañoBloqueBytes();
-            this.entradasPorBloque = tamañoBloqueBytes / tamañoEntradaBytes;
-
-            if (tipo == TipoIndice.PRIMARIO) {
-                this.cantidadRegistrosIndice = estructuraDatos.getCantidadBloques();
-            } else {
-                this.cantidadRegistrosIndice = estructuraDatos.getCantidadTotalRegistros();
-            }
-
-            this.cantidadBloquesIndice = (int) Math.ceil((double) cantidadRegistrosIndice / entradasPorBloque);
-
-            this.bloques = new ArrayList<>();
-            for (int i = 0; i < cantidadBloquesIndice; i++) {
-                bloques.add(new BloqueIndice(i, entradasPorBloque));
-            }
-        }
-
-        public void generarIndices() {
-            if (tipo == TipoIndice.PRIMARIO) {
-                generarIndicesPrimarios();
-            } else {
-                generarIndicesSecundarios();
-            }
-        }
-
-        private void generarIndicesPrimarios() {
-            for (BloqueDatos bloque : estructuraDatos.getBloques()) {
-                if (!bloque.getRegistros().isEmpty()) {
-                    Registro primerRegistro = bloque.getRegistros().get(0);
-                    String valorClave = primerRegistro.getValor(estructuraDatos.getCampoClavePrimaria());
-                    EntradaIndice entrada = new EntradaIndice(valorClave, bloque.getNumeroBloque());
-                    agregarEntrada(entrada);
-                }
-            }
-        }
-
-        private void generarIndicesSecundarios() {
-            int posicionGlobal = 0;
-            for (BloqueDatos bloque : estructuraDatos.getBloques()) {
-                for (Registro registro : bloque.getRegistros()) {
-                    String valorCampo = registro.getValor(campoIndexacion);
-                    EntradaIndice entrada = new EntradaIndice(valorCampo, posicionGlobal);
-                    agregarEntrada(entrada);
-                    posicionGlobal++;
-                }
-            }
-        }
-
-        private boolean agregarEntrada(EntradaIndice entrada) {
-            for (BloqueIndice bloque : bloques) {
-                if (bloque.agregarEntrada(entrada)) {
-                    return true;
-                }
-            }
-            return false;
-        }
-
-        public TipoIndice getTipo() { return tipo; }
-        public String getCampoIndexacion() { return campoIndexacion; }
-        public int getTamañoEntradaBytes() { return tamañoEntradaBytes; }
-        public int getEntradasPorBloque() { return entradasPorBloque; }
-        public int getCantidadRegistrosIndice() { return cantidadRegistrosIndice; }
-        public int getCantidadBloquesIndice() { return cantidadBloquesIndice; }
-        public List<BloqueIndice> getBloques() { return bloques; }
-        public int getLongitudCampoIndexacionBytes() { return longitudCampoIndexacionBytes; }
-        public int getLongitudPunteroBytes() { return longitudPunteroBytes; }
-    }
-
-    // ======================== ATRIBUTOS DEL CONTROLADOR ========================
-
-    private EstructuraDatos estructuraDatos;
-    private EstructuraIndice estructuraIndice;
-    private TipoIndice tipoIndiceSeleccionado;
-
-    // FXML Components - Siempre Visibles
-    @FXML private Label titleIndex;
-    @FXML private ComboBox<String> cmbTipoIndice;
-
-    // Sección: Crear Estructura de Datos
-    @FXML private Label lblEstructuraDataHeader;
-    @FXML private Label lblCantidadCampos;
-    @FXML private TextField txtCantidadCampos;
-    @FXML private Label lblLongitudRegistro;
     @FXML private TextField txtLongitudRegistro;
-    @FXML private Label lblTamañoBloque;
     @FXML private TextField txtTamañoBloque;
-    @FXML private Label lblCantidadRegistros;
     @FXML private TextField txtCantidadRegistros;
-    @FXML private Button btnCrearEstructura;
-
-    // Sección: Ingreso de Datos
-    @FXML private Label lblIngresoDataHeader;
-    @FXML private Pane panelCamposVistaData;
-    @FXML private Button btnAgregarRegistro;
-    @FXML private Text txtRegistrosCount;
-
-    // Sección: Parámetros de Índice
-    @FXML private Label lblParametrosIndiceHeader;
-    @FXML private TextFlow flowPrimarioInfo;
-    @FXML private Label lblCampoSecundario;
-    @FXML private ComboBox<String> cmbCampoIndexacion;
-    @FXML private Label lblLongitudCampoIndice;
     @FXML private TextField txtLongitudCampoIndice;
-    @FXML private Label lblLongitudPuntero;
-    @FXML private TextField txtLongitudPuntero;
-    @FXML private Button btnCrearIndice;
-
-    // Sección: Resultados
-    @FXML private Label lblResultadosHeader;
-    @FXML private Text txtResultados;
-
-    // Botones de Utilidad
-    @FXML private Button btnReiniciar;
-    @FXML private Button btnGuardar;
-
-    // ======================== INICIALIZACIÓN ========================
+    @FXML private Button btnGenerar;
+    @FXML private Button btnLimpiar;
+    @FXML private Canvas canvasFlechas;
+    @FXML private VBox vboxIndices;
+    @FXML private VBox vboxDatos;
 
     private ResearchController researchController;
+    private boolean esPrimario = true;
+    
+    // Para almacenar referencias a los labels de flecha
+    private Label flechaLabel1Indice, flechaLabel2Indice, flechaLabel3Indice;
+    private Label flechaLabel1Datos, flechaLabel2Datos, flechaLabel3Datos;
 
     public void setResearchController(ResearchController researchController) {
         this.researchController = researchController;
     }
 
+    public void setTipoIndice(boolean primario) {
+        this.esPrimario = primario;
+    }
+
     @FXML
     public void initialize() {
-        researchController = new ResearchController();
-        configurarComboTipoIndice();
-        ocultarTodoExceptoCombo();
     }
-
-    private void configurarComboTipoIndice() {
-        if (cmbTipoIndice != null) {
-            cmbTipoIndice.setItems(FXCollections.observableArrayList("PRIMARIO", "SECUNDARIO"));
-        }
-    }
-
-    private void ocultarTodoExceptoCombo() {
-        lblEstructuraDataHeader.setVisible(false);
-        lblCantidadCampos.setVisible(false);
-        txtCantidadCampos.setVisible(false);
-        lblLongitudRegistro.setVisible(false);
-        txtLongitudRegistro.setVisible(false);
-        lblTamañoBloque.setVisible(false);
-        txtTamañoBloque.setVisible(false);
-        lblCantidadRegistros.setVisible(false);
-        txtCantidadRegistros.setVisible(false);
-        btnCrearEstructura.setVisible(false);
-
-        lblIngresoDataHeader.setVisible(false);
-        panelCamposVistaData.setVisible(false);
-        btnAgregarRegistro.setVisible(false);
-        txtRegistrosCount.getParent().setVisible(false);
-
-        lblParametrosIndiceHeader.setVisible(false);
-        flowPrimarioInfo.setVisible(false);
-        lblCampoSecundario.setVisible(false);
-        cmbCampoIndexacion.setVisible(false);
-        lblLongitudCampoIndice.setVisible(false);
-        txtLongitudCampoIndice.setVisible(false);
-        lblLongitudPuntero.setVisible(false);
-        txtLongitudPuntero.setVisible(false);
-        btnCrearIndice.setVisible(false);
-
-        lblResultadosHeader.getParent().setVisible(false);
-        txtResultados.getParent().setVisible(false);
-    }
-
-    // ======================== MANEJADOR DE CAMBIOS DE TIPO ========================
 
     @FXML
-    public void onTipoIndiceChanged() {
-        String tipoSeleccionado = cmbTipoIndice.getValue();
-        if (tipoSeleccionado == null) {
-            ocultarTodoExceptoCombo();
-            return;
-        }
-
-        tipoIndiceSeleccionado = TipoIndice.valueOf(tipoSeleccionado);
-
-        // Si no existe estructura de datos, mostrar opción de crear
-        if (estructuraDatos == null) {
-            mostrarPanelCrearEstructura();
-        } else {
-            // Si existe estructura, mostrar panel de ingreso de datos y parámetros de índice
-            mostrarPanelIngresoDatos();
-            mostrarPanelParametrosIndice();
-        }
-    }
-
-    private void mostrarPanelCrearEstructura() {
-        ocultarTodoExceptoCombo();
-        lblEstructuraDataHeader.setVisible(true);
-        lblCantidadCampos.setVisible(true);
-        txtCantidadCampos.setVisible(true);
-        lblLongitudRegistro.setVisible(true);
-        txtLongitudRegistro.setVisible(true);
-        lblTamañoBloque.setVisible(true);
-        txtTamañoBloque.setVisible(true);
-        lblCantidadRegistros.setVisible(true);
-        txtCantidadRegistros.setVisible(true);
-        btnCrearEstructura.setVisible(true);
-    }
-
-    private void mostrarPanelIngresoDatos() {
-        lblIngresoDataHeader.setVisible(true);
-        panelCamposVistaData.setVisible(true);
-        btnAgregarRegistro.setVisible(true);
-        txtRegistrosCount.getParent().setVisible(true);
-        actualizarContadorRegistros();
-    }
-
-    private void mostrarPanelParametrosIndice() {
-        lblParametrosIndiceHeader.setVisible(true);
-        lblLongitudCampoIndice.setVisible(true);
-        txtLongitudCampoIndice.setVisible(true);
-        lblLongitudPuntero.setVisible(true);
-        txtLongitudPuntero.setVisible(true);
-        btnCrearIndice.setVisible(true);
-
-        if (tipoIndiceSeleccionado == TipoIndice.PRIMARIO) {
-            flowPrimarioInfo.setVisible(true);
-            lblCampoSecundario.setVisible(false);
-            cmbCampoIndexacion.setVisible(false);
-        } else {
-            flowPrimarioInfo.setVisible(false);
-            lblCampoSecundario.setVisible(true);
-            cmbCampoIndexacion.setVisible(true);
-            actualizarComboCampos();
-        }
-    }
-
-    // ======================== CREAR ESTRUCTURA DE DATOS ========================
-
-    @FXML
-    public void crearEstructuraDatos() {
+    public void generarEstructura() {
         try {
-            int cantidadCampos = Integer.parseInt(txtCantidadCampos.getText());
             int longitudRegistro = Integer.parseInt(txtLongitudRegistro.getText());
             int tamañoBloque = Integer.parseInt(txtTamañoBloque.getText());
             int cantidadRegistros = Integer.parseInt(txtCantidadRegistros.getText());
-
-            if (cantidadCampos < 2) {
-                mostrarError("Debe haber al menos 2 campos");
-                return;
-            }
+            int longitudCampoIndice = Integer.parseInt(txtLongitudCampoIndice.getText());
 
             if (longitudRegistro > tamañoBloque) {
                 mostrarError("Longitud de registro no puede exceder tamaño de bloque");
                 return;
             }
 
-            List<Campo> campos = solicitarNombresCampos(cantidadCampos);
-            if (campos == null) return;
+            // Cálculos para DATOS
+            int registrosPorBloqueDatos = tamañoBloque / longitudRegistro;
+            int bloquesTotalesDatos = (int) Math.ceil((double) cantidadRegistros / registrosPorBloqueDatos);
 
-            estructuraDatos = new EstructuraDatos(campos, longitudRegistro, tamañoBloque, cantidadRegistros);
+            // Cálculos para ÍNDICE
+            int longitudPuntero = 4;
+            int tamañoEntrada = longitudCampoIndice + longitudPuntero;
+            int entradasPorBloqueIndice = tamañoBloque / tamañoEntrada;
 
-            mostrarPanelIngresoDatos();
-            mostrarPanelParametrosIndice();
-            btnReiniciar.setDisable(false);
-            btnGuardar.setDisable(false);
+            // En PRIMARIO: registros índice = bloques de datos
+            // En SECUNDARIO: registros índice = registros de datos
+            int totalRegistrosIndice = esPrimario ? bloquesTotalesDatos : cantidadRegistros;
+            int bloquesTotalesIndice = (int) Math.ceil((double) totalRegistrosIndice / entradasPorBloqueIndice);
 
-            crearCamposEnPanel();
+            System.out.println("=== DATOS ===");
+            System.out.println("Registros por bloque: " + registrosPorBloqueDatos);
+            System.out.println("Bloques totales datos: " + bloquesTotalesDatos);
+            System.out.println("=== ÍNDICE ===");
+            System.out.println("Total registros índice: " + totalRegistrosIndice);
+            System.out.println("Entradas por bloque índice: " + entradasPorBloqueIndice);
+            System.out.println("Bloques totales índice: " + bloquesTotalesIndice);
+
+            // Generar tablas
+            generarTablaIndices(bloquesTotalesIndice, entradasPorBloqueIndice, totalRegistrosIndice);
+            generarTablaDatos(bloquesTotalesDatos, registrosPorBloqueDatos, cantidadRegistros);
+
+            // Dibujar flechas
+            javafx.application.Platform.runLater(() -> dibujarFlechas());
 
         } catch (NumberFormatException e) {
             mostrarError("Ingrese valores numéricos válidos");
         }
     }
 
-    private List<Campo> solicitarNombresCampos(int cantidadCampos) {
-        List<Campo> campos = new ArrayList<>();
+    private void generarTablaIndices(int bloquesTotales, int entradasPorBloque, int totalRegistros) {
+        vboxIndices.getChildren().clear();
+        flechaLabel1Indice = null;
+        flechaLabel2Indice = null;
+        flechaLabel3Indice = null;
 
-        for (int i = 0; i < cantidadCampos; i++) {
-            TextInputDialog dialog = new TextInputDialog();
-            dialog.setTitle("Campo " + (i + 1));
-            dialog.setHeaderText("Nombre del campo " + (i + 1));
-            dialog.setContentText("Nombre:");
+        Color[] colores = {Color.web("#E3F2FD"), Color.web("#BBDEFB"), Color.web("#90CAF9"), Color.web("#64B5F6")};
+        List<Integer> bloquesAMostrar = obtenerBloquesAMostrar(bloquesTotales);
 
-            Optional<String> resultado = dialog.showAndWait();
-            if (!resultado.isPresent()) return null;
+        System.out.println("Bloques a mostrar en índices: " + bloquesAMostrar);
 
-            String nombre = resultado.get().trim();
-            if (nombre.isEmpty()) {
-                mostrarError("Campo vacío");
-                return null;
+        for (int i = 0; i < bloquesAMostrar.size(); i++) {
+            int numeroBloque = bloquesAMostrar.get(i);
+            VBox bloqueBox = new VBox();
+            bloqueBox.setStyle("-fx-border-color: #999999; -fx-border-width: 1; -fx-padding: 3;");
+            bloqueBox.setStyle(bloqueBox.getStyle() + " -fx-background-color: " + colorToHex(colores[i % 4]) + ";");
+
+            Label tituloBloque = new Label("Bloque Índice " + (numeroBloque + 1));
+            tituloBloque.setStyle("-fx-font-weight: bold; -fx-font-size: 7;");
+            bloqueBox.getChildren().add(tituloBloque);
+
+            VBox filasBox = new VBox();
+            filasBox.setSpacing(1);
+
+            // Registros de este bloque de índice
+            int registroInicial = numeroBloque * entradasPorBloque + 1;
+            int registroFinal = Math.min((numeroBloque + 1) * entradasPorBloque, totalRegistros);
+            int totalRegistrosBloque = registroFinal - registroInicial + 1;
+
+            System.out.println("Bloque " + numeroBloque + ": registros " + registroInicial + " a " + registroFinal);
+
+            // PRIMER REGISTRO del bloque
+            if (registroInicial <= totalRegistros) {
+                Label primeraFila = crearFilaIndice(registroInicial);
+                filasBox.getChildren().add(primeraFila);
+                
+                // Marcar flecha 1 si es el primer bloque mostrado
+                if (numeroBloque == bloquesAMostrar.get(0)) {
+                    flechaLabel1Indice = primeraFila;
+                }
             }
 
-            boolean esPrimaria = false;
-            if (i == 0) {
-                Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
-                alert.setTitle("Clave Primaria");
-                alert.setHeaderText("¿Es este la clave primaria?");
-                alert.setContentText("Campo: " + nombre);
-                Optional<ButtonType> r = alert.showAndWait();
-                esPrimaria = r.isPresent() && r.get() == ButtonType.OK;
+            // REGISTRO DEL MEDIO del bloque
+            if (totalRegistrosBloque > 2) {
+                int registroMedio = registroInicial + totalRegistrosBloque / 2;
+                if (registroMedio <= totalRegistros) {
+                    Label middleFila = crearFilaIndice(registroMedio);
+                    filasBox.getChildren().add(middleFila);
+                }
             }
 
-            campos.add(new Campo(nombre, esPrimaria));
-        }
-
-        if (campos.stream().noneMatch(Campo::isEsClavePrimaria)) {
-            campos.get(0).setEsClavePrimaria(true);
-        }
-
-        return campos;
-    }
-
-    private void crearCamposEnPanel() {
-        panelCamposVistaData.getChildren().clear();
-        VBox vbox = new VBox();
-        vbox.setSpacing(8);
-
-        for (Campo campo : estructuraDatos.getCampos()) {
-            Label label = new Label(campo.getNombre() + ":");
-            TextField textField = new TextField();
-            textField.setId("txt_" + campo.getNombre());
-            textField.setPrefWidth(200);
-            vbox.getChildren().addAll(label, textField);
-        }
-
-        panelCamposVistaData.getChildren().add(vbox);
-    }
-
-    private void actualizarComboCampos() {
-        if (estructuraDatos != null) {
-            List<String> campos = new ArrayList<>();
-            for (Campo c : estructuraDatos.getCampos()) {
-                campos.add(c.getNombre());
+            // ÚLTIMO REGISTRO del bloque
+            if (totalRegistrosBloque > 1 && registroFinal <= totalRegistros) {
+                Label ultimaFila = crearFilaIndice(registroFinal);
+                filasBox.getChildren().add(ultimaFila);
+                
+                // Marcar flechas según el bloque
+                if (numeroBloque == bloquesAMostrar.get(bloquesAMostrar.size() / 2)) {
+                    flechaLabel2Indice = ultimaFila;
+                }
+                if (numeroBloque == bloquesAMostrar.get(bloquesAMostrar.size() - 1)) {
+                    flechaLabel3Indice = ultimaFila;
+                }
             }
-            cmbCampoIndexacion.setItems(FXCollections.observableArrayList(campos));
+
+            bloqueBox.getChildren().add(filasBox);
+            vboxIndices.getChildren().add(bloqueBox);
         }
     }
 
-    // ======================== AGREGAR REGISTRO ========================
+    private void generarTablaDatos(int bloquesTotales, int registrosPorBloque, int cantidadRegistros) {
+        vboxDatos.getChildren().clear();
+        flechaLabel1Datos = null;
+        flechaLabel2Datos = null;
+        flechaLabel3Datos = null;
 
-    @FXML
-    public void agregarRegistro() {
-        if (estructuraDatos == null) {
-            mostrarError("Cree estructura primero");
-            return;
-        }
+        Color[] colores = {Color.web("#F3E5F5"), Color.web("#E1BEE7"), Color.web("#CE93D8"), Color.web("#BA68C8")};
+        List<Integer> bloquesAMostrar = obtenerBloquesAMostrar(bloquesTotales);
 
-        if (estructuraDatos.getTotalRegistrosActuales() >= estructuraDatos.getCantidadTotalRegistros()) {
-            mostrarError("Capacidad máxima alcanzada");
-            return;
+        System.out.println("Bloques a mostrar en datos: " + bloquesAMostrar);
+
+        for (int i = 0; i < bloquesAMostrar.size(); i++) {
+            int numeroBloque = bloquesAMostrar.get(i);
+            VBox bloqueBox = new VBox();
+            bloqueBox.setStyle("-fx-border-color: #999999; -fx-border-width: 1; -fx-padding: 3;");
+            bloqueBox.setStyle(bloqueBox.getStyle() + " -fx-background-color: " + colorToHex(colores[i % 4]) + ";");
+
+            Label tituloBloque = new Label("Bloque Datos " + (numeroBloque + 1));
+            tituloBloque.setStyle("-fx-font-weight: bold; -fx-font-size: 7;");
+            bloqueBox.getChildren().add(tituloBloque);
+
+            Label encabezado = crearEncabezado();
+            bloqueBox.getChildren().add(encabezado);
+
+            VBox filasBox = new VBox();
+            filasBox.setSpacing(1);
+
+            int registroInicial = numeroBloque * registrosPorBloque + 1;
+            int registroFinal = Math.min((numeroBloque + 1) * registrosPorBloque, cantidadRegistros);
+            int totalRegistrosBloque = registroFinal - registroInicial + 1;
+
+            // PRIMER REGISTRO
+            if (registroInicial <= cantidadRegistros) {
+                Label primeraFila = crearFilaDatos(registroInicial, numeroBloque + 1);
+                filasBox.getChildren().add(primeraFila);
+                
+                if (numeroBloque == bloquesAMostrar.get(0)) {
+                    flechaLabel1Datos = primeraFila;
+                }
+            }
+
+            // REGISTRO DEL MEDIO
+            if (totalRegistrosBloque > 2) {
+                int registroMedio = registroInicial + totalRegistrosBloque / 2;
+                if (registroMedio <= cantidadRegistros) {
+                    Label middleFila = crearFilaDatos(registroMedio, numeroBloque + 1);
+                    filasBox.getChildren().add(middleFila);
+                }
+            }
+
+            // ÚLTIMO REGISTRO
+            if (totalRegistrosBloque > 1 && registroFinal <= cantidadRegistros) {
+                Label ultimaFila = crearFilaDatos(registroFinal, numeroBloque + 1);
+                filasBox.getChildren().add(ultimaFila);
+                
+                if (numeroBloque == bloquesAMostrar.get(bloquesAMostrar.size() / 2)) {
+                    flechaLabel2Datos = ultimaFila;
+                }
+                if (numeroBloque == bloquesAMostrar.get(bloquesAMostrar.size() - 1)) {
+                    flechaLabel3Datos = ultimaFila;
+                }
+            }
+
+            bloqueBox.getChildren().add(filasBox);
+            vboxDatos.getChildren().add(bloqueBox);
         }
+    }
+
+    private Label crearFilaIndice(int numeroRegistro) {
+        String contenido = String.format("%d | %d → Reg %d", numeroRegistro, numeroRegistro, numeroRegistro);
+        Label label = new Label(contenido);
+        label.setFont(Font.font("Monospace", 7));
+        label.setStyle("-fx-padding: 1;");
+        return label;
+    }
+
+    private Label crearFilaDatos(int numeroRegistro, int numeroBloque) {
+        Label label = new Label(String.format("%d | %d | D%d | D%d | ... | Di%d | %d",
+                numeroRegistro, numeroRegistro, numeroRegistro, numeroRegistro + 1000, numeroRegistro, numeroBloque));
+        label.setFont(Font.font("Monospace", 7));
+        label.setStyle("-fx-padding: 1;");
+        return label;
+    }
+
+    private Label crearEncabezado() {
+        Label label = new Label("# Regi | PK | D1 | D2 | ... | Di | # Blq");
+        label.setFont(Font.font("Monospace", 7));
+        label.setStyle("-fx-font-weight: bold; -fx-padding: 1;");
+        return label;
+    }
+
+    private List<Integer> obtenerBloquesAMostrar(int totalBloques) {
+        List<Integer> bloques = new ArrayList<>();
+        if (totalBloques <= 4) {
+            for (int i = 0; i < totalBloques; i++) {
+                bloques.add(i);
+            }
+        } else {
+            bloques.add(0);                          // Bloque 0 (primer bloque)
+            bloques.add(1);                          // Bloque 1 (segundo bloque)
+            bloques.add(totalBloques / 2);           // Bloque del medio
+            bloques.add(totalBloques - 1);           // Último bloque
+        }
+        System.out.println("Total bloques: " + totalBloques + ", A mostrar: " + bloques);
+        return bloques;
+    }
+
+    private void dibujarFlechas() {
+        GraphicsContext gc = canvasFlechas.getGraphicsContext2D();
+        gc.clearRect(0, 0, canvasFlechas.getWidth(), canvasFlechas.getHeight());
+
+        System.out.println("Dibujando flechas...");
+        System.out.println("Flecha 1 - Índice: " + flechaLabel1Indice + ", Datos: " + flechaLabel1Datos);
+        System.out.println("Flecha 2 - Índice: " + flechaLabel2Indice + ", Datos: " + flechaLabel2Datos);
+        System.out.println("Flecha 3 - Índice: " + flechaLabel3Indice + ", Datos: " + flechaLabel3Datos);
 
         try {
-            Registro registro = new Registro();
-
-            for (Campo campo : estructuraDatos.getCampos()) {
-                TextField tf = (TextField) panelCamposVistaData.lookup("#txt_" + campo.getNombre());
-                if (tf != null) {
-                    String valor = tf.getText().trim();
-                    if (valor.isEmpty()) {
-                        mostrarError("Campo vacío: " + campo.getNombre());
-                        return;
-                    }
-                    registro.setValor(campo.getNombre(), valor);
-                }
+            // FLECHA 1: Verde
+            if (flechaLabel1Indice != null && flechaLabel1Datos != null) {
+                dibujarFlechaEntreLabels(gc, flechaLabel1Indice, flechaLabel1Datos, Color.GREEN);
+                System.out.println("✓ Flecha 1 (Verde) dibujada");
             }
 
-            if (estructuraDatos.agregarRegistro(registro)) {
-                for (Campo campo : estructuraDatos.getCampos()) {
-                    TextField tf = (TextField) panelCamposVistaData.lookup("#txt_" + campo.getNombre());
-                    if (tf != null) tf.clear();
-                }
-                actualizarContadorRegistros();
+            // FLECHA 2: Azul
+            if (flechaLabel2Indice != null && flechaLabel2Datos != null) {
+                dibujarFlechaEntreLabels(gc, flechaLabel2Indice, flechaLabel2Datos, Color.BLUE);
+                System.out.println("✓ Flecha 2 (Azul) dibujada");
+            }
+
+            // FLECHA 3: Rojo
+            if (flechaLabel3Indice != null && flechaLabel3Datos != null) {
+                dibujarFlechaEntreLabels(gc, flechaLabel3Indice, flechaLabel3Datos, Color.RED);
+                System.out.println("✓ Flecha 3 (Rojo) dibujada");
             }
 
         } catch (Exception e) {
-            mostrarError("Error: " + e.getMessage());
+            System.err.println("Error al dibujar flechas: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 
-    private void actualizarContadorRegistros() {
-        if (estructuraDatos != null) {
-            int actual = estructuraDatos.getTotalRegistrosActuales();
-            int total = estructuraDatos.getCantidadTotalRegistros();
-            txtRegistrosCount.setText("Registros: " + actual + "/" + total);
-        }
-    }
-
-    // ======================== CREAR ÍNDICE ========================
-
-    @FXML
-    public void crearEstructuraIndice() {
-        if (estructuraDatos == null) {
-            mostrarError("Cree estructura de datos primero");
-            return;
-        }
-
-        if (estructuraDatos.getTotalRegistrosActuales() == 0) {
-            mostrarError("Agregue al menos un registro");
-            return;
-        }
-
+    private void dibujarFlechaEntreLabels(GraphicsContext gc, Label labelIzq, Label labelDer, Color color) {
         try {
-            String campoIndexacion;
-            if (tipoIndiceSeleccionado == TipoIndice.PRIMARIO) {
-                campoIndexacion = estructuraDatos.getCampoClavePrimaria();
-            } else {
-                campoIndexacion = cmbCampoIndexacion.getValue();
-                if (campoIndexacion == null) {
-                    mostrarError("Seleccione campo de indexación");
-                    return;
-                }
+            Bounds boundsIzq = labelIzq.localToScene(labelIzq.getBoundsInLocal());
+            Bounds boundsDer = labelDer.localToScene(labelDer.getBoundsInLocal());
+            Bounds canvasBounds = canvasFlechas.localToScene(canvasFlechas.getBoundsInLocal());
+
+            if (boundsIzq == null || boundsDer == null || boundsIzq.isEmpty() || boundsDer.isEmpty()) {
+                System.err.println("Bounds vacíos");
+                return;
             }
 
-            int longitudCampo = Integer.parseInt(txtLongitudCampoIndice.getText());
-            int longitudPuntero = Integer.parseInt(txtLongitudPuntero.getText());
+            // Convertir a coordenadas del canvas
+            double x1 = boundsIzq.getCenterX() - canvasBounds.getMinX();
+            double y1 = boundsIzq.getCenterY() - canvasBounds.getMinY();
+            double x2 = boundsDer.getCenterX() - canvasBounds.getMinX();
+            double y2 = boundsDer.getCenterY() - canvasBounds.getMinY();
 
-            estructuraIndice = new EstructuraIndice(tipoIndiceSeleccionado, campoIndexacion,
-                    longitudCampo, longitudPuntero, estructuraDatos);
+            System.out.println("Dibujando línea de (" + x1 + "," + y1 + ") a (" + x2 + "," + y2 + ")");
 
-            estructuraIndice.generarIndices();
-            mostrarResultados();
+            // Dibujar línea
+            gc.setStroke(color);
+            gc.setLineWidth(2);
+            gc.strokeLine(x1, y1, x2, y2);
 
-        } catch (NumberFormatException e) {
-            mostrarError("Valores numéricos inválidos");
+            // Punta de flecha
+            double angle = Math.atan2(y2 - y1, x2 - x1);
+            double arrowSize = 8;
+            gc.setFill(color);
+            gc.fillPolygon(
+                    new double[]{x2, x2 - arrowSize * Math.cos(angle - Math.PI / 6), x2 - arrowSize * Math.cos(angle + Math.PI / 6)},
+                    new double[]{y2, y2 - arrowSize * Math.sin(angle - Math.PI / 6), y2 - arrowSize * Math.sin(angle + Math.PI / 6)},
+                    3
+            );
+
+        } catch (Exception e) {
+            System.err.println("Error dibujando flecha: " + e.getMessage());
+            e.printStackTrace();
         }
-    }
-    
-
-    private void mostrarResultados() {
-        StringBuilder sb = new StringBuilder();
-
-        sb.append("=== ESTRUCTURA DE ÍNDICES ===\n\n");
-        sb.append("Tipo: ").append(estructuraIndice.getTipo()).append("\n");
-        sb.append("Campo: ").append(estructuraIndice.getCampoIndexacion()).append("\n\n");
-
-        sb.append("=== PARÁMETROS ===\n");
-        sb.append("Longitud campo: ").append(estructuraIndice.getLongitudCampoIndexacionBytes()).append(" bytes\n");
-        sb.append("Longitud puntero: ").append(estructuraIndice.getLongitudPunteroBytes()).append(" bytes\n");
-        sb.append("Tamaño entrada: ").append(estructuraIndice.getTamañoEntradaBytes()).append(" bytes\n");
-        sb.append("Entradas/bloque: ").append(estructuraIndice.getEntradasPorBloque()).append("\n");
-        sb.append("Registros índice: ").append(estructuraIndice.getCantidadRegistrosIndice()).append("\n");
-        sb.append("Bloques índice: ").append(estructuraIndice.getCantidadBloquesIndice()).append("\n\n");
-
-        sb.append("=== ENTRADAS DE ÍNDICE ===\n\n");
-        for (BloqueIndice bloque : estructuraIndice.getBloques()) {
-            sb.append("Bloque ").append(bloque.getNumeroBloque()).append(":\n");
-            for (EntradaIndice entrada : bloque.getEntradas()) {
-                sb.append("  ").append(entrada.getValorCampoIndexacion());
-                sb.append(" → ").append(entrada.getPuntero());
-                sb.append(" (").append(tipoIndiceSeleccionado == TipoIndice.PRIMARIO ? "bloque" : "registro").append(")\n");
-            }
-            sb.append("\n");
-        }
-
-        lblResultadosHeader.getParent().setVisible(true);
-        txtResultados.getParent().setVisible(true);
-        txtResultados.setText(sb.toString());
-    }
-
-    // ======================== REINICIAR ========================
-
-    @FXML
-    public void reiniciar() {
-        estructuraDatos = null;
-        estructuraIndice = null;
-        tipoIndiceSeleccionado = null;
-
-        cmbTipoIndice.setValue(null);
-        txtCantidadCampos.clear();
-        txtLongitudRegistro.clear();
-        txtTamañoBloque.clear();
-        txtCantidadRegistros.clear();
-        txtLongitudCampoIndice.clear();
-        txtLongitudPuntero.clear();
-
-        ocultarTodoExceptoCombo();
-        btnReiniciar.setDisable(true);
-        btnGuardar.setDisable(true);
     }
 
     @FXML
-    public void guardarResultados() {
-        if (estructuraIndice == null) {
-            mostrarError("No hay resultados para guardar");
-            return;
-        }
-        mostrarInfo("Funcionalidad de guardar implementar según necesidades");
+    public void limpiar() {
+        vboxIndices.getChildren().clear();
+        vboxDatos.getChildren().clear();
+        canvasFlechas.getGraphicsContext2D().clearRect(0, 0, canvasFlechas.getWidth(), canvasFlechas.getHeight());
+        flechaLabel1Indice = null;
+        flechaLabel2Indice = null;
+        flechaLabel3Indice = null;
+        flechaLabel1Datos = null;
+        flechaLabel2Datos = null;
+        flechaLabel3Datos = null;
     }
 
-    // ======================== UTILIDADES ========================
+    private String colorToHex(Color color) {
+        return String.format("#%02X%02X%02X",
+                (int) (color.getRed() * 255),
+                (int) (color.getGreen() * 255),
+                (int) (color.getBlue() * 255));
+    }
 
     private void mostrarError(String mensaje) {
         Alert alert = new Alert(Alert.AlertType.ERROR);
@@ -701,11 +367,11 @@ public class IndexMonoController {
         alert.setContentText(mensaje);
         alert.showAndWait();
     }
-
-    private void mostrarInfo(String mensaje) {
-        Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setTitle("Información");
-        alert.setContentText(mensaje);
-        alert.showAndWait();
-    }
 }
+
+
+
+
+
+
+
