@@ -1,100 +1,57 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <?import javafx.scene.control.Button?>
-<?import javafx.scene.control.ComboBox?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.TextField?>
+<?import javafx.scene.control.ScrollPane?>
 <?import javafx.scene.layout.Pane?>
+<?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
-<?import javafx.scene.text.Text?>
-<?import javafx.scene.text.TextFlow?>
+<?import javafx.scene.canvas.Canvas?>
 
-<Pane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="440.0" prefWidth="730.0" xmlns="http://javafx.com/javafx/24.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="ciencias.Research.IndexMonoController">
+<Pane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="440.0" prefWidth="730.0" xmlns="http://javafx.com/javafx/22.0.2" xmlns:fx="http://javafx.com/fxml/1" fx:controller="ciencias.Research.IndexMonoController">
    <children>
-      
-      <TextFlow layoutX="256.0" layoutY="29.0" prefHeight="35.0" prefWidth="219.0" textAlignment="LEFT">
-         <children>
-            <Label fx:id="titleIndex" text="Estructura de Índices">
-               <font>
-                  <Font size="23.0" />
-               </font>
-            </Label>
-         </children>
-      </TextFlow>
+      <!-- HEADER -->
+      <Label layoutX="10.0" layoutY="5.0" style="-fx-font-size: 13; -fx-font-weight: bold;" text="Estructura de Índices" />
 
-      <!-- SECCIÓN 1: SELECCIÓN DE TIPO DE ÍNDICE -->
-      <Label layoutX="30.0" layoutY="80.0" text="Tipo de índice:" style="-fx-font-weight: bold;" />
-      <ComboBox fx:id="cmbTipoIndice" layoutX="30.0" layoutY="105.0" prefHeight="25.0" prefWidth="150.0" onAction="#onTipoIndiceChanged" />
+      <!-- PARÁMETROS (Compactados en una línea) -->
+      <Label layoutX="10.0" layoutY="25.0" style="-fx-font-size: 8; -fx-font-weight: bold;" text="Parámetros:" />
 
-      <!-- SECCIÓN 2: CREAR ESTRUCTURA DE DATOS -->
-      <Label layoutX="91.0" layoutY="140.0" style="-fx-font-weight: bold;" text="Crear Estructura de Datos" />
+      <Label layoutX="10.0" layoutY="38.0" style="-fx-font-size: 8;" text="Tam.Reg:" />
+      <TextField fx:id="txtLongitudRegistro" layoutX="45.0" layoutY="35.0" prefHeight="16.0" prefWidth="40.0" promptText="128" style="-fx-font-size: 7;" />
 
-      <Label layoutX="35.0" layoutY="170.0" text="Cantidad de campos:" />
-      <TextField fx:id="txtCantidadCampos" layoutX="180.0" layoutY="166.0" prefHeight="25.0" prefWidth="100.0" promptText="Ej: 5" />
+      <Label layoutX="90.0" layoutY="38.0" style="-fx-font-size: 8;" text="Cap.Blq:" />
+      <TextField fx:id="txtTamañoBloque" layoutX="135.0" layoutY="35.0" prefHeight="16.0" prefWidth="45.0" promptText="4096" style="-fx-font-size: 7;" />
 
-      <Label layoutX="31.0" layoutY="205.0" text="Longitud registro (bytes):" />
-      <TextField fx:id="txtLongitudRegistro" layoutX="180.0" layoutY="201.0" prefHeight="25.0" prefWidth="100.0" promptText="Ej: 100" />
+      <Label layoutX="185.0" layoutY="38.0" style="-fx-font-size: 8;" text="Nú.Reg:" />
+      <TextField fx:id="txtCantidadRegistros" layoutX="227.0" layoutY="35.0" prefHeight="16.0" prefWidth="45.0" promptText="1000" style="-fx-font-size: 7;" />
 
-      <Label layoutX="31.0" layoutY="240.0" text="Tamaño de bloque (bytes):" />
-      <TextField fx:id="txtTamañoBloque" layoutX="180.0" layoutY="236.0" prefHeight="25.0" prefWidth="100.0" promptText="Ej: 4096" />
+      <Label layoutX="277.0" layoutY="38.0" style="-fx-font-size: 8;" text="Tam.Idx:" />
+      <TextField fx:id="txtLongitudCampoIndice" layoutX="320.0" layoutY="35.0" prefHeight="16.0" prefWidth="40.0" promptText="14" style="-fx-font-size: 7;" />
 
-      <Label layoutX="25.0" layoutY="275.0" text="Cantidad total de registros:" />
-      <TextField fx:id="txtCantidadRegistros" layoutX="180.0" layoutY="271.0" prefHeight="25.0" prefWidth="100.0" promptText="Ej: 1000" />
+      <Button fx:id="btnGenerar" layoutX="365.0" layoutY="35.0" mnemonicParsing="false" onAction="#generarEstructura" prefHeight="16.0" prefWidth="50.0" style="-fx-font-size: 7; -fx-font-weight: bold;" text="Generar" />
 
-      <Button fx:id="btnCrearEstructura" layoutX="118.0" layoutY="310.0" mnemonicParsing="false" onAction="#crearEstructuraDatos" text="Crear Estructura" />
+      <Button fx:id="btnLimpiar" layoutX="420.0" layoutY="35.0" mnemonicParsing="false" onAction="#limpiar" prefHeight="16.0" prefWidth="50.0" style="-fx-font-size: 7;" text="Limpiar" />
 
-      <!-- SECCIÓN 3: INGRESO DE DATOS -->
-      <Label layoutX="30.0" layoutY="360.0" style="-fx-font-weight: bold;" text="Ingreso de Datos" />
+      <!-- CANVAS PARA FLECHAS -->
+      <Canvas fx:id="canvasFlechas" height="365.0" layoutX="10.0" layoutY="60.0" width="710.0" />
 
-      <Pane fx:id="panelCamposVistaData" layoutX="30.0" layoutY="385.0" prefHeight="100.0" prefWidth="300.0" style="-fx-border-color: #cccccc; -fx-border-radius: 3;" />
+      <!-- TABLA INDICES (IZQUIERDA con SCROLL) -->
+      <Label layoutX="15.0" layoutY="62.0" style="-fx-font-size: 8; -fx-font-weight: bold;" text="Índices" />
+      <ScrollPane layoutX="15.0" layoutY="76.0" prefHeight="320.0" prefWidth="340.0" fitToWidth="true" style="-fx-padding: 0; -fx-border-color: #cccccc;">
+         <content>
+            <VBox fx:id="vboxIndices" spacing="3.0" style="-fx-padding: 3;" />
+         </content>
+      </ScrollPane>
 
-      <Button fx:id="btnAgregarRegistro" layoutX="115.0" layoutY="495.0" mnemonicParsing="false" onAction="#agregarRegistro" text="Agregar Registro" />
-
-      <TextFlow layoutX="30.0" layoutY="530.0" prefHeight="25.0" prefWidth="300.0" textAlignment="LEFT">
-         <children>
-            <Text fx:id="txtRegistrosCount" strokeType="OUTSIDE" strokeWidth="0.0" text="Registros: 0/0" />
-         </children>
-      </TextFlow>
-
-      <!-- SECCIÓN 4: PARÁMETROS DE ÍNDICE -->
-      <Label layoutX="30.0" layoutY="570.0" style="-fx-font-weight: bold;" text="Parámetros de Índice" />
-
-      <TextFlow fx:id="flowPrimarioInfo" layoutX="30.0" layoutY="595.0" prefHeight="60.0" prefWidth="300.0" style="-fx-border-color: #e0e0e0; -fx-padding: 10;">
-         <children>
-            <Text strokeType="OUTSIDE" strokeWidth="0.0" text="Tipo: PRIMARIO&#10;Campo: Clave Primaria&#10;Densidad: No denso (apunta a bloques)" />
-         </children>
-      </TextFlow>
-
-      <Label fx:id="lblCampoSecundario" layoutX="30.0" layoutY="595.0" text="Campo de indexación:" />
-      <ComboBox fx:id="cmbCampoIndexacion" layoutX="180.0" layoutY="591.0" prefHeight="25.0" prefWidth="150.0" />
-
-      <Label layoutX="30.0" layoutY="630.0" text="Longitud campo índice (bytes):" />
-      <TextField fx:id="txtLongitudCampoIndice" layoutX="230.0" layoutY="626.0" prefHeight="25.0" prefWidth="80.0" promptText="Ej: 20" />
-
-      <Label layoutX="30.0" layoutY="665.0" text="Longitud puntero (bytes):" />
-      <TextField fx:id="txtLongitudPuntero" layoutX="230.0" layoutY="661.0" prefHeight="25.0" prefWidth="80.0" promptText="Ej: 4" />
-
-      <Button fx:id="btnCrearIndice" layoutX="230.0" layoutY="695.0" mnemonicParsing="false" onAction="#crearEstructuraIndice" text="Crear Índice" />
-
-      <!-- SECCIÓN 5: RESULTADOS -->
-      <TextFlow layoutX="30.0" layoutY="730.0" prefHeight="25.0" prefWidth="840.0" textAlignment="LEFT">
-         <children>
-            <Label fx:id="lblResultadosHeader" text="Resultados:">
-               <font>
-                  <Font size="14.0" style="-fx-font-weight: bold;" />
-               </font>
-            </Label>
-         </children>
-      </TextFlow>
-
-      <TextFlow layoutX="30.0" layoutY="760.0" prefHeight="300.0" prefWidth="840.0">
-         <children>
-            <Text fx:id="txtResultados" strokeType="OUTSIDE" strokeWidth="0.0" wrappingWidth="840.0" text="Los resultados aparecerán aquí..." />
-         </children>
-      </TextFlow>
-
-      <Button fx:id="btnReiniciar" disable="true" layoutX="35.0" layoutY="1060.0" mnemonicParsing="false" onAction="#reiniciar" text="Reiniciar" />
-
-      <Button fx:id="btnGuardar" disable="true" layoutX="173.0" layoutY="1060.0" mnemonicParsing="false" onAction="#guardarResultados" text="Guardar Resultados" />
+      <!-- TABLA DATOS (DERECHA con SCROLL) -->
+      <Label layoutX="375.0" layoutY="62.0" style="-fx-font-size: 8; -fx-font-weight: bold;" text="Datos" />
+      <ScrollPane layoutX="375.0" layoutY="76.0" prefHeight="320.0" prefWidth="340.0" fitToWidth="true" style="-fx-padding: 0; -fx-border-color: #cccccc;">
+         <content>
+            <VBox fx:id="vboxDatos" spacing="3.0" style="-fx-padding: 3;" />
+         </content>
+      </ScrollPane>
    </children>
 </Pane>
+
+

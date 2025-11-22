@@ -358,22 +358,31 @@ public class ResearchController {
         return menuButtonTrees.getText();
     }
 
-    @FXML
-    private void monoAction(javafx.event.ActionEvent event){
-        MenuItem source = (MenuItem) event.getSource();
-        String option = source.getText();
-        menuButtonMono.setText(option);
-        try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("mono.fxml"));
-            Parent vista = loader.load();
+   @FXML
+private void monoAction(javafx.event.ActionEvent event){
+    MenuItem source = (MenuItem) event.getSource();
+    String option = source.getText();
+    menuButtonMono.setText(option);
+    try {
+        FXMLLoader loader = new FXMLLoader(getClass().getResource("mono.fxml"));
+        Parent vista = loader.load();
 
-            IndexMonoController indexMonoController = new IndexMonoController();
-            indexMonoController.setResearchController(this);
-            paneIndexMono.getChildren().setAll(vista);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        // ✅ OBTENER el controlador del FXML (no crear uno nuevo)
+        IndexMonoController indexMonoController = loader.getController();
+        
+        // ✅ Establecer si es PRIMARIO o SECUNDARIO según la opción seleccionada
+        boolean esPrimario = "Primaria".equals(option);
+        indexMonoController.setTipoIndice(esPrimario);
+        
+        // ✅ Pasar la referencia de ResearchController
+        indexMonoController.setResearchController(this);
+        
+        paneIndexMono.getChildren().setAll(vista);
+    } catch (IOException e) {
+        System.err.println("Error cargando mono.fxml: " + e.getMessage());
+        e.printStackTrace();
     }
+}
 
     @FXML
     private void multiAction(javafx.event.ActionEvent event){
