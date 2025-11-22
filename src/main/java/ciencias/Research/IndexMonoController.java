@@ -1,6 +1,7 @@
 package ciencias.Research;
 
 import ciencias.ResearchController;
+import javafx.animation.PauseTransition;
 import javafx.fxml.FXML;
 import javafx.geometry.Bounds;
 import javafx.scene.canvas.Canvas;
@@ -9,6 +10,8 @@ import javafx.scene.control.*;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
+import javafx.animation.PauseTransition;
+import javafx.util.Duration;
 
 import java.util.*;
 
@@ -27,9 +30,8 @@ public class IndexMonoController {
     private ResearchController researchController;
     private boolean esPrimario = true;
     
-    // Para almacenar referencias a los labels de flecha
-    private Label flechaLabel1Indice, flechaLabel2Indice, flechaLabel3Indice;
-    private Label flechaLabel1Datos, flechaLabel2Datos, flechaLabel3Datos;
+    private List<VBox> bloquesIndicesMostrados = new ArrayList<>();
+    private List<VBox> bloquesDatosMostrados = new ArrayList<>();
 
     public void setResearchController(ResearchController researchController) {
         this.researchController = researchController;
@@ -46,66 +48,58 @@ public class IndexMonoController {
     @FXML
     public void generarEstructura() {
         try {
-            int longitudRegistro = Integer.parseInt(txtLongitudRegistro.getText());
-            int tamañoBloque = Integer.parseInt(txtTamañoBloque.getText());
-            int cantidadRegistros = Integer.parseInt(txtCantidadRegistros.getText());
-            int longitudCampoIndice = Integer.parseInt(txtLongitudCampoIndice.getText());
+             int longitudRegistro = Integer.parseInt(txtLongitudRegistro.getText());
+        int tamañoBloque = Integer.parseInt(txtTamañoBloque.getText());
+        int cantidadRegistros = Integer.parseInt(txtCantidadRegistros.getText());
+        int longitudCampoIndice = Integer.parseInt(txtLongitudCampoIndice.getText());
 
-            if (longitudRegistro > tamañoBloque) {
-                mostrarError("Longitud de registro no puede exceder tamaño de bloque");
-                return;
-            }
-
-            // Cálculos para DATOS
-            int registrosPorBloqueDatos = tamañoBloque / longitudRegistro;
-            int bloquesTotalesDatos = (int) Math.ceil((double) cantidadRegistros / registrosPorBloqueDatos);
-
-            // Cálculos para ÍNDICE
-            int longitudPuntero = 4;
-            int tamañoEntrada = longitudCampoIndice + longitudPuntero;
-            int entradasPorBloqueIndice = tamañoBloque / tamañoEntrada;
-
-            // En PRIMARIO: registros índice = bloques de datos
-            // En SECUNDARIO: registros índice = registros de datos
-            int totalRegistrosIndice = esPrimario ? bloquesTotalesDatos : cantidadRegistros;
-            int bloquesTotalesIndice = (int) Math.ceil((double) totalRegistrosIndice / entradasPorBloqueIndice);
-
-            System.out.println("=== DATOS ===");
-            System.out.println("Registros por bloque: " + registrosPorBloqueDatos);
-            System.out.println("Bloques totales datos: " + bloquesTotalesDatos);
-            System.out.println("=== ÍNDICE ===");
-            System.out.println("Total registros índice: " + totalRegistrosIndice);
-            System.out.println("Entradas por bloque índice: " + entradasPorBloqueIndice);
-            System.out.println("Bloques totales índice: " + bloquesTotalesIndice);
-
-            // Generar tablas
-            generarTablaIndices(bloquesTotalesIndice, entradasPorBloqueIndice, totalRegistrosIndice);
-            generarTablaDatos(bloquesTotalesDatos, registrosPorBloqueDatos, cantidadRegistros);
-
-            // Dibujar flechas
-            javafx.application.Platform.runLater(() -> dibujarFlechas());
-
-        } catch (NumberFormatException e) {
-            mostrarError("Ingrese valores numéricos válidos");
+        if (longitudRegistro > tamañoBloque) {
+            mostrarError("Longitud de registro no puede exceder tamaño de bloque");
+            return;
         }
+
+        int registrosPorBloqueDatos = tamañoBloque / longitudRegistro;
+        int bloquesTotalesDatos = (int) Math.ceil((double) cantidadRegistros / registrosPorBloqueDatos);
+
+        int entradasPorBloqueIndice = tamañoBloque / longitudCampoIndice;
+        int totalRegistrosIndice = esPrimario ? bloquesTotalesDatos : cantidadRegistros;
+        int bloquesTotalesIndice = (int) Math.ceil((double) totalRegistrosIndice / entradasPorBloqueIndice);
+
+        bloquesIndicesMostrados.clear();
+        bloquesDatosMostrados.clear();
+
+        generarTablaIndices(bloquesTotalesIndice, entradasPorBloqueIndice, totalRegistrosIndice);
+        generarTablaDatos(bloquesTotalesDatos, registrosPorBloqueDatos, cantidadRegistros);
+
+        // Esperar a que el layout esté completamente renderizado antes de dibujar las flechas
+        PauseTransition pause = new PauseTransition(Duration.millis(300));
+        pause.setOnFinished(event -> dibujarFlechasDinamicas());
+        pause.play();
+
+    } catch (NumberFormatException e) {
+        mostrarError("Ingrese valores numéricos válidos");
     }
+}
 
     private void generarTablaIndices(int bloquesTotales, int entradasPorBloque, int totalRegistros) {
         vboxIndices.getChildren().clear();
-        flechaLabel1Indice = null;
-        flechaLabel2Indice = null;
-        flechaLabel3Indice = null;
 
-        Color[] colores = {Color.web("#E3F2FD"), Color.web("#BBDEFB"), Color.web("#90CAF9"), Color.web("#64B5F6")};
+        Color[] coloresPasteles = {
+            Color.web("#D4E8F7"),
+            Color.web("#CCEEF5"),
+            Color.web("#C0E8F0"),
+            Color.web("#B3E0EB")
+        };
+
         List<Integer> bloquesAMostrar = obtenerBloquesAMostrar(bloquesTotales);
-
-        System.out.println("Bloques a mostrar en índices: " + bloquesAMostrar);
 
         for (int i = 0; i < bloquesAMostrar.size(); i++) {
             int numeroBloque = bloquesAMostrar.get(i);
+            boolean esUltimoBloque = (numeroBloque == bloquesTotales - 1);
+
             VBox bloqueBox = new VBox();
             bloqueBox.setStyle("-fx-border-color: #999999; -fx-border-width: 1; -fx-padding: 3;");
-            bloqueBox.setStyle(bloqueBox.getStyle() + " -fx-background-color: " + colorToHex(colores[i % 4]) + ";");
+            bloqueBox.setStyle(bloqueBox.getStyle() + " -fx-background-color: " + colorToHex(coloresPasteles[i % 4]) + ";");
 
             Label tituloBloque = new Label("Bloque Índice " + (numeroBloque + 1));
             tituloBloque.setStyle("-fx-font-weight: bold; -fx-font-size: 7;");
@@ -114,68 +108,69 @@ public class IndexMonoController {
             VBox filasBox = new VBox();
             filasBox.setSpacing(1);
 
-            // Registros de este bloque de índice
             int registroInicial = numeroBloque * entradasPorBloque + 1;
-            int registroFinal = Math.min((numeroBloque + 1) * entradasPorBloque, totalRegistros);
-            int totalRegistrosBloque = registroFinal - registroInicial + 1;
+            int registroFinal = (numeroBloque + 1) * entradasPorBloque;
+            int ultimoRegistroLleno = Math.min(registroFinal, totalRegistros);
 
-            System.out.println("Bloque " + numeroBloque + ": registros " + registroInicial + " a " + registroFinal);
-
-            // PRIMER REGISTRO del bloque
+            // PRIMER REGISTRO
             if (registroInicial <= totalRegistros) {
-                Label primeraFila = crearFilaIndice(registroInicial);
+                Label primeraFila = crearFilaIndice(registroInicial, esPrimario);
                 filasBox.getChildren().add(primeraFila);
-                
-                // Marcar flecha 1 si es el primer bloque mostrado
-                if (numeroBloque == bloquesAMostrar.get(0)) {
-                    flechaLabel1Indice = primeraFila;
-                }
             }
 
-            // REGISTRO DEL MEDIO del bloque
-            if (totalRegistrosBloque > 2) {
-                int registroMedio = registroInicial + totalRegistrosBloque / 2;
-                if (registroMedio <= totalRegistros) {
-                    Label middleFila = crearFilaIndice(registroMedio);
+            // REGISTRO DEL MEDIO O ÚLTIMO LLENO (especial para último bloque)
+            if (esUltimoBloque) {
+                // En el último bloque: mostrar último registro lleno como "del medio"
+                if (ultimoRegistroLleno < registroFinal && ultimoRegistroLleno >= registroInicial) {
+                    Label middleFila = crearFilaIndice(ultimoRegistroLleno, esPrimario);
                     filasBox.getChildren().add(middleFila);
                 }
+            } else {
+                // En bloques normales: mostrar del medio como antes
+                int totalRegistrosBloque = Math.min(entradasPorBloque, Math.max(0, totalRegistros - registroInicial + 1));
+                if (totalRegistrosBloque > 2) {
+                    int registroMedio = registroInicial + totalRegistrosBloque / 2;
+                    if (registroMedio <= totalRegistros) {
+                        Label middleFila = crearFilaIndice(registroMedio, esPrimario);
+                        filasBox.getChildren().add(middleFila);
+                    }
+                }
             }
 
-            // ÚLTIMO REGISTRO del bloque
-            if (totalRegistrosBloque > 1 && registroFinal <= totalRegistros) {
-                Label ultimaFila = crearFilaIndice(registroFinal);
-                filasBox.getChildren().add(ultimaFila);
-                
-                // Marcar flechas según el bloque
-                if (numeroBloque == bloquesAMostrar.get(bloquesAMostrar.size() / 2)) {
-                    flechaLabel2Indice = ultimaFila;
-                }
-                if (numeroBloque == bloquesAMostrar.get(bloquesAMostrar.size() - 1)) {
-                    flechaLabel3Indice = ultimaFila;
-                }
+            // ÚLTIMO REGISTRO (teórico)
+            Label ultimaFila;
+            if (registroFinal <= totalRegistros) {
+                ultimaFila = crearFilaIndice(registroFinal, esPrimario);
+            } else {
+                ultimaFila = crearFilaIndiceVacio(registroFinal);
             }
+            filasBox.getChildren().add(ultimaFila);
 
             bloqueBox.getChildren().add(filasBox);
             vboxIndices.getChildren().add(bloqueBox);
+            bloquesIndicesMostrados.add(bloqueBox);
         }
     }
 
     private void generarTablaDatos(int bloquesTotales, int registrosPorBloque, int cantidadRegistros) {
         vboxDatos.getChildren().clear();
-        flechaLabel1Datos = null;
-        flechaLabel2Datos = null;
-        flechaLabel3Datos = null;
 
-        Color[] colores = {Color.web("#F3E5F5"), Color.web("#E1BEE7"), Color.web("#CE93D8"), Color.web("#BA68C8")};
+        Color[] coloresPasteles = {
+            Color.web("#F0D9E8"),
+            Color.web("#EDD0E0"),
+            Color.web("#E8C7D8"),
+            Color.web("#E0BDD0")
+        };
+
         List<Integer> bloquesAMostrar = obtenerBloquesAMostrar(bloquesTotales);
-
-        System.out.println("Bloques a mostrar en datos: " + bloquesAMostrar);
 
         for (int i = 0; i < bloquesAMostrar.size(); i++) {
             int numeroBloque = bloquesAMostrar.get(i);
+            boolean esUltimoBloque = (numeroBloque == bloquesTotales - 1);
+
             VBox bloqueBox = new VBox();
             bloqueBox.setStyle("-fx-border-color: #999999; -fx-border-width: 1; -fx-padding: 3;");
-            bloqueBox.setStyle(bloqueBox.getStyle() + " -fx-background-color: " + colorToHex(colores[i % 4]) + ";");
+            bloqueBox.setStyle(bloqueBox.getStyle() + " -fx-background-color: " + colorToHex(coloresPasteles[i % 4]) + ";");
 
             Label tituloBloque = new Label("Bloque Datos " + (numeroBloque + 1));
             tituloBloque.setStyle("-fx-font-weight: bold; -fx-font-size: 7;");
@@ -188,52 +183,67 @@ public class IndexMonoController {
             filasBox.setSpacing(1);
 
             int registroInicial = numeroBloque * registrosPorBloque + 1;
-            int registroFinal = Math.min((numeroBloque + 1) * registrosPorBloque, cantidadRegistros);
-            int totalRegistrosBloque = registroFinal - registroInicial + 1;
+            int registroFinal = (numeroBloque + 1) * registrosPorBloque;
+            int ultimoRegistroLleno = Math.min(registroFinal, cantidadRegistros);
 
             // PRIMER REGISTRO
             if (registroInicial <= cantidadRegistros) {
                 Label primeraFila = crearFilaDatos(registroInicial, numeroBloque + 1);
                 filasBox.getChildren().add(primeraFila);
-                
-                if (numeroBloque == bloquesAMostrar.get(0)) {
-                    flechaLabel1Datos = primeraFila;
-                }
             }
 
-            // REGISTRO DEL MEDIO
-            if (totalRegistrosBloque > 2) {
-                int registroMedio = registroInicial + totalRegistrosBloque / 2;
-                if (registroMedio <= cantidadRegistros) {
-                    Label middleFila = crearFilaDatos(registroMedio, numeroBloque + 1);
+            // REGISTRO DEL MEDIO O ÚLTIMO LLENO (especial para último bloque)
+            if (esUltimoBloque) {
+                // En el último bloque: mostrar último registro lleno como "del medio"
+                if (ultimoRegistroLleno < registroFinal && ultimoRegistroLleno >= registroInicial) {
+                    Label middleFila = crearFilaDatos(ultimoRegistroLleno, numeroBloque + 1);
                     filasBox.getChildren().add(middleFila);
                 }
+            } else {
+                // En bloques normales: mostrar del medio como antes
+                int totalRegistrosBloque = Math.min(registrosPorBloque, Math.max(0, cantidadRegistros - registroInicial + 1));
+                if (totalRegistrosBloque > 2) {
+                    int registroMedio = registroInicial + totalRegistrosBloque / 2;
+                    if (registroMedio <= cantidadRegistros) {
+                        Label middleFila = crearFilaDatos(registroMedio, numeroBloque + 1);
+                        filasBox.getChildren().add(middleFila);
+                    }
+                }
             }
 
-            // ÚLTIMO REGISTRO
-            if (totalRegistrosBloque > 1 && registroFinal <= cantidadRegistros) {
-                Label ultimaFila = crearFilaDatos(registroFinal, numeroBloque + 1);
-                filasBox.getChildren().add(ultimaFila);
-                
-                if (numeroBloque == bloquesAMostrar.get(bloquesAMostrar.size() / 2)) {
-                    flechaLabel2Datos = ultimaFila;
-                }
-                if (numeroBloque == bloquesAMostrar.get(bloquesAMostrar.size() - 1)) {
-                    flechaLabel3Datos = ultimaFila;
-                }
+            // ÚLTIMO REGISTRO (teórico)
+            Label ultimaFila;
+            if (registroFinal <= cantidadRegistros) {
+                ultimaFila = crearFilaDatos(registroFinal, numeroBloque + 1);
+            } else {
+                ultimaFila = crearFilaDatoVacio(registroFinal, numeroBloque + 1);
             }
+            filasBox.getChildren().add(ultimaFila);
 
             bloqueBox.getChildren().add(filasBox);
             vboxDatos.getChildren().add(bloqueBox);
+            bloquesDatosMostrados.add(bloqueBox);
         }
     }
 
-    private Label crearFilaIndice(int numeroRegistro) {
-        String contenido = String.format("%d | %d → Reg %d", numeroRegistro, numeroRegistro, numeroRegistro);
+    private Label crearFilaIndice(int numeroRegistro, boolean primario) {
+        String contenido;
+        if (primario) {
+            contenido = String.format("%d | %d → Bloque %d", numeroRegistro, numeroRegistro, numeroRegistro);
+        } else {
+            contenido = String.format("%d | %d → Registro %d", numeroRegistro, numeroRegistro, numeroRegistro);
+        }
         Label label = new Label(contenido);
         label.setFont(Font.font("Monospace", 7));
         label.setStyle("-fx-padding: 1;");
         return label;
+    }
+
+    private Label crearFilaIndiceVacio(int numeroRegistro) {
+        Label l = new Label(numeroRegistro + " | ... | [vacío]");
+        l.setFont(Font.font("Monospace", 7));
+        l.setStyle("-fx-font-style: italic; -fx-text-fill: #000000; -fx-padding: 1;");
+        return l;
     }
 
     private Label crearFilaDatos(int numeroRegistro, int numeroBloque) {
@@ -242,6 +252,13 @@ public class IndexMonoController {
         label.setFont(Font.font("Monospace", 7));
         label.setStyle("-fx-padding: 1;");
         return label;
+    }
+
+    private Label crearFilaDatoVacio(int numeroRegistro, int numeroBloque) {
+        Label l = new Label(numeroRegistro + " | ... | [vacío] | " + numeroBloque);
+        l.setFont(Font.font("Monospace", 7));
+        l.setStyle("-fx-font-style: italic; -fx-text-fill: #000000; -fx-padding: 1;");
+        return l;
     }
 
     private Label crearEncabezado() {
@@ -258,76 +275,105 @@ public class IndexMonoController {
                 bloques.add(i);
             }
         } else {
-            bloques.add(0);                          // Bloque 0 (primer bloque)
-            bloques.add(1);                          // Bloque 1 (segundo bloque)
-            bloques.add(totalBloques / 2);           // Bloque del medio
-            bloques.add(totalBloques - 1);           // Último bloque
+            bloques.add(0);
+            bloques.add(1);
+            bloques.add(totalBloques / 2);
+            bloques.add(totalBloques - 1);
         }
-        System.out.println("Total bloques: " + totalBloques + ", A mostrar: " + bloques);
         return bloques;
     }
 
-    private void dibujarFlechas() {
+    private void dibujarFlechasDinamicas() {
+        // Validación robusta antes de dibujar
+        if (canvasFlechas == null || vboxIndices == null || vboxDatos == null) {
+            System.out.println("DEBUG - Componentes nulos");
+            return;
+        }
+
+        if (bloquesIndicesMostrados == null || bloquesDatosMostrados == null) {
+            System.out.println("DEBUG - Listas de bloques nulas");
+            return;
+        }
+
+        if (bloquesIndicesMostrados.isEmpty() || bloquesDatosMostrados.isEmpty()) {
+            System.out.println("DEBUG - Bloques vacíos");
+            return;
+        }
+
         GraphicsContext gc = canvasFlechas.getGraphicsContext2D();
         gc.clearRect(0, 0, canvasFlechas.getWidth(), canvasFlechas.getHeight());
 
-        System.out.println("Dibujando flechas...");
-        System.out.println("Flecha 1 - Índice: " + flechaLabel1Indice + ", Datos: " + flechaLabel1Datos);
-        System.out.println("Flecha 2 - Índice: " + flechaLabel2Indice + ", Datos: " + flechaLabel2Datos);
-        System.out.println("Flecha 3 - Índice: " + flechaLabel3Indice + ", Datos: " + flechaLabel3Datos);
-
         try {
-            // FLECHA 1: Verde
-            if (flechaLabel1Indice != null && flechaLabel1Datos != null) {
-                dibujarFlechaEntreLabels(gc, flechaLabel1Indice, flechaLabel1Datos, Color.GREEN);
-                System.out.println("✓ Flecha 1 (Verde) dibujada");
+            // FLECHA 1: Verde (Primer bloque)
+            if (bloquesIndicesMostrados.size() > 0 && bloquesDatosMostrados.size() > 0) {
+                VBox indice1 = bloquesIndicesMostrados.get(0);
+                VBox datos1 = bloquesDatosMostrados.get(0);
+                if (indice1 != null && datos1 != null) {
+                    dibujarFlechaDesdeBloques(gc, indice1, datos1, Color.GREEN);
+                }
             }
 
-            // FLECHA 2: Azul
-            if (flechaLabel2Indice != null && flechaLabel2Datos != null) {
-                dibujarFlechaEntreLabels(gc, flechaLabel2Indice, flechaLabel2Datos, Color.BLUE);
-                System.out.println("✓ Flecha 2 (Azul) dibujada");
+            // FLECHA 2: Azul (Bloque medio) - SOLO si hay más de 2 bloques
+            if (bloquesIndicesMostrados.size() > 2 && bloquesDatosMostrados.size() > 2) {
+                int midIdx = bloquesIndicesMostrados.size() / 2;
+                int midDat = bloquesDatosMostrados.size() / 2;
+                VBox indice2 = bloquesIndicesMostrados.get(midIdx);
+                VBox datos2 = bloquesDatosMostrados.get(midDat);
+                if (indice2 != null && datos2 != null) {
+                    dibujarFlechaDesdeBloques(gc, indice2, datos2, Color.BLUE);
+                }
             }
 
-            // FLECHA 3: Rojo
-            if (flechaLabel3Indice != null && flechaLabel3Datos != null) {
-                dibujarFlechaEntreLabels(gc, flechaLabel3Indice, flechaLabel3Datos, Color.RED);
-                System.out.println("✓ Flecha 3 (Rojo) dibujada");
+            // FLECHA 3: Rojo (Último bloque) - SOLO si hay más de 1 bloque
+            if (bloquesIndicesMostrados.size() > 1 && bloquesDatosMostrados.size() > 1) {
+                int lastIdx = bloquesIndicesMostrados.size() - 1;
+                int lastDat = bloquesDatosMostrados.size() - 1;
+                VBox indice3 = bloquesIndicesMostrados.get(lastIdx);
+                VBox datos3 = bloquesDatosMostrados.get(lastDat);
+                if (indice3 != null && datos3 != null) {
+                    dibujarFlechaDesdeBloques(gc, indice3, datos3, Color.RED);
+                }
             }
 
         } catch (Exception e) {
-            System.err.println("Error al dibujar flechas: " + e.getMessage());
+            System.err.println("DEBUG - Error inesperado al dibujar flechas: " + e.getMessage());
             e.printStackTrace();
         }
     }
 
-    private void dibujarFlechaEntreLabels(GraphicsContext gc, Label labelIzq, Label labelDer, Color color) {
+    private void dibujarFlechaDesdeBloques(GraphicsContext gc, VBox bloqueIndice, VBox bloqueDatos, Color color) {
         try {
-            Bounds boundsIzq = labelIzq.localToScene(labelIzq.getBoundsInLocal());
-            Bounds boundsDer = labelDer.localToScene(labelDer.getBoundsInLocal());
+            Bounds boundsIndice = bloqueIndice.localToScene(bloqueIndice.getBoundsInLocal());
+            Bounds boundsDatos = bloqueDatos.localToScene(bloqueDatos.getBoundsInLocal());
             Bounds canvasBounds = canvasFlechas.localToScene(canvasFlechas.getBoundsInLocal());
 
-            if (boundsIzq == null || boundsDer == null || boundsIzq.isEmpty() || boundsDer.isEmpty()) {
-                System.err.println("Bounds vacíos");
+            if (boundsIndice == null || boundsDatos == null || boundsIndice.isEmpty() || boundsDatos.isEmpty() || canvasBounds == null) {
                 return;
             }
 
-            // Convertir a coordenadas del canvas
-            double x1 = boundsIzq.getCenterX() - canvasBounds.getMinX();
-            double y1 = boundsIzq.getCenterY() - canvasBounds.getMinY();
-            double x2 = boundsDer.getCenterX() - canvasBounds.getMinX();
-            double y2 = boundsDer.getCenterY() - canvasBounds.getMinY();
+            // Salida: lado derecho del bloque de índices
+            double x1 = boundsIndice.getCenterX() + boundsIndice.getWidth() / 2 - canvasBounds.getMinX();
+            double y1 = boundsIndice.getCenterY() - canvasBounds.getMinY();
 
-            System.out.println("Dibujando línea de (" + x1 + "," + y1 + ") a (" + x2 + "," + y2 + ")");
+            // Entrada: lado izquierdo del bloque de datos
+            double x2 = boundsDatos.getCenterX() - boundsDatos.getWidth() / 2 - canvasBounds.getMinX();
+            double y2 = boundsDatos.getCenterY() - canvasBounds.getMinY();
 
-            // Dibujar línea
+            // Validar coordenadas en rango del canvas
+            if (x1 < 0 || x1 > canvasFlechas.getWidth() || y1 < 0 || y1 > canvasFlechas.getHeight()) {
+                return;
+            }
+            if (x2 < 0 || x2 > canvasFlechas.getWidth() || y2 < 0 || y2 > canvasFlechas.getHeight()) {
+                return;
+            }
+
             gc.setStroke(color);
-            gc.setLineWidth(2);
+            gc.setLineWidth(2.5);
             gc.strokeLine(x1, y1, x2, y2);
 
             // Punta de flecha
             double angle = Math.atan2(y2 - y1, x2 - x1);
-            double arrowSize = 8;
+            double arrowSize = 10;
             gc.setFill(color);
             gc.fillPolygon(
                     new double[]{x2, x2 - arrowSize * Math.cos(angle - Math.PI / 6), x2 - arrowSize * Math.cos(angle + Math.PI / 6)},
@@ -336,8 +382,7 @@ public class IndexMonoController {
             );
 
         } catch (Exception e) {
-            System.err.println("Error dibujando flecha: " + e.getMessage());
-            e.printStackTrace();
+            // Silent - flecha fallida no arriba con error
         }
     }
 
@@ -346,12 +391,8 @@ public class IndexMonoController {
         vboxIndices.getChildren().clear();
         vboxDatos.getChildren().clear();
         canvasFlechas.getGraphicsContext2D().clearRect(0, 0, canvasFlechas.getWidth(), canvasFlechas.getHeight());
-        flechaLabel1Indice = null;
-        flechaLabel2Indice = null;
-        flechaLabel3Indice = null;
-        flechaLabel1Datos = null;
-        flechaLabel2Datos = null;
-        flechaLabel3Datos = null;
+        bloquesIndicesMostrados.clear();
+        bloquesDatosMostrados.clear();
     }
 
     private String colorToHex(Color color) {
@@ -368,6 +409,8 @@ public class IndexMonoController {
         alert.showAndWait();
     }
 }
+
+
 
 
 
