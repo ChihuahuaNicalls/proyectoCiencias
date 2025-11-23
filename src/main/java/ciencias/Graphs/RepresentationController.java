@@ -12,6 +12,8 @@ import javafx.scene.shape.Line;
 import javafx.scene.shape.CubicCurve;
 import javafx.scene.shape.Polygon;
 import javafx.scene.text.Text;
+import javafx.scene.web.WebView;
+import javafx.scene.web.WebEngine;
 import javafx.scene.paint.Color;
 import javafx.geometry.Point2D;
 import javafx.scene.input.ScrollEvent;
@@ -248,36 +250,45 @@ public class RepresentationController {
         }
 
         public void addEdge(String source, String destination, String label) {
-
-            List<Edge> edgesBetween = getEdgesBetween(source, destination);
-            int maxEdges = 3;
-            int maxLoops = 2;
-
-            if (source.equals(destination)) {
-                if (edgesBetween.size() >= maxLoops) {
-                    throw new IllegalStateException(
-                            "No se pueden tener más de " + maxLoops + " bucles en el vértice " + source);
-                }
-            } else {
-                if (edgesBetween.size() >= maxEdges) {
-                    throw new IllegalStateException(
-                            "No se pueden tener más de " + maxEdges + " aristas entre " + source + " y " + destination);
-                }
-            }
-
+            // Enforce consistency of directed/undirected and at most one edge per relation
+            boolean requestedDirected = edgeDirection.isSelected();
             if (hasEdges) {
-                if (isDirected != edgeDirection.isSelected()) {
-                    throw new IllegalStateException(
-                            "No se pueden mezclar aristas dirigidas y no dirigidas en el mismo grafo");
+                if (isDirected != requestedDirected) {
+                    throw new IllegalStateException("No se pueden mezclar aristas dirigidas y no dirigidas en el mismo grafo");
                 }
-
             } else {
-                isDirected = edgeDirection.isSelected();
-
+                isDirected = requestedDirected;
                 hasEdges = true;
             }
 
-            edges.add(new Edge(source, destination, label));
+            // Loops: allow at most one loop per vertex
+            if (source.equals(destination)) {
+                boolean existsLoop = edges.stream().anyMatch(e -> e.isLoop && e.source.equals(source));
+                if (existsLoop) {
+                    throw new IllegalStateException("Ya existe un bucle en el vértice " + source);
+                }
+                edges.add(new Edge(source, destination, label));
+                return;
+            }
+
+            if (!isDirected) {
+                // canonicalize unordered pair to avoid duplicates for undirected edges
+                String a = source.compareTo(destination) <= 0 ? source : destination;
+                String b = source.compareTo(destination) <= 0 ? destination : source;
+                boolean exists = edges.stream().anyMatch(e -> !e.isLoop &&
+                        ((e.source.equals(a) && e.destination.equals(b)) || (e.source.equals(b) && e.destination.equals(a))));
+                if (exists) {
+                    throw new IllegalStateException("Ya existe una arista entre " + source + " y " + destination);
+                }
+                edges.add(new Edge(a, b, label));
+            } else {
+                // directed: allow one edge per ordered pair (but reverse edge allowed separately)
+                boolean exists = edges.stream().anyMatch(e -> e.source.equals(source) && e.destination.equals(destination));
+                if (exists) {
+                    throw new IllegalStateException("Ya existe una arista dirigida de " + source + " a " + destination);
+                }
+                edges.add(new Edge(source, destination, label));
+            }
         }
 
         public void removeEdge(String source, String destination) {
@@ -660,11 +671,51 @@ public class RepresentationController {
         }
 
         matrixTabPane.getTabs().clear();
-        double[][] floydMatrix = computeFloydWarshall();
-        Tab floydTab = new Tab("Matriz de Distancias");
-        GridPane matrixGrid = createMatrixGrid(floydMatrix, "Matriz de Distancias");
-        floydTab.setContent(new ScrollPane(matrixGrid));
-        matrixTabPane.getTabs().add(floydTab);
+        List<double[][]> iterations = computeFloydWarshallIterations();
+        if (iterations.isEmpty()) {
+            Tab t = new Tab("Matriz de Distancias");
+            t.setContent(new ScrollPane(new GridPane()));
+            matrixTabPane.getTabs().add(t);
+            return;
+        }
+
+        for (int it = 0; it < iterations.size()-1; it++) {
+            double[][] m = iterations.get(it);
+            String title;
+            if (it == 0) title = "Inicial";
+            else if (it == iterations.size() - 2) title = "Final";
+            else title = "i=" + (it - 1);
+
+            Tab tab = new Tab(title);
+            GridPane matrixGrid = createMatrixGrid(m, "Matriz de Distancias - " + title);
+            tab.setContent(new ScrollPane(matrixGrid));
+            matrixTabPane.getTabs().add(tab);
+        }
+
+        // Bellman-Ford: show only the last iteration as chained LaTeX-like formulas
+        List<BellmanStep> bellmanSteps = computeBellmanIterationsWithEquations(item1);
+        if (!bellmanSteps.isEmpty()) {
+            BellmanStep last = bellmanSteps.get(bellmanSteps.size() - 1);
+            Tab bellmanTab = new Tab("Bellman - Cálculos");
+            javafx.scene.layout.VBox content = new javafx.scene.layout.VBox(6);
+            content.setPadding(new javafx.geometry.Insets(8));
+
+            // Render using MathJax inside a WebView
+            WebView webView = new WebView();
+            WebEngine webEngine = webView.getEngine();
+            StringBuilder html = new StringBuilder();
+            html.append("<!doctype html><html><head><meta charset=\"utf-8\">\n");
+            html.append("<script src=\"https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js\"></script>\n");
+            html.append("<style>body{font-family:Consolas,monospace;padding:10px;}</style>");
+            html.append("</head><body>\n");
+            for (String eq : last.equations) {
+                html.append("<div style=\"margin-bottom:8px;font-size:14px;\">\\(").append(eq).append("\\)</div>\n");
+            }
+            html.append("</body></html>");
+            webEngine.loadContent(html.toString());
+            bellmanTab.setContent(webView);
+            matrixTabPane.getTabs().add(bellmanTab);
+        }
     }
 
     private double calculateBellmanFordDistance(String source, String destination) {
@@ -700,6 +751,118 @@ public class RepresentationController {
         }
     }
 
+    // --- Bellman-Ford detailed iteration helpers ---
+    // Helper class to hold Bellman-Ford step data
+    private static class BellmanStep {
+        Map<String, Double> lambda;
+        List<String> equations;
+
+        BellmanStep(Map<String, Double> lambda, List<String> equations) {
+            this.lambda = new LinkedHashMap<>(lambda);
+            this.equations = new ArrayList<>(equations);
+        }
+    }
+
+    private List<BellmanStep> computeBellmanIterationsWithEquations(String source) {
+        List<BellmanStep> steps = new ArrayList<>();
+        List<String> verts = new ArrayList<>(graphData.vertices);
+        if (verts.isEmpty() || !graphData.hasVertex(source)) return steps;
+
+        Map<String, Double> lambda = new LinkedHashMap<>();
+        for (String v : verts) lambda.put(v, Double.POSITIVE_INFINITY);
+        lambda.put(source, 0.0);
+
+        // initial step (LaTeX)
+        steps.add(new BellmanStep(lambda, Collections.singletonList("Inicial: \\lambda_{" + vertexToNumber(source) + "} = 0")));
+
+        int iteration = 0;
+        while (true) {
+            iteration++;
+            boolean anyChange = false;
+            Map<String, Double> prev = new LinkedHashMap<>(lambda);
+            List<String> equations = new ArrayList<>();
+
+            for (String v : verts) {
+                // gather predecessors of v
+                List<Edge> preds = new ArrayList<>();
+                for (Edge e : graphData.edges) {
+                    if (e.destination.equals(v)) preds.add(e);
+                    if (!graphData.isDirected && e.source.equals(v)) preds.add(new Edge(e.destination, e.source, e.label));
+                }
+
+                if (preds.isEmpty()) {
+                    String eq = "\\lambda_{" + vertexToNumber(v) + "} = " + (Double.isInfinite(prev.get(v)) ? "\\infty" : formatDouble(prev.get(v)));
+                    equations.add(eq);
+                    continue;
+                }
+
+                List<String> symTerms = new ArrayList<>();
+                List<String> evalTerms = new ArrayList<>();
+                double best = prev.get(v);
+                for (Edge p : preds) {
+                    String u = p.source;
+                    double w = getWeight(p);
+                    double prevU = prev.getOrDefault(u, Double.POSITIVE_INFINITY);
+
+                    // symbolic term like (\lambda_{1} + v_{13})
+                    String sym = "(\\lambda_{" + vertexToNumber(u) + "} + v_{" + vertexToNumber(u) + "" + vertexToNumber(v) + "})";
+                    symTerms.add(sym);
+
+                    // evaluated term like (2 + 4) or (\infty)
+                    String left = Double.isInfinite(prevU) ? "\\infty" : formatDouble(prevU);
+                    String right = formatDouble(w);
+                    String eval = "(" + left + " + " + right + ")";
+                    evalTerms.add(eval);
+
+                    if (!Double.isInfinite(prevU) && prevU + w < best) {
+                        best = prevU + w;
+                    }
+                }
+
+
+                // build chained LaTeX equation: \lambda_j=\min{(\lambda_u+v_uv),...}=\min{(prev_u+w),...}=result
+                StringBuilder chain = new StringBuilder();
+                chain.append("\\lambda_{").append(vertexToNumber(v)).append("}=\\min\\{");
+                chain.append(String.join(",", symTerms));
+                chain.append("\\}=\\min\\{");
+                chain.append(String.join(",", evalTerms));
+                chain.append("\\}=");
+                chain.append(Double.isInfinite(best) ? "\\infty" : formatDouble(best));
+
+                equations.add(chain.toString());
+
+                // apply relaxation into lambda
+                if (best != prev.get(v)) {
+                    lambda.put(v, best);
+                    anyChange = true;
+                }
+            }
+
+            steps.add(new BellmanStep(lambda, equations));
+            if (!anyChange) break;
+            if (iteration > Math.max(1000, verts.size() * 5)) break; // safety cap
+        }
+
+        return steps;
+    }
+
+    private String formatDouble(double v) {
+        if (Double.isInfinite(v)) return "∞";
+        if (Math.abs(v - Math.round(v)) < 1e-9) return String.valueOf((long) Math.round(v));
+        return String.format("%.3f", v);
+    }
+
+    private int vertexToNumber(String v) {
+        if (v == null || v.isEmpty()) return 0;
+        char c = v.toUpperCase().charAt(0);
+        if (c >= 'A' && c <= 'Z') return c - 'A' + 1;
+        try {
+            return Integer.parseInt(v);
+        } catch (NumberFormatException ex) {
+            return Math.abs(v.hashCode()) % 1000; // fallback
+        }
+    }
+
     private void updateMetrics() {
         if (graphData.isEmpty()) {
             excText.setText("");
@@ -717,11 +880,16 @@ public class RepresentationController {
 
         for (int i = 0; i < vertices.size(); i++) {
             double maxDistance = 0;
+            boolean unreachable = false;
             for (int j = 0; j < vertices.size(); j++) {
-                if (i != j && distances[i][j] != Double.POSITIVE_INFINITY) {
-                    maxDistance = Math.max(maxDistance, distances[i][j]);
+                if (i == j) continue;
+                if (distances[i][j] == Double.POSITIVE_INFINITY) {
+                    unreachable = true;
+                    break;
                 }
+                maxDistance = Math.max(maxDistance, distances[i][j]);
             }
+            if (unreachable) maxDistance = Double.POSITIVE_INFINITY;
             eccentricities.put(vertices.get(i), maxDistance);
         }
 
@@ -785,6 +953,71 @@ public class RepresentationController {
         return dist;
     }
 
+    private List<double[][]> computeFloydWarshallIterations() {
+        List<String> vertices = new ArrayList<>(graphData.vertices);
+        int n = vertices.size();
+        List<double[][]> iterations = new ArrayList<>();
+        if (n == 0) return iterations;
+
+        double[][] dist = new double[n][n];
+        for (int i = 0; i < n; i++) {
+            for (int j = 0; j < n; j++) {
+                if (i == j) dist[i][j] = 0;
+                else dist[i][j] = Double.POSITIVE_INFINITY;
+            }
+        }
+
+        Map<String, Integer> vertexIndex = new HashMap<>();
+        for (int i = 0; i < n; i++) vertexIndex.put(vertices.get(i), i);
+
+        for (Edge edge : graphData.edges) {
+            int u = vertexIndex.get(edge.source);
+            int v = vertexIndex.get(edge.destination);
+            double w = getWeight(edge);
+            dist[u][v] = Math.min(dist[u][v], w);
+            if (!graphData.isDirected) dist[v][u] = Math.min(dist[v][u], w);
+        }
+
+        // save initial
+        iterations.add(copyDoubleMatrix(dist));
+        for (int k = 0; k < n; k++) {
+            for (int i = 0; i < n; i++) {
+                for (int j = 0; j < n; j++) {
+                    if (dist[i][k] != Double.POSITIVE_INFINITY && dist[k][j] != Double.POSITIVE_INFINITY) {
+                        dist[i][j] = Math.min(dist[i][j], dist[i][k] + dist[k][j]);
+                    }
+                }
+            }
+            iterations.add(copyDoubleMatrix(dist));
+            if (iterations.size() >= 2) {
+                double[][] prev = iterations.get(iterations.size() - 2);
+                double[][] cur = iterations.get(iterations.size() - 1);
+                boolean different = false;
+                outer: for (int ii = 0; ii < n; ii++) {
+                    for (int jj = 0; jj < n; jj++) {
+                        if (Double.compare(prev[ii][jj], cur[ii][jj]) != 0) {
+                            different = true;
+                            break outer;
+                        }
+                    }
+                }
+            }
+        }
+
+        return iterations;
+    }
+
+    private double[][] copyDoubleMatrix(double[][] src) {
+        int r = src.length;
+        if (r == 0) return new double[0][0];
+        int c = src[0].length;
+        double[][] dst = new double[r][c];
+        for (int i = 0; i < r; i++) for (int j = 0; j < c; j++) dst[i][j] = src[i][j];
+        return dst;
+    }
+
+    
+
     private void updateMedianaAndCenter(Map<String, Double> eccentricities, double radius, double[][] distances) {
         List<String> vertices = new ArrayList<>(graphData.vertices);
 
@@ -804,12 +1037,17 @@ public class RepresentationController {
         for (String vertex : vertices) {
             double sum = 0;
             int idx = vertexIndex.get(vertex);
+            boolean unreachable = false;
             for (int j = 0; j < vertices.size(); j++) {
-                if (distances[idx][j] != Double.POSITIVE_INFINITY) {
-                    sum += distances[idx][j];
+                if (idx == j) continue;
+                if (distances[idx][j] == Double.POSITIVE_INFINITY) {
+                    unreachable = true;
+                    break;
                 }
+                sum += distances[idx][j];
             }
-            sumDistances.put(vertex, sum);
+            if (unreachable) sumDistances.put(vertex, Double.POSITIVE_INFINITY);
+            else sumDistances.put(vertex, sum);
         }
 
         double minSum = Collections.min(sumDistances.values());
@@ -892,14 +1130,26 @@ public class RepresentationController {
         int n = vertices.size();
         int[][] matrix = new int[n][n];
 
-        for (Edge edge : graphData.edges) {
-            int i = vertices.indexOf(edge.source);
-            int j = vertices.indexOf(edge.destination);
-            if (i != -1 && j != -1) {
-                matrix[i][j]++;
-                if (!graphData.isDirected && i != j) {
-                    matrix[j][i]++;
+        // For directed graphs: matrix[row][col] = (+1 if row->col exists) + (-1 if col->row exists)
+        for (int i = 0; i < n; i++) {
+            for (int j = 0; j < n; j++) {
+                // adjacency diagonal must always be 0
+                if (i == j) {
+                    matrix[i][j] = 0;
+                    continue;
                 }
+                String vi = vertices.get(i);
+                String vj = vertices.get(j);
+                int val = 0;
+                for (Edge e : graphData.edges) {
+                    if (e.source.equals(vi) && e.destination.equals(vj)) val += 1;
+                    if (e.source.equals(vj) && e.destination.equals(vi)) val -= 1;
+                    if (!graphData.isDirected) {
+                        // count undirected as +1 for both endpoints
+                        if ((e.source.equals(vi) && e.destination.equals(vj)) || (e.source.equals(vj) && e.destination.equals(vi))) val = 1;
+                    }
+                }
+                matrix[i][j] = val;
             }
         }
 
@@ -907,29 +1157,61 @@ public class RepresentationController {
     }
 
     private GridPane createEdgeAdjacencyMatrix() {
-        List<Edge> edges = graphData.edges;
+        List<Edge> edges = new ArrayList<>(graphData.edges);
         int n = edges.size();
-        int[][] matrix = new int[n][n];
 
+        // Build a string matrix where each cell is either "0" or a pair like "(1,-1)" representing
+        // the relation of ei and ej at their common vertex: value is (s_i,s_j) where s=1 if edge leaves the common vertex, -1 if edge enters it.
+        String[][] sm = new String[n][n];
         for (int i = 0; i < n; i++) {
-            Edge e1 = edges.get(i);
             for (int j = 0; j < n; j++) {
-                Edge e2 = edges.get(j);
-                if (i != j && (e1.source.equals(e2.source) || e1.source.equals(e2.destination) ||
-                        e1.destination.equals(e2.source) || e1.destination.equals(e2.destination))) {
-                    matrix[i][j] = 1;
+                // diagonal should be neutral/zero for adjacency matrices
+                if (i == j) {
+                    sm[i][j] = "0";
+                    continue;
                 }
+                Edge ei = edges.get(i);
+                Edge ej = edges.get(j);
+                String cell = "0";
+                // check common vertices
+                List<String> common = new ArrayList<>();
+                if (ei.source.equals(ej.source) || ei.source.equals(ej.destination)) common.add(ei.source);
+                if (ei.destination.equals(ej.source) || ei.destination.equals(ej.destination)) common.add(ei.destination);
+                // pick first common vertex if any
+                if (!common.isEmpty()) {
+                    String v = common.get(0);
+                    int si = 0;
+                    int sj = 0;
+                    if (graphData.isDirected) {
+                        // for ei relative to v
+                        if (ei.destination.equals(v)) si = -1; // arrow points to v
+                        else if (ei.source.equals(v)) si = 1; // arrow leaves v
+                        // for ej relative to v
+                        if (ej.destination.equals(v)) sj = -1;
+                        else if (ej.source.equals(v)) sj = 1;
+                    } else {
+                        si = 1; sj = 1;
+                    }
+                    cell = "(" + si + "," + sj + ")";
+                }
+                sm[i][j] = cell;
             }
         }
 
-        List<String> edgeLabels = new ArrayList<>();
-        for (Edge edge : edges) {
-            edgeLabels.add(edge.source + "-" + edge.destination + "(" + edge.label + ")");
-        }
-
-        return createIntMatrixGrid(matrix, edgeLabels, edgeLabels, "Matriz de Adyacencia de Aristas");
+        List<String> edgeNames = edgeLabels(edges);
+        return createStringMatrixGrid(sm, edgeNames, edgeNames, "Matriz de Adyacencia de Aristas");
     }
 
+    // Helper: compare if a set contains an edge by endpoints (ignore label)
+    private boolean containsEdgeByEndpoints(Set<Edge> set, Edge target) {
+        if (set == null || target == null) return false;
+        for (Edge e : set) {
+            if ((e.source.equals(target.source) && e.destination.equals(target.destination)) || (!graphData.isDirected && e.source.equals(target.destination) && e.destination.equals(target.source))) {
+                return true;
+            }
+        }
+        return false;
+    }
     private GridPane createIncidenceMatrix() {
         List<String> vertices = new ArrayList<>(graphData.vertices);
         List<Edge> edges = graphData.edges;
@@ -940,11 +1222,12 @@ public class RepresentationController {
             int sourceIdx = vertices.indexOf(edge.source);
             int destIdx = vertices.indexOf(edge.destination);
 
-            if (sourceIdx != -1) {
-                matrix[sourceIdx][j] = graphData.isDirected ? -1 : 1;
-            }
-            if (destIdx != -1) {
-                matrix[destIdx][j] = 1;
+            if (graphData.isDirected) {
+                if (sourceIdx != -1) matrix[sourceIdx][j] = 1; // arrow leaves source
+                if (destIdx != -1) matrix[destIdx][j] = -1; // arrow points to destination
+            } else {
+                if (sourceIdx != -1) matrix[sourceIdx][j] = 1;
+                if (destIdx != -1) matrix[destIdx][j] = 1;
             }
         }
 
@@ -957,38 +1240,847 @@ public class RepresentationController {
     }
 
     private GridPane createCircuitMatrix() {
+        // Find simple cycles (limited) and represent them as rows vs edges columns
+        List<List<String>> cycles = findSimpleCycles(graphData, 100);
+        List<Edge> edges = new ArrayList<>(graphData.edges);
+        if (cycles.isEmpty()) {
+            int[][] matrix = new int[1][edges.size()];
+            return createIntMatrixGrid(matrix, Arrays.asList("Circuitos"), edgeLabels(edges), "Matriz de Circuitos");
+        }
 
-        List<String> vertices = new ArrayList<>(graphData.vertices);
-        int n = vertices.size();
-        int[][] matrix = new int[1][n];
+        int[][] matrix = new int[cycles.size()][edges.size()];
+        for (int i = 0; i < cycles.size(); i++) {
+            List<String> cycle = cycles.get(i);
+            int m = cycle.size();
+            for (int k = 0; k < m; k++) {
+                String u = cycle.get(k);
+                String v = cycle.get((k + 1) % m);
+                for (int j = 0; j < edges.size(); j++) {
+                    Edge e = edges.get(j);
+                    if (!graphData.isDirected) {
+                        // undirected: mark 1 if edge connects u and v
+                        if ((e.source.equals(u) && e.destination.equals(v)) || (e.source.equals(v) && e.destination.equals(u))) {
+                            matrix[i][j] = 1;
+                        }
+                    } else {
+                        // Use the canonical cycle order: if the edge orientation matches the traversal u->v => +1,
+                        // if the edge is oriented v->u (opposite to traversal) => -1.
+                        if (e.source.equals(u) && e.destination.equals(v)) matrix[i][j] = 1;
+                        else if (e.source.equals(v) && e.destination.equals(u)) matrix[i][j] = -1;
+                    }
+                }
+            }
+        }
 
-        return createIntMatrixGrid(matrix, Arrays.asList("Circuitos"), vertices, "Matriz de Circuitos");
+        List<String> rowLabels = new ArrayList<>();
+        for (int i = 0; i < cycles.size(); i++) {
+            rowLabels.add("C" + (i + 1));
+        }
+
+        return createIntMatrixGrid(matrix, rowLabels, edgeLabels(edges), "Matriz de Circuitos");
     }
 
     private GridPane createFundamentalCircuitMatrix() {
-        List<String> vertices = new ArrayList<>(graphData.vertices);
-        int n = vertices.size();
-        int[][] matrix = new int[1][n];
+        List<Edge> allEdges = new ArrayList<>(graphData.edges);
+        List<String> verts = new ArrayList<>(graphData.vertices);
+        if (verts.isEmpty()) {
+            int[][] matrix = new int[1][0];
+            return createIntMatrixGrid(matrix, Arrays.asList("Circuitos Fundamentales"), Collections.emptyList(),
+                    "Matriz de Circuitos Fundamentales");
+        }
 
-        return createIntMatrixGrid(matrix, Arrays.asList("Circuitos Fundamentales"), vertices,
-                "Matriz de Circuitos Fundamentales");
+        // Compute Minimum Spanning Tree (Kruskal). For directed graphs treat edges as undirected for MST.
+        Set<Edge> treeEdgeSet = computeMSTEdges(graphData);
+
+        // chords are edges not in the MST
+        List<Edge> chords = new ArrayList<>();
+        for (Edge e : graphData.edges) {
+            if (!treeEdgeSet.contains(e)) chords.add(e);
+        }
+
+        if (chords.isEmpty()) {
+            int[][] matrix = new int[1][allEdges.size()];
+            return createIntMatrixGrid(matrix, Arrays.asList("Circuitos Fundamentales"), edgeLabels(allEdges),
+                    "Matriz de Circuitos Fundamentales");
+        }
+
+        // Build adjacency for tree using actual tree edges
+        Map<String, List<Edge>> treeAdj = new HashMap<>();
+        for (Edge te : treeEdgeSet) {
+            treeAdj.computeIfAbsent(te.source, k -> new ArrayList<>()).add(te);
+            // allow traversal both ways
+            treeAdj.computeIfAbsent(te.destination, k -> new ArrayList<>()).add(te);
+        }
+
+
+        List<int[]> rows = new ArrayList<>();
+        for (Edge chord : chords) {
+            // find vertex path in tree between chord.source and chord.destination
+            List<String> pathVerts = findPathVerticesInTree(treeAdj, chord.source, chord.destination);
+            // build cycle traversal: pathVerts from source->dest, then chord dest->source to close
+            List<String> cycleVerts = new ArrayList<>(pathVerts);
+            // close cycle by adding starting vertex at end implicitly when iterating pairs
+
+            int[] row = new int[allEdges.size()];
+            // traverse path edges in order
+            for (int k = 0; k < pathVerts.size() - 1; k++) {
+                String a = pathVerts.get(k);
+                String b = pathVerts.get(k + 1);
+                for (int c = 0; c < allEdges.size(); c++) {
+                    Edge e = allEdges.get(c);
+                    if (!graphData.isDirected) {
+                        if ((e.source.equals(a) && e.destination.equals(b)) || (e.source.equals(b) && e.destination.equals(a))) row[c] = 1;
+                    } else {
+                        // Use canonical cycle order: if tree edge orientation matches traversal a->b => +1,
+                        // otherwise if the edge is oriented b->a then mark -1.
+                        if (e.source.equals(a) && e.destination.equals(b)) row[c] = 1;
+                        else if (e.source.equals(b) && e.destination.equals(a)) row[c] = -1;
+                    }
+                }
+            }
+            // add chord edge (from chord.source -> chord.destination)
+                for (int c = 0; c < allEdges.size(); c++) {
+                    Edge e = allEdges.get(c);
+                    if (e.source.equals(chord.source) && e.destination.equals(chord.destination)) {
+                        row[c] = 1; // chord along its orientation => +1 (match traversal order)
+                        break;
+                    }
+                    if (!graphData.isDirected && ((e.source.equals(chord.destination) && e.destination.equals(chord.source)) || (e.source.equals(chord.source) && e.destination.equals(chord.destination)))) {
+                        row[c] = 1;
+                        break;
+                    }
+                }
+            rows.add(row);
+        }
+
+        int[][] matrix = new int[rows.size()][allEdges.size()];
+        for (int r = 0; r < rows.size(); r++) matrix[r] = rows.get(r);
+
+        List<String> rowLabels = new ArrayList<>();
+        for (int i = 0; i < rows.size(); i++) rowLabels.add("CF" + (i + 1));
+
+        return createIntMatrixGrid(matrix, rowLabels, edgeLabels(allEdges), "Matriz de Circuitos Fundamentales");
     }
 
     private GridPane createCutSetMatrix() {
-        List<String> vertices = new ArrayList<>(graphData.vertices);
-        int n = vertices.size();
-        int[][] matrix = new int[1][n];
+        // Enumerate minimal edge cut-sets up to a bounded size (small graphs expected)
+        int maxCutSize = 4;
+        List<Set<Edge>> cutSets = findAllCutSets(graphData, maxCutSize);
+        List<Edge> edges = new ArrayList<>(graphData.edges);
 
-        return createIntMatrixGrid(matrix, Arrays.asList("Conjuntos de Corte"), vertices, "Conjuntos de Corte");
+        if (cutSets.isEmpty()) {
+            int[][] matrix = new int[1][edges.size()];
+            return createIntMatrixGrid(matrix, Arrays.asList("Conjuntos de Corte"), edgeLabels(edges), "Conjuntos de Corte");
+        }
+
+        int[][] matrix = new int[cutSets.size()][edges.size()];
+        List<String> rowLabels = new ArrayList<>();
+        for (int i = 0; i < cutSets.size(); i++) {
+            Set<Edge> cut = cutSets.get(i);
+            // pick a starting vertex as the source of the first edge in the cut (if any)
+            String start = null;
+            if (!cut.isEmpty()) start = cut.iterator().next().source;
+            Set<String> compA = componentWithoutEdges(graphData, start, cut);
+
+            for (int j = 0; j < edges.size(); j++) {
+                Edge e = edges.get(j);
+                if (!cut.contains(e)) continue;
+                if (!graphData.isDirected) {
+                    matrix[i][j] = 1;
+                } else {
+                    boolean aIn = compA.contains(e.source);
+                    boolean bIn = compA.contains(e.destination);
+                    if (aIn && !bIn) matrix[i][j] = 1; // goes from A to B
+                    else if (!aIn && bIn) matrix[i][j] = -1; // goes from B to A
+                    else matrix[i][j] = 0;
+                }
+            }
+            rowLabels.add("CC" + (i + 1));
+        }
+
+        return createIntMatrixGrid(matrix, rowLabels, edgeLabels(edges), "Conjuntos de Corte");
+    }
+
+    // Enumerate minimal cut-sets (edge removals that disconnect the graph)
+    private List<Set<Edge>> findAllCutSets(Graph g, int maxSize) {
+        List<Set<Edge>> result = new ArrayList<>();
+        List<Edge> edges = new ArrayList<>(g.edges);
+        int m = edges.size();
+        if (m == 0)
+            return result;
+
+        // helper to check if removal of subset disconnects graph
+        for (int size = 1; size <= Math.min(maxSize, m); size++) {
+            // generate combinations of given size
+            int[] idx = new int[size];
+            for (int i = 0; i < size; i++) idx[i] = i;
+            while (idx[0] <= m - size) {
+                Set<Edge> subset = new HashSet<>();
+                for (int k = 0; k < size; k++) subset.add(edges.get(idx[k]));
+
+                if (removalDisconnects(g, subset)) {
+                    // ensure minimal: no existing result is subset of this
+                    boolean isMinimal = true;
+                    for (Set<Edge> existing : result) {
+                        if (subset.containsAll(existing)) {
+                            isMinimal = false;
+                            break;
+                        }
+                    }
+                    if (isMinimal) {
+                        result.add(subset);
+                    }
+                }
+
+                // next combination
+                int t = size - 1;
+                idx[t]++;
+                while (t > 0 && idx[t] >= m - (size - 1 - t)) {
+                    t--;
+                    idx[t]++;
+                    for (int j = t + 1; j < size; j++) {
+                        idx[j] = idx[j - 1] + 1;
+                    }
+                }
+                if (idx[0] > m - size) break;
+            }
+        }
+
+        return result;
+    }
+
+    private boolean removalDisconnects(Graph g, Set<Edge> forbidden) {
+        if (g.vertices.isEmpty()) return false;
+        // count components after removal
+        int comps = countComponentsAfterRemoval(g, forbidden);
+        return comps > 1;
+    }
+
+    private int countComponentsAfterRemoval(Graph g, Set<Edge> forbidden) {
+        Set<String> seen = new HashSet<>();
+        int compCount = 0;
+        for (String v : g.vertices) {
+            if (!seen.contains(v)) {
+                compCount++;
+                Deque<String> dq = new ArrayDeque<>();
+                dq.add(v);
+                seen.add(v);
+                while (!dq.isEmpty()) {
+                    String cur = dq.poll();
+                    for (Edge e : g.edges) {
+                        if (forbidden.contains(e)) continue;
+                        String neigh = null;
+                        if (e.source.equals(cur)) neigh = e.destination;
+                        else if (!g.isDirected && e.destination.equals(cur)) neigh = e.source;
+                        if (neigh != null && !seen.contains(neigh)) {
+                            seen.add(neigh);
+                            dq.add(neigh);
+                        }
+                    }
+                }
+            }
+        }
+        return compCount;
+    }
+
+    private Set<String> componentWithoutEdges(Graph g, String start, Set<Edge> forbidden) {
+        Set<String> comp = new HashSet<>();
+        if (start == null || !g.vertices.contains(start)) {
+            // pick any vertex
+            if (g.vertices.isEmpty()) return comp;
+            start = g.vertices.iterator().next();
+        }
+        Deque<String> dq = new ArrayDeque<>();
+        dq.add(start);
+        comp.add(start);
+        while (!dq.isEmpty()) {
+            String v = dq.poll();
+            for (Edge e : g.edges) {
+                if (forbidden.contains(e)) continue;
+                String neigh = null;
+                if (e.source.equals(v)) neigh = e.destination;
+                else if (!g.isDirected && e.destination.equals(v)) neigh = e.source;
+                if (neigh != null && !comp.contains(neigh)) {
+                    comp.add(neigh);
+                    dq.add(neigh);
+                }
+            }
+        }
+        return comp;
+    }
+
+    // Similar to componentWithoutEdge but compare forbidden edge by endpoints (ignoring label)
+    private Set<String> componentWithoutEdgeByEndpoints(Graph g, String start, Edge forbidden) {
+        Set<String> comp = new HashSet<>();
+        if (start == null || !g.vertices.contains(start)) {
+            if (g.vertices.isEmpty()) return comp;
+            start = g.vertices.iterator().next();
+        }
+        Deque<String> dq = new ArrayDeque<>();
+        dq.add(start);
+        comp.add(start);
+        while (!dq.isEmpty()) {
+            String v = dq.poll();
+            for (Edge e : g.edges) {
+                // compare endpoints ignoring label and direction for forbidden
+                boolean isForbidden = false;
+                if ( (e.source.equals(forbidden.source) && e.destination.equals(forbidden.destination)) ) {
+                    isForbidden = true;
+                }
+                if (!g.isDirected && (e.source.equals(forbidden.destination) && e.destination.equals(forbidden.source))) {
+                    isForbidden = true;
+                }
+                if (isForbidden) continue;
+
+                String neigh = null;
+                if (e.source.equals(v)) neigh = e.destination;
+                else if (!g.isDirected && e.destination.equals(v)) neigh = e.source;
+                if (neigh != null && !comp.contains(neigh)) {
+                    comp.add(neigh);
+                    dq.add(neigh);
+                }
+            }
+        }
+        return comp;
+    }
+
+    // Compute MST edges using Kruskal (treat graph as undirected for MST). Uses getWeight(edge).
+    private Set<Edge> computeMSTEdges(Graph g) {
+        Set<Edge> mst = new LinkedHashSet<>();
+        List<String> verts = new ArrayList<>(g.vertices);
+        if (verts.isEmpty()) return mst;
+
+        List<Edge> edges = new ArrayList<>(g.edges);
+        edges.sort(Comparator.comparingDouble(this::getWeight));
+
+        // iterative union-find (DSU)
+        Map<String, String> ufParent = new HashMap<>();
+        for (String v : verts) ufParent.put(v, v);
+
+        java.util.function.Function<String, String> findRoot = x -> {
+            String r = x;
+            while (!ufParent.get(r).equals(r)) {
+                r = ufParent.get(r);
+            }
+            // path compression
+            String cur = x;
+            while (!ufParent.get(cur).equals(r)) {
+                String next = ufParent.get(cur);
+                ufParent.put(cur, r);
+                cur = next;
+            }
+            return r;
+        };
+
+        for (Edge e : edges) {
+            String u = e.source;
+            String v = e.destination;
+            if (!ufParent.containsKey(u) || !ufParent.containsKey(v)) continue;
+            String ru = findRoot.apply(u);
+            String rv = findRoot.apply(v);
+            if (!ru.equals(rv)) {
+                ufParent.put(ru, rv);
+                mst.add(e);
+            }
+            if (mst.size() >= Math.max(0, verts.size() - 1)) break;
+        }
+
+        return mst;
+    }
+
+    // Find edges along path between u and v inside the tree adjacency
+    private List<Edge> findPathEdgesInTree(Map<String, List<Edge>> treeAdj, String u, String v, boolean directed) {
+        List<Edge> result = new ArrayList<>();
+        if (u == null || v == null) return result;
+        // BFS on tree, store parent edge
+        Deque<String> dq = new ArrayDeque<>();
+        Map<String, Edge> parentEdge = new HashMap<>();
+        Set<String> seen = new HashSet<>();
+        dq.add(u);
+        seen.add(u);
+        boolean found = false;
+        while (!dq.isEmpty() && !found) {
+            String cur = dq.poll();
+            List<Edge> neighs = treeAdj.getOrDefault(cur, Collections.emptyList());
+            for (Edge e : neighs) {
+                String neigh = e.source.equals(cur) ? e.destination : e.source;
+                if (!seen.contains(neigh)) {
+                    seen.add(neigh);
+                    parentEdge.put(neigh, e);
+                    dq.add(neigh);
+                    if (neigh.equals(v)) {
+                        found = true;
+                        break;
+                    }
+                }
+            }
+        }
+        if (!seen.contains(v)) return result;
+        // reconstruct path
+        String cur = v;
+        while (!cur.equals(u)) {
+            Edge e = parentEdge.get(cur);
+            if (e == null) break;
+            result.add(e);
+            cur = e.source.equals(cur) ? e.destination : e.source;
+            // above toggling works because tree edges may be stored in either direction
+        }
+        return result;
+    }
+
+    // Find vertex path between u and v inside the tree adjacency (inclusive), returns list of vertices from u..v
+    private List<String> findPathVerticesInTree(Map<String, List<Edge>> treeAdj, String u, String v) {
+        List<String> result = new ArrayList<>();
+        if (u == null || v == null) return result;
+        Deque<String> dq = new ArrayDeque<>();
+        Map<String, String> parent = new HashMap<>();
+        Set<String> seen = new HashSet<>();
+        dq.add(u);
+        seen.add(u);
+        boolean found = false;
+        while (!dq.isEmpty() && !found) {
+            String cur = dq.poll();
+            for (Edge e : treeAdj.getOrDefault(cur, Collections.emptyList())) {
+                String neigh = e.source.equals(cur) ? e.destination : e.source;
+                if (!seen.contains(neigh)) {
+                    seen.add(neigh);
+                    parent.put(neigh, cur);
+                    dq.add(neigh);
+                    if (neigh.equals(v)) { found = true; break; }
+                }
+            }
+        }
+        if (!seen.contains(v)) return result;
+        String cur = v;
+        LinkedList<String> path = new LinkedList<>();
+        while (cur != null) {
+            path.addFirst(cur);
+            if (cur.equals(u)) break;
+            cur = parent.get(cur);
+        }
+        return new ArrayList<>(path);
+    }
+
+    private List<String> edgeLabels(List<Edge> edges) {
+        List<String> labels = new ArrayList<>();
+        for (Edge e : edges) {
+            labels.add(e.source + "-" + e.destination + "(" + e.label + ")");
+        }
+        return labels;
+    }
+
+    private Set<Edge> edgesFromVertexCycle(Graph g, List<String> cycle) {
+        Set<Edge> result = new HashSet<>();
+        if (cycle == null || cycle.size() < 2) return result;
+        int n = cycle.size();
+        for (int i = 0; i < n; i++) {
+            String u = cycle.get(i);
+            String v = cycle.get((i + 1) % n);
+            for (Edge e : g.edges) {
+                if (g.isDirected) {
+                    if (e.source.equals(u) && e.destination.equals(v)) {
+                        result.add(e);
+                        break;
+                    }
+                } else {
+                    String a = u.compareTo(v) <= 0 ? u : v;
+                    String b = u.compareTo(v) <= 0 ? v : u;
+                    if (e.source.equals(a) && e.destination.equals(b)) {
+                        result.add(e);
+                        break;
+                    }
+                }
+            }
+        }
+        return result;
+    }
+
+    // Create a GridPane for string-valued matrices (used for edge-adjacency pair view)
+    private GridPane createStringMatrixGrid(String[][] matrix, List<String> rowLabels, List<String> colLabels, String title) {
+        GridPane grid = new GridPane();
+        grid.setGridLinesVisible(true);
+
+        int rows = matrix.length;
+        int cols = rows == 0 ? 0 : matrix[0].length;
+
+        for (int i = 0; i <= cols; i++) {
+            grid.getColumnConstraints().add(new ColumnConstraints(100));
+        }
+        for (int i = 0; i <= rows; i++) {
+            grid.getRowConstraints().add(new RowConstraints(30));
+        }
+
+        for (int j = 0; j < cols; j++) {
+            Text header = new Text(colLabels.get(j));
+            header.setStyle("-fx-font-weight: bold;");
+            grid.add(header, j + 1, 0);
+        }
+
+        for (int i = 0; i < rows; i++) {
+            Text rowHeader = new Text(rowLabels.get(i));
+            rowHeader.setStyle("-fx-font-weight: bold;");
+            grid.add(rowHeader, 0, i + 1);
+
+            for (int j = 0; j < cols; j++) {
+                String value = matrix[i][j];
+                Text cell = new Text(value);
+                StackPane cellPane = new StackPane(cell);
+                cellPane.setStyle("-fx-border-color: lightgray;");
+                grid.add(cellPane, j + 1, i + 1);
+            }
+        }
+
+        return grid;
     }
 
     private GridPane createFundamentalCutSetMatrix() {
-        List<String> vertices = new ArrayList<>(graphData.vertices);
-        int n = vertices.size();
-        int[][] matrix = new int[1][n];
+        // Fresh MST-based fundamental cut-sets implementation
+        List<Edge> allEdges = new ArrayList<>(graphData.edges);
+        List<String> verts = new ArrayList<>(graphData.vertices);
 
-        return createIntMatrixGrid(matrix, Arrays.asList("Conjuntos de Corte Fundamentales"), vertices,
-                "Conjuntos de Corte Fundamentales");
+        if (verts.isEmpty()) {
+            int[][] matrix = new int[1][0];
+            return createIntMatrixGrid(matrix, Arrays.asList("Conjuntos de Corte Fundamentales"), Collections.emptyList(),
+                    "Conjuntos de Corte Fundamentales");
+        }
+
+        // Build MST (treat graph as undirected for expansion minima)
+        Set<Edge> treeEdgeSet = computeMSTEdges(graphData);
+        List<Edge> treeEdges = new ArrayList<>(treeEdgeSet);
+
+        if (treeEdges.isEmpty()) {
+            int[][] matrix = new int[1][allEdges.size()];
+            return createIntMatrixGrid(matrix, Arrays.asList("Conjuntos de Corte Fundamentales"), edgeLabels(allEdges),
+                    "Conjuntos de Corte Fundamentales");
+        }
+
+        // Rows: one per tree edge (branch). Columns: all edges in graph (edge-based matrix).
+        int rows = treeEdges.size();
+        int cols = allEdges.size();
+        int[][] matrix = new int[rows][cols];
+        List<String> rowLabels = new ArrayList<>();
+
+        // For each tree edge, compute component after removing that edge and include all edges crossing the partition
+        // Build tree adjacency for the MST (undirected)
+        Map<String, List<Edge>> treeAdj = new HashMap<>();
+        for (Edge te : treeEdges) {
+            treeAdj.computeIfAbsent(te.source, k -> new ArrayList<>()).add(te);
+            treeAdj.computeIfAbsent(te.destination, k -> new ArrayList<>()).add(te);
+        }
+
+        for (int i = 0; i < treeEdges.size(); i++) {
+            Edge branch = treeEdges.get(i);
+
+            // BFS on the tree (treeAdj) ignoring the branch edge to get the component containing branch.source
+            Set<String> comp = new HashSet<>();
+            Deque<String> dq = new ArrayDeque<>();
+            dq.add(branch.source);
+            comp.add(branch.source);
+            while (!dq.isEmpty()) {
+                String cur = dq.poll();
+                for (Edge te : treeAdj.getOrDefault(cur, Collections.emptyList())) {
+                    // skip the removed branch (compare endpoints ignoring label)
+                    boolean isBranch = (te.source.equals(branch.source) && te.destination.equals(branch.destination)) || (!graphData.isDirected && te.source.equals(branch.destination) && te.destination.equals(branch.source));
+                    if (isBranch) continue;
+                    String neigh = te.source.equals(cur) ? te.destination : te.source;
+                    if (!comp.contains(neigh)) {
+                        comp.add(neigh);
+                        dq.add(neigh);
+                    }
+                }
+            }
+            // For every edge in the graph, include it in the cut if it has endpoints in different components
+            for (int j = 0; j < allEdges.size(); j++) {
+                Edge e = allEdges.get(j);
+                boolean inLeft = comp.contains(e.source);
+                boolean inRight = comp.contains(e.destination);
+                boolean crossing = inLeft ^ inRight;
+                if (crossing) {
+                    if (!graphData.isDirected) matrix[i][j] = 1;
+                    else {
+                        if (inLeft && !inRight) matrix[i][j] = 1; // from left to right
+                        else if (!inLeft && inRight) matrix[i][j] = -1; // from right to left
+                    }
+                }
+            }
+
+            rowLabels.add("TC" + (i + 1));
+        }
+
+        return createIntMatrixGrid(matrix, rowLabels, edgeLabels(allEdges), "Conjuntos de Corte Fundamentales");
+    }
+
+    // Helper: path from vertex to root using parent map
+    @SuppressWarnings("unused")
+    private List<String> pathToRoot(String v, Map<String, String> parent) {
+        List<String> p = new ArrayList<>();
+        String cur = v;
+        while (cur != null) {
+            p.add(cur);
+            cur = parent.get(cur);
+        }
+        return p;
+    }
+
+    // Helper: find simple cycles by backtracking (limit to maxCycles)
+    private List<List<String>> findSimpleCycles(Graph g, int maxCycles) {
+        if (g.isDirected) {
+            return findSimpleCyclesDirected(g, maxCycles);
+        }
+
+        // Undirected graphs: backtracking DFS with canonicalization to enumerate unique simple cycles
+        List<List<String>> cycles = new ArrayList<>();
+        List<String> verts = new ArrayList<>(g.vertices);
+        Map<String, Integer> index = new HashMap<>();
+        for (int i = 0; i < verts.size(); i++) index.put(verts.get(i), i);
+
+        Set<String> seen = new HashSet<>();
+
+        for (int s = 0; s < verts.size(); s++) {
+            String start = verts.get(s);
+            Deque<String> path = new ArrayDeque<>();
+            path.addLast(start);
+            dfsUndirectedCycles(g, start, start, s, path, cycles, index, seen, maxCycles);
+            if (cycles.size() >= maxCycles) break;
+        }
+
+        return cycles;
+    }
+
+    private void dfsUndirectedCycles(Graph g, String start, String current, int startIndex, Deque<String> path,
+            List<List<String>> cycles, Map<String, Integer> index, Set<String> seen, int maxCycles) {
+        if (cycles.size() >= maxCycles) return;
+        for (String neigh : g.getAdjacentVertices(current)) {
+            int ni = index.getOrDefault(neigh, -1);
+            if (ni < startIndex) continue; // ensure smallest-index vertex in cycle is the start
+            if (neigh.equals(start) && path.size() > 2) {
+                List<String> cycle = new ArrayList<>(path);
+                String key = canonicalizeUndirectedCycle(cycle, index);
+                if (!seen.contains(key)) {
+                    seen.add(key);
+                    cycles.add(cycle);
+                    if (cycles.size() >= maxCycles) return;
+                }
+            } else if (!path.contains(neigh)) {
+                path.addLast(neigh);
+                dfsUndirectedCycles(g, start, neigh, startIndex, path, cycles, index, seen, maxCycles);
+                path.removeLast();
+                if (cycles.size() >= maxCycles) return;
+            }
+        }
+    }
+
+    private String canonicalizeUndirectedCycle(List<String> cycle, Map<String, Integer> index) {
+        // rotate cycle so smallest index vertex is first, then choose lexicographically smaller
+        int n = cycle.size();
+        int minPos = 0;
+        int minIdx = Integer.MAX_VALUE;
+        for (int i = 0; i < n; i++) {
+            int idx = index.getOrDefault(cycle.get(i), Integer.MAX_VALUE);
+            if (idx < minIdx) { minIdx = idx; minPos = i; }
+        }
+        List<String> rotated = new ArrayList<>();
+        for (int i = 0; i < n; i++) rotated.add(cycle.get((minPos + i) % n));
+
+        List<String> rev = new ArrayList<>(rotated);
+        Collections.reverse(rev);
+
+        String a = String.join("|", rotated);
+        String b = String.join("|", rev);
+        return a.compareTo(b) <= 0 ? a : b;
+    }
+
+    // Remove cycles that are trivial (single-edge loops) and cycles whose edge-sets
+    // are strictly contained in another cycle's edge-set. Keeps only maximal cycles.
+    private List<List<String>> filterCyclesByEdgeSets(Graph g, List<List<String>> cycles) {
+        if (cycles == null || cycles.isEmpty()) return cycles;
+
+        List<Set<Edge>> edgeSets = new ArrayList<>();
+        for (List<String> cycle : cycles) {
+            Set<Edge> es = edgesFromVertexCycle(g, cycle);
+            edgeSets.add(new HashSet<>(es));
+        }
+
+        int m = cycles.size();
+        boolean[] remove = new boolean[m];
+
+        // remove single-edge cycles (usually loops)
+        for (int i = 0; i < m; i++) {
+            if (edgeSets.get(i).size() <= 1) remove[i] = true;
+        }
+
+        // remove cycles whose edge-set is a strict subset of another cycle's edge-set
+        for (int i = 0; i < m; i++) {
+            if (remove[i]) continue;
+            for (int j = 0; j < m; j++) {
+                if (i == j) continue;
+                if (remove[j]) continue;
+                Set<Edge> a = edgeSets.get(i);
+                Set<Edge> b = edgeSets.get(j);
+                if (a.isEmpty() || b.isEmpty()) continue;
+                if (b.containsAll(a) && b.size() > a.size()) {
+                    // i is contained in j
+                    remove[i] = true;
+                    break;
+                }
+            }
+        }
+
+        List<List<String>> filtered = new ArrayList<>();
+        for (int i = 0; i < m; i++) if (!remove[i]) filtered.add(cycles.get(i));
+        return filtered;
+    }
+
+    // Directed simple cycles finder: basic per-start-index DFS to avoid duplicates
+    private List<List<String>> findSimpleCyclesDirected(Graph g, int maxCycles) {
+        List<List<String>> cycles = new ArrayList<>();
+        List<String> verts = new ArrayList<>(g.vertices);
+        Map<String, Integer> index = new HashMap<>();
+        for (int i = 0; i < verts.size(); i++) index.put(verts.get(i), i);
+
+        for (int s = 0; s < verts.size(); s++) {
+            String start = verts.get(s);
+            Deque<String> path = new ArrayDeque<>();
+            path.addLast(start);
+            dfsDirectedCycles(g, start, start, s, path, cycles, index, maxCycles);
+            if (cycles.size() >= maxCycles) break;
+        }
+        return filterCyclesByEdgeSets(g, cycles);
+    }
+
+    private void dfsDirectedCycles(Graph g, String start, String current, int startIndex, Deque<String> path,
+            List<List<String>> cycles, Map<String, Integer> index, int maxCycles) {
+        if (cycles.size() >= maxCycles) return;
+        for (String neigh : getNeighborsBothDirections(g, current)) {
+            if (neigh.equals(start) && path.size() > 1) {
+                List<String> cycle = new ArrayList<>(path);
+                // ensure uniqueness: only accept cycles where the minimum index vertex is the start
+                int minIdx = Integer.MAX_VALUE;
+                for (String v : cycle) minIdx = Math.min(minIdx, index.getOrDefault(v, Integer.MAX_VALUE));
+                if (minIdx == startIndex) {
+                    cycles.add(cycle);
+                    if (cycles.size() >= maxCycles) return;
+                }
+            } else if (!path.contains(neigh)) {
+                path.addLast(neigh);
+                dfsDirectedCycles(g, start, neigh, startIndex, path, cycles, index, maxCycles);
+                path.removeLast();
+                if (cycles.size() >= maxCycles) return;
+            }
+        }
+    }
+
+    // For cycle detection we must consider both outgoing and incoming edges so cycles
+    // that traverse an edge against its direction are still detected (they'll be
+    // recorded and later represented with -1 for that edge in the circuit matrix).
+    private Set<String> getNeighborsBothDirections(Graph g, String vertex) {
+        Set<String> neigh = new LinkedHashSet<>();
+        for (Edge e : g.edges) {
+            if (e.source.equals(vertex)) neigh.add(e.destination);
+            if (e.destination.equals(vertex)) neigh.add(e.source);
+        }
+        return neigh;
+    }
+
+    private void findCyclesDFS(Graph g, String start, String current, Deque<String> path, List<List<String>> cycles,
+            Set<String> visitedGlobal, int maxCycles) {
+        if (cycles.size() >= maxCycles)
+            return;
+        for (String neigh : g.getAdjacentVertices(current)) {
+            if (neigh.equals(start) && path.size() > 2) {
+                List<String> cycle = new ArrayList<>(path);
+                // normalize to avoid duplicates
+                Collections.sort(cycle);
+                boolean dup = false;
+                for (List<String> c : cycles) {
+                    List<String> copy = new ArrayList<>(c);
+                    Collections.sort(copy);
+                    if (copy.equals(cycle)) {
+                        dup = true;
+                        break;
+                    }
+                }
+                if (!dup)
+                    cycles.add(new ArrayList<>(path));
+                if (cycles.size() >= maxCycles)
+                    return;
+            } else if (!path.contains(neigh) && !visitedGlobal.contains(neigh)) {
+                path.push(neigh);
+                findCyclesDFS(g, start, neigh, path, cycles, visitedGlobal, maxCycles);
+                path.pop();
+                if (cycles.size() >= maxCycles)
+                    return;
+            }
+        }
+    }
+
+    // Helper: find bridges using DFS (Tarjan)
+    @SuppressWarnings("unused")
+    private List<Edge> findBridges(Graph g) {
+        List<Edge> bridges = new ArrayList<>();
+        Map<String, Integer> disc = new HashMap<>();
+        Map<String, Integer> low = new HashMap<>();
+        Map<String, String> parent = new HashMap<>();
+        List<String> verts = new ArrayList<>(g.vertices);
+        int time = 0;
+        for (String v : verts) {
+            if (!disc.containsKey(v)) {
+                time = bridgeDFS(g, v, disc, low, parent, bridges, time);
+            }
+        }
+        return bridges;
+    }
+
+    private int bridgeDFS(Graph g, String u, Map<String, Integer> disc, Map<String, Integer> low,
+            Map<String, String> parent, List<Edge> bridges, int time) {
+        disc.put(u, time);
+        low.put(u, time);
+        time++;
+        for (String v : g.getAdjacentVertices(u)) {
+            if (!disc.containsKey(v)) {
+                parent.put(v, u);
+                time = bridgeDFS(g, v, disc, low, parent, bridges, time);
+                low.put(u, Math.min(low.get(u), low.get(v)));
+                if (low.get(v) > disc.get(u)) {
+                    // u-v is a bridge; find any matching edge
+                    for (Edge e : g.edges) {
+                        if ((e.source.equals(u) && e.destination.equals(v)) || (e.source.equals(v) && e.destination.equals(u))) {
+                            bridges.add(e);
+                            break;
+                        }
+                    }
+                }
+            } else if (!Objects.equals(parent.get(u), v)) {
+                low.put(u, Math.min(low.get(u), disc.get(v)));
+            }
+        }
+        return time;
+    }
+
+    // BFS/DFS component ignoring a specific edge
+    @SuppressWarnings("unused")
+    private Set<String> componentWithoutEdge(Graph g, String start, Edge forbidden) {
+        Set<String> comp = new HashSet<>();
+        Deque<String> dq = new ArrayDeque<>();
+        dq.add(start);
+        comp.add(start);
+        while (!dq.isEmpty()) {
+            String v = dq.poll();
+            for (Edge e : g.edges) {
+                if (e.equals(forbidden))
+                    continue;
+                String neigh = null;
+                if (e.source.equals(v))
+                    neigh = e.destination;
+                else if (!g.isDirected && e.destination.equals(v))
+                    neigh = e.source;
+                if (neigh != null && !comp.contains(neigh)) {
+                    comp.add(neigh);
+                    dq.add(neigh);
+                }
+            }
+        }
+        return comp;
     }
 
     private GridPane createPlaceholderMatrix(String matrixType) {
@@ -1036,7 +2128,12 @@ public class RepresentationController {
                 if (Double.isInfinite(matrix[i][j])) {
                     value = "∞";
                 } else {
-                    value = String.valueOf((int) matrix[i][j]);
+                    double v = matrix[i][j];
+                    if (Math.abs(v - Math.round(v)) < 1e-9) {
+                        value = String.valueOf((long) Math.round(v));
+                    } else {
+                        value = String.format("%.3f", v);
+                    }
                 }
                 Text cell = new Text(value);
                 StackPane cellPane = new StackPane(cell);
@@ -1091,9 +2188,10 @@ public class RepresentationController {
         if (graphType.equals("main")) {
             canvas.setPrefSize(CANVAS_WIDTH, CANVAS_HEIGHT);
         } else if (graphType.equals("mediana")) {
-            canvas.setPrefSize(224, 121);
+            // Use same canvas size as main graph for consistent vertex/edge sizing
+            canvas.setPrefSize(CANVAS_WIDTH, CANVAS_HEIGHT);
         } else if (graphType.equals("center")) {
-            canvas.setPrefSize(224, 121);
+            canvas.setPrefSize(CANVAS_WIDTH, CANVAS_HEIGHT);
         }
 
         if (graph.isEmpty()) {
@@ -1106,7 +2204,7 @@ public class RepresentationController {
         double centerY = canvas.getPrefHeight() / 2;
 
         if (customLayout == null || customLayout.isEmpty() || !customLayout.keySet().containsAll(graph.vertices)) {
-            double radius = graphType.equals("main") ? VERTEX_RADIUS : 8;
+            double radius = VERTEX_RADIUS; // always use main vertex radius for consistency
             customLayout = calculateGraphLayout(graph, centerX, centerY, radius);
             setLayoutForGraphType(graphType, customLayout);
         }
@@ -1144,10 +2242,18 @@ public class RepresentationController {
                 if (sourcePos != null && destPos != null) {
                     for (int i = 0; i < parallelEdges.size(); i++) {
                         Edge edge = parallelEdges.get(i);
-                        double radius = graphType.equals("main") ? VERTEX_RADIUS : 8;
+                        double radius = VERTEX_RADIUS;
+                        // detect presence of an opposite-direction edge in the full graph
+                        boolean hasReverse = false;
+                        for (Edge check : graph.edges) {
+                            if (check.source.equals(firstEdge.destination) && check.destination.equals(firstEdge.source)) {
+                                hasReverse = true;
+                                break;
+                            }
+                        }
                         drawEdge(canvas, sourcePos, destPos, edge.label,
                                 graph.isDirected, radius, i, parallelEdges.size(),
-                                allLabels, edgeLabelConnections, allEdgesInGroup);
+                                allLabels, edgeLabelConnections, allEdgesInGroup, hasReverse);
                     }
                 }
             }
@@ -1170,6 +2276,7 @@ public class RepresentationController {
         drawGraph(graphData, graph, "main");
     }
 
+    @SuppressWarnings("unused")
     private void drawSubgraph(Graph subgraph, ScrollPane scrollPane, String graphType) {
         Pane canvas = new Pane();
 
@@ -1229,10 +2336,18 @@ public class RepresentationController {
                 if (sourcePos != null && destPos != null) {
                     for (int i = 0; i < parallelEdges.size(); i++) {
                         Edge edge = parallelEdges.get(i);
+                        // detect reverse edge presence in this subgraph
+                        boolean hasReverse = false;
+                        for (Edge check : subgraph.edges) {
+                            if (check.source.equals(firstEdge.destination) && check.destination.equals(firstEdge.source)) {
+                                hasReverse = true;
+                                break;
+                            }
+                        }
                         drawEdge(canvas, sourcePos, destPos, edge.label,
                                 subgraph.isDirected,
-                                graphType.equals("mediana") || graphType.equals("center") ? 8 : VERTEX_RADIUS,
-                                i, parallelEdges.size(), allLabels, edgeLabelConnections, allEdgesInGroup);
+                                VERTEX_RADIUS,
+                                i, parallelEdges.size(), allLabels, edgeLabelConnections, allEdgesInGroup, hasReverse);
                     }
                 }
             }
@@ -1251,10 +2366,10 @@ public class RepresentationController {
         centerGraphView(scrollPane);
     }
 
-    private void drawEdge(Pane canvas, Point2D source, Point2D target, String label,
+        private void drawEdge(Pane canvas, Point2D source, Point2D target, String label,
             boolean isDirected, double radius, int parallelIndex, int totalEdges,
             List<String> allLabels, List<EdgeLabelConnection> connections,
-            List<javafx.scene.shape.Shape> allEdges) {
+            List<javafx.scene.shape.Shape> allEdges, boolean hasReverse) {
 
         double arrowLength = 15;
         double arrowWidth = 8;
@@ -1331,7 +2446,8 @@ public class RepresentationController {
             }
         });
 
-        if (isDirected) {
+        // Draw arrow at target if directed or if there is an opposite edge
+        if (isDirected || hasReverse) {
             double angle = Math.atan2(adjustedTargetY - adjustedSourceY, adjustedTargetX - adjustedSourceX);
 
             double arrowX = adjustedTargetX - arrowLength * Math.cos(angle);
@@ -1363,6 +2479,40 @@ public class RepresentationController {
             });
 
             canvas.getChildren().add(arrowHead);
+        }
+
+        // If there is an opposite edge, draw an arrow at the source as well
+        if (hasReverse) {
+            double angleBack = Math.atan2(adjustedSourceY - adjustedTargetY, adjustedSourceX - adjustedTargetX);
+            double arrowBX = adjustedSourceX - arrowLength * Math.cos(angleBack);
+            double arrowBY = adjustedSourceY - arrowLength * Math.sin(angleBack);
+
+            double bx2 = arrowBX + arrowWidth * Math.cos(angleBack + Math.PI / 2);
+            double by2 = arrowBY + arrowWidth * Math.sin(angleBack + Math.PI / 2);
+
+            double bx3 = arrowBX + arrowWidth * Math.cos(angleBack - Math.PI / 2);
+            double by3 = arrowBY + arrowWidth * Math.sin(angleBack - Math.PI / 2);
+
+            Polygon arrowHeadBack = new Polygon();
+            arrowHeadBack.getPoints().addAll(
+                    adjustedSourceX - offsetX, adjustedSourceY - offsetY,
+                    bx2, by2,
+                    bx3, by3);
+            arrowHeadBack.setFill(edgeColor);
+
+            arrowHeadBack.setOnMouseEntered(e -> {
+                arrowHeadBack.setFill(hoverColor);
+                line.setStroke(hoverColor);
+                line.setStrokeWidth(3);
+            });
+
+            arrowHeadBack.setOnMouseExited(e -> {
+                arrowHeadBack.setFill(edgeColor);
+                line.setStroke(edgeColor);
+                line.setStrokeWidth(2);
+            });
+
+            canvas.getChildren().add(arrowHeadBack);
         }
 
         if (parallelIndex == 0 && allLabels != null && !allLabels.isEmpty()) {

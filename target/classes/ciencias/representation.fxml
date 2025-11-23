@@ -64,7 +64,7 @@
          </children>
       </TextFlow>
       <TextField fx:id="distanceItem1" layoutX="273.0" layoutY="700.0" prefHeight="25.0" prefWidth="54.0" />
-      <TextField fx:id="distanceItem2" layoutX="349.0" layoutY="700.0" prefHeight="25.0" prefWidth="54.0" />
+      <TextField fx:id="distanceItem2" layoutX="357.0" layoutY="700.0" prefHeight="25.0" prefWidth="54.0" />
       <TextFlow layoutX="67.0" layoutY="117.0" prefHeight="16.0" prefWidth="69.0" textAlignment="CENTER">
          <children>
             <Text strokeType="OUTSIDE" strokeWidth="0.0" text="Vertices:" textAlignment="CENTER" />
@@ -119,7 +119,7 @@
             <Text fx:id="distanceText1" strokeType="OUTSIDE" strokeWidth="0.0" text="Distancia entre vertices" textAlignment="CENTER" />
          </children>
       </TextFlow>
-      <Button fx:id="calculateButton" layoutX="307.0" layoutY="667.0" mnemonicParsing="false" onAction="#calculate" prefHeight="25.0" prefWidth="58.0" text="Calcular" />
+      <Button fx:id="calculateButton" layoutX="300.0" layoutY="668.0" mnemonicParsing="false" onAction="#calculate" prefHeight="25.0" prefWidth="84.0" text="Calcular" />
       <TextFlow layoutX="143.0" layoutY="513.0" prefHeight="21.0" prefWidth="106.0" textAlignment="CENTER">
          <children>
             <Text fx:id="distanceText11" strokeType="OUTSIDE" strokeWidth="0.0" text="Excentricidades:" textAlignment="CENTER" />
