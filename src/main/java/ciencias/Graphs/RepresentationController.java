@@ -651,76 +651,84 @@ public class RepresentationController {
     }
 
     @FXML
-private void calculateDistance() {
-    String item1 = distanceItem1.getText().trim().toUpperCase();
-    String item2 = distanceItem2.getText().trim().toUpperCase();
+    private void calculateDistance() {
+        String item1 = distanceItem1.getText().trim().toUpperCase();
+        String item2 = distanceItem2.getText().trim().toUpperCase();
 
-    if (item1.isEmpty() || item2.isEmpty()) {
-        operationText.setText("Error: Ingrese ambos vertices");
-        return;
-    }
+        if (item1.isEmpty() || item2.isEmpty()) {
+            operationText.setText("Error: Ingrese ambos vertices");
+            return;
+        }
 
-    if (!graphData.hasVertex(item1) || !graphData.hasVertex(item2)) {
-        operationText.setText("Error: Los vertices deben existir");
-        return;
-    }
+        if (!graphData.hasVertex(item1) || !graphData.hasVertex(item2)) {
+            operationText.setText("Error: Los vertices deben existir");
+            return;
+        }
 
-    double distance = calculateBellmanFordDistance(item1, item2);
-    if (Double.isInfinite(distance)) {
-        operationText.setText("No existe camino entre " + item1 + " y " + item2);
-    } else {
-        operationText.setText("Distancia entre " + item1 + " y " + item2 + ": " + (int) distance);
-    }
+        double distance = calculateBellmanFordDistance(item1, item2);
+        if (Double.isInfinite(distance)) {
+            operationText.setText("No existe camino entre " + item1 + " y " + item2);
+        } else {
+            operationText.setText("Distancia entre " + item1 + " y " + item2 + ": " + (int) distance);
+        }
 
-    matrixTabPane.getTabs().clear();
-    
-    
-    List<double[][]> iterations = computeFloydWarshallIterations();
-    if (!iterations.isEmpty()) {
-        List<String> vertices = new ArrayList<>(graphData.vertices);
-        
-        for (int it = 0; it < iterations.size(); it++) {
-            double[][] m = iterations.get(it);
-            String title;
-            if (it == 0) {
-                title = "Inicial";
-            } else {
-                title = "i = " + (it - 1);
+        matrixTabPane.getTabs().clear();
+
+        List<double[][]> iterations = computeFloydWarshallIterations();
+        if (!iterations.isEmpty()) {
+            List<String> vertices = new ArrayList<>(graphData.vertices);
+
+            for (int it = 0; it < iterations.size(); it++) {
+                double[][] m = iterations.get(it);
+                String title;
+                if (it == 0) {
+                    title = "Inicial";
+                } else {
+                    title = "i = " + (it - 1);
+                }
+
+                Tab tab = new Tab(title);
+                GridPane matrixGrid = createDoubleMatrixGrid(m, vertices, vertices,
+                        "Matriz de Distancias - " + title);
+                tab.setContent(new ScrollPane(matrixGrid));
+                matrixTabPane.getTabs().add(tab);
             }
+        }
 
-            Tab tab = new Tab(title);
-            GridPane matrixGrid = createDoubleMatrixGrid(m, vertices, vertices, 
-                    "Matriz de Distancias - " + title);
-            tab.setContent(new ScrollPane(matrixGrid));
-            matrixTabPane.getTabs().add(tab);
+        List<String> bellmanEquations = computeFinalBellmanEquations(item1, item2);
+        if (!bellmanEquations.isEmpty()) {
+            Tab bellmanTab = new Tab("Algoritmo de Bellman");
+            WebView webView = new WebView();
+            WebEngine webEngine = webView.getEngine();
+            StringBuilder html = new StringBuilder();
+            html.append("<!doctype html><html><head><meta charset=\"utf-8\">\n");
+            html.append("<script src=\"https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js\"></script>\n");
+            html.append("<style>");
+            html.append("body{font-family:Consolas,monospace;padding:20px;font-size:18px;line-height:1.8;}");
+            html.append("div{margin:15px 0;}");
+            html.append("</style>");
+            html.append("</head><body>\n");
+            html.append("<h4>Calculos para camino: " + item1 + " → " + item2 + "</h4>\n");
+
+            for (String eq : bellmanEquations) {
+                html.append("<div>\\(").append(eq).append("\\)</div>\n");
+            }
+            html.append("</body></html>");
+            webEngine.loadContent(html.toString());
+
+            webView.setMinHeight(500);
+            webView.setMinWidth(700);
+
+            ScrollPane scrollPane = new ScrollPane(webView);
+            scrollPane.setFitToWidth(true);
+            scrollPane.setFitToHeight(true);
+            scrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+            scrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+
+            bellmanTab.setContent(scrollPane);
+            matrixTabPane.getTabs().add(bellmanTab);
         }
     }
-
-    
-    List<String> bellmanEquations = computeFinalBellmanEquations(item1, item2);
-    if (!bellmanEquations.isEmpty()) {
-        Tab bellmanTab = new Tab("Algoritmo de Bellman");
-        javafx.scene.layout.VBox content = new javafx.scene.layout.VBox(6);
-        content.setPadding(new javafx.geometry.Insets(8));
-
-        WebView webView = new WebView();
-        WebEngine webEngine = webView.getEngine();
-        StringBuilder html = new StringBuilder();
-        html.append("<!doctype html><html><head><meta charset=\"utf-8\">\n");
-        html.append("<script src=\"https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js\"></script>\n");
-        html.append("<style>body{font-family:Consolas,monospace;padding:10px;font-size:16px;line-height:1.4;}</style>");
-        html.append("</head><body>\n");
-        html.append("<h4>Calculos para camino: " + item1 + " → " + item2 + "</h4>\n");
-        
-        for (String eq : bellmanEquations) {
-            html.append("<div style=\"margin-bottom:8px;\">\\(").append(eq).append("\\)</div>\n");
-        }
-        html.append("</body></html>");
-        webEngine.loadContent(html.toString());
-        bellmanTab.setContent(webView);
-        matrixTabPane.getTabs().add(bellmanTab);
-    }
-}
 
     private List<String> computeFinalBellmanEquations(String source, String target) {
         List<String> equations = new ArrayList<>();
@@ -730,71 +738,119 @@ private void calculateDistance() {
             return equations;
         }
 
+        Collections.sort(vertices, (v1, v2) -> {
+            return Integer.compare(vertexToNumber(v1), vertexToNumber(v2));
+        });
+
         Map<String, Double> distances = new HashMap<>();
+        Map<String, List<String>> incomingEdges = new HashMap<>();
+
         for (String vertex : vertices) {
             distances.put(vertex, Double.POSITIVE_INFINITY);
+            incomingEdges.put(vertex, new ArrayList<>());
         }
         distances.put(source, 0.0);
 
-        Map<String, String> predecessors = new HashMap<>();
-
-        for (int i = 0; i < vertices.size() - 1; i++) {
-            for (Edge edge : graphData.edges) {
-                double edgeWeight = getWeight(edge);
-                if (distances.get(edge.source) + edgeWeight < distances.get(edge.destination)) {
-                    distances.put(edge.destination, distances.get(edge.source) + edgeWeight);
-                    predecessors.put(edge.destination, edge.source);
-                }
-                if (!graphData.isDirected) {
-                    if (distances.get(edge.destination) + edgeWeight < distances.get(edge.source)) {
-                        distances.put(edge.source, distances.get(edge.destination) + edgeWeight);
-                        predecessors.put(edge.source, edge.destination);
-                    }
-                }
+        for (Edge edge : graphData.edges) {
+            incomingEdges.get(edge.destination).add(edge.source + "," + edge.label);
+            if (!graphData.isDirected) {
+                incomingEdges.get(edge.source).add(edge.destination + "," + edge.label);
             }
         }
 
-        if (Double.isInfinite(distances.get(target))) {
+        int sourceNum = vertexToNumber(source);
+        int targetNum = vertexToNumber(target);
+
+        equations.add("\\lambda_{" + sourceNum + "} = 0");
+
+        for (String vertex : vertices) {
+            int vertexNum = vertexToNumber(vertex);
+
+            if (vertex.equals(source) || vertexNum > targetNum)
+                continue;
+
+            List<String> predecessors = new ArrayList<>();
+            List<Double> candidateValues = new ArrayList<>();
+            List<Double> weights = new ArrayList<>();
+
+            for (String edgeInfo : incomingEdges.get(vertex)) {
+                String[] parts = edgeInfo.split(",");
+                String pred = parts[0];
+                double weight = Double.parseDouble(parts[1]);
+                int predNum = vertexToNumber(pred);
+
+                if (predNum < vertexNum && distances.get(pred) < Double.POSITIVE_INFINITY) {
+                    double newDist = distances.get(pred) + weight;
+                    predecessors.add(pred);
+                    candidateValues.add(newDist);
+                    weights.add(weight);
+                }
+            }
+
+            if (!predecessors.isEmpty()) {
+                double minDistance = Collections.min(candidateValues);
+                distances.put(vertex, minDistance);
+
+                String equation = buildVertexEquation(vertex, predecessors, candidateValues, distances, weights);
+                equations.add(equation);
+            }
+        }
+
+        if (distances.get(target) < Double.POSITIVE_INFINITY) {
+            equations.add("\\text{Distancia final: } \\lambda_{" + targetNum + "} = " +
+                    formatDouble(distances.get(target)));
+        } else {
             equations.add("\\text{No existe camino entre } " + source + " \\text{ y } " + target);
-            return equations;
         }
-
-        List<String> path = new ArrayList<>();
-        String current = target;
-        while (current != null && !current.equals(source)) {
-            path.add(0, current);
-            current = predecessors.get(current);
-        }
-        path.add(0, source);
-
-        for (int i = 0; i < path.size() - 1; i++) {
-            String u = path.get(i);
-            String v = path.get(i + 1);
-
-            double weight = 0;
-            for (Edge edge : graphData.edges) {
-                if ((edge.source.equals(u) && edge.destination.equals(v)) ||
-                        (!graphData.isDirected && edge.source.equals(v) && edge.destination.equals(u))) {
-                    weight = getWeight(edge);
-                    break;
-                }
-            }
-
-            double distU = distances.get(u);
-            double distV = distances.get(v);
-
-            String equation = "\\lambda_{" + vertexToNumber(v) + "} = " +
-                    "\\lambda_{" + vertexToNumber(u) + "} + v_{" +
-                    vertexToNumber(u) + vertexToNumber(v) + "} = " +
-                    formatDouble(distU) + " + " + formatDouble(weight) + " = " +
-                    formatDouble(distV);
-            equations.add(equation);
-        }
-
-        equations.add("\\text{Distancia final: } \\lambda_{" + vertexToNumber(target) + "} = " +
-                formatDouble(distances.get(target)));
 
         return equations;
+    }
+
+    private String buildVertexEquation(String vertex, List<String> predecessors,
+            List<Double> candidateValues, Map<String, Double> distances,
+            List<Double> weights) {
+        StringBuilder equation = new StringBuilder();
+        int vertexNum = vertexToNumber(vertex);
+
+        equation.append("\\lambda_{").append(vertexNum).append("} = ");
+
+        if (predecessors.size() == 1) {
+
+            String pred = predecessors.get(0);
+            double value = candidateValues.get(0);
+            double predDist = distances.get(pred);
+            double weight = weights.get(0);
+
+            equation.append("\\lambda_{").append(vertexToNumber(pred))
+                    .append("} + v_{").append(vertexToNumber(pred)).append(vertexNum)
+                    .append("} = ").append(formatDouble(predDist))
+                    .append(" + ").append(formatDouble(weight))
+                    .append(" = ").append(formatDouble(value));
+        } else {
+
+            equation.append("\\min\\{");
+
+            List<String> symbolicParts = new ArrayList<>();
+            List<String> valueParts = new ArrayList<>();
+
+            for (int i = 0; i < predecessors.size(); i++) {
+                String pred = predecessors.get(i);
+                double predDist = distances.get(pred);
+                double weight = weights.get(i);
+
+                symbolicParts.add("(\\lambda_{" + vertexToNumber(pred) + "} + v_{"
+                        + vertexToNumber(pred) + vertexNum + "})");
+
+                valueParts.add("(" + formatDouble(predDist) + " + " + formatDouble(weight) + ")");
+            }
+
+            equation.append(String.join(", ", symbolicParts))
+                    .append("\\} = \\min\\{")
+                    .append(String.join(", ", valueParts))
+                    .append("\\} = ").append(formatDouble(Collections.min(candidateValues)));
+        }
+
+        return equation.toString();
     }
 
     private String formatDouble(double v) {
