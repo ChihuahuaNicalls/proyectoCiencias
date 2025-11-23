@@ -250,40 +250,42 @@ public class RepresentationController {
         }
 
         public void addEdge(String source, String destination, String label) {
-            // Enforce consistency of directed/undirected and at most one edge per relation
+
             boolean requestedDirected = edgeDirection.isSelected();
             if (hasEdges) {
                 if (isDirected != requestedDirected) {
-                    throw new IllegalStateException("No se pueden mezclar aristas dirigidas y no dirigidas en el mismo grafo");
+                    throw new IllegalStateException(
+                            "No se pueden mezclar aristas dirigidas y no dirigidas en el mismo grafo");
                 }
             } else {
                 isDirected = requestedDirected;
                 hasEdges = true;
             }
 
-            // Loops: allow at most one loop per vertex
             if (source.equals(destination)) {
                 boolean existsLoop = edges.stream().anyMatch(e -> e.isLoop && e.source.equals(source));
                 if (existsLoop) {
-                    throw new IllegalStateException("Ya existe un bucle en el vértice " + source);
+                    throw new IllegalStateException("Ya existe un bucle en el vertice " + source);
                 }
                 edges.add(new Edge(source, destination, label));
                 return;
             }
 
             if (!isDirected) {
-                // canonicalize unordered pair to avoid duplicates for undirected edges
+
                 String a = source.compareTo(destination) <= 0 ? source : destination;
                 String b = source.compareTo(destination) <= 0 ? destination : source;
                 boolean exists = edges.stream().anyMatch(e -> !e.isLoop &&
-                        ((e.source.equals(a) && e.destination.equals(b)) || (e.source.equals(b) && e.destination.equals(a))));
+                        ((e.source.equals(a) && e.destination.equals(b))
+                                || (e.source.equals(b) && e.destination.equals(a))));
                 if (exists) {
                     throw new IllegalStateException("Ya existe una arista entre " + source + " y " + destination);
                 }
                 edges.add(new Edge(a, b, label));
             } else {
-                // directed: allow one edge per ordered pair (but reverse edge allowed separately)
-                boolean exists = edges.stream().anyMatch(e -> e.source.equals(source) && e.destination.equals(destination));
+
+                boolean exists = edges.stream()
+                        .anyMatch(e -> e.source.equals(source) && e.destination.equals(destination));
                 if (exists) {
                     throw new IllegalStateException("Ya existe una arista dirigida de " + source + " a " + destination);
                 }
@@ -474,19 +476,19 @@ public class RepresentationController {
 
         updateGraphDisplay();
         updateMetrics();
-        modificationText.setText("Añadidos vértices: " + String.join(", ", addedVertices));
+        modificationText.setText("Añadidos vertices: " + String.join(", ", addedVertices));
     }
 
     @FXML
     private void vertDelete() {
         String vertex = vertDelete.getText().trim().toUpperCase();
         if (vertex.isEmpty()) {
-            modificationText.setText("Error: Ingrese un vértice a eliminar");
+            modificationText.setText("Error: Ingrese un vertice a eliminar");
             return;
         }
 
         if (!graphData.hasVertex(vertex)) {
-            modificationText.setText("Error: El vértice " + vertex + " no existe");
+            modificationText.setText("Error: El vertice " + vertex + " no existe");
             return;
         }
 
@@ -495,7 +497,7 @@ public class RepresentationController {
         vertDelete.clear();
         updateGraphDisplay();
         updateMetrics();
-        modificationText.setText("Vértice " + vertex + " eliminado");
+        modificationText.setText("Vertice " + vertex + " eliminado");
     }
 
     @FXML
@@ -505,7 +507,7 @@ public class RepresentationController {
         String weightText = edgeWeightNotation.getText().trim();
 
         if (source.isEmpty()) {
-            modificationText.setText("Error: Ingrese al menos el vértice origen");
+            modificationText.setText("Error: Ingrese al menos el vertice origen");
             return;
         }
 
@@ -514,7 +516,7 @@ public class RepresentationController {
         }
 
         if (!graphData.hasVertex(source) || !graphData.hasVertex(destination)) {
-            modificationText.setText("Error: Los vértices deben existir");
+            modificationText.setText("Error: Los vertices deben existir");
             return;
         }
 
@@ -530,7 +532,7 @@ public class RepresentationController {
                 }
                 label = weightText;
             } catch (NumberFormatException e) {
-                modificationText.setText("Error: Peso debe ser un número");
+                modificationText.setText("Error: Peso debe ser un numero");
                 return;
             }
         }
@@ -558,7 +560,7 @@ public class RepresentationController {
         String weightText = edgeWeightNotation.getText().trim();
 
         if (source.isEmpty()) {
-            modificationText.setText("Error: Ingrese al menos el vértice origen");
+            modificationText.setText("Error: Ingrese al menos el vertice origen");
             return;
         }
 
@@ -574,7 +576,7 @@ public class RepresentationController {
                 Double.parseDouble(weightText);
                 label = weightText;
             } catch (NumberFormatException e) {
-                modificationText.setText("Error: Peso debe ser un número");
+                modificationText.setText("Error: Peso debe ser un numero");
                 return;
             }
         }
@@ -614,7 +616,7 @@ public class RepresentationController {
         graphData.setState(previousState);
         updateGraphDisplay();
         updateMetrics();
-        modificationText.setText("Acción deshecha");
+        modificationText.setText("Accion deshecha");
     }
 
     @FXML
@@ -628,7 +630,7 @@ public class RepresentationController {
         graphData.setState(nextState);
         updateGraphDisplay();
         updateMetrics();
-        modificationText.setText("Acción rehecha");
+        modificationText.setText("Accion rehecha");
     }
 
     @FXML
@@ -654,12 +656,12 @@ private void calculateDistance() {
     String item2 = distanceItem2.getText().trim().toUpperCase();
 
     if (item1.isEmpty() || item2.isEmpty()) {
-        operationText.setText("Error: Ingrese ambos vértices");
+        operationText.setText("Error: Ingrese ambos vertices");
         return;
     }
 
     if (!graphData.hasVertex(item1) || !graphData.hasVertex(item2)) {
-        operationText.setText("Error: Los vértices deben existir");
+        operationText.setText("Error: Los vertices deben existir");
         return;
     }
 
@@ -672,7 +674,7 @@ private void calculateDistance() {
 
     matrixTabPane.getTabs().clear();
     
-    // Mostrar matrices de Floyd-Warshall
+    
     List<double[][]> iterations = computeFloydWarshallIterations();
     if (!iterations.isEmpty()) {
         List<String> vertices = new ArrayList<>(graphData.vertices);
@@ -683,7 +685,7 @@ private void calculateDistance() {
             if (it == 0) {
                 title = "Inicial";
             } else {
-                title = "k = " + (it - 1);
+                title = "i = " + (it - 1);
             }
 
             Tab tab = new Tab(title);
@@ -694,10 +696,10 @@ private void calculateDistance() {
         }
     }
 
-    // Mostrar cálculos de Bellman-Ford (SOLO la última iteración para los vértices específicos)
+    
     List<String> bellmanEquations = computeFinalBellmanEquations(item1, item2);
     if (!bellmanEquations.isEmpty()) {
-        Tab bellmanTab = new Tab("Bellman - Cálculos");
+        Tab bellmanTab = new Tab("Algoritmo de Bellman");
         javafx.scene.layout.VBox content = new javafx.scene.layout.VBox(6);
         content.setPadding(new javafx.geometry.Insets(8));
 
@@ -708,7 +710,7 @@ private void calculateDistance() {
         html.append("<script src=\"https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js\"></script>\n");
         html.append("<style>body{font-family:Consolas,monospace;padding:10px;font-size:16px;line-height:1.4;}</style>");
         html.append("</head><body>\n");
-        html.append("<h4>Cálculos para camino: " + item1 + " → " + item2 + "</h4>\n");
+        html.append("<h4>Calculos para camino: " + item1 + " → " + item2 + "</h4>\n");
         
         for (String eq : bellmanEquations) {
             html.append("<div style=\"margin-bottom:8px;\">\\(").append(eq).append("\\)</div>\n");
@@ -720,105 +722,101 @@ private void calculateDistance() {
     }
 }
 
-private List<String> computeFinalBellmanEquations(String source, String target) {
-    List<String> equations = new ArrayList<>();
-    List<String> vertices = new ArrayList<>(graphData.vertices);
-    
-    if (vertices.isEmpty() || !graphData.hasVertex(source) || !graphData.hasVertex(target)) {
-        return equations;
-    }
+    private List<String> computeFinalBellmanEquations(String source, String target) {
+        List<String> equations = new ArrayList<>();
+        List<String> vertices = new ArrayList<>(graphData.vertices);
 
-    // Ejecutar Bellman-Ford completo
-    Map<String, Double> distances = new HashMap<>();
-    for (String vertex : vertices) {
-        distances.put(vertex, Double.POSITIVE_INFINITY);
-    }
-    distances.put(source, 0.0);
+        if (vertices.isEmpty() || !graphData.hasVertex(source) || !graphData.hasVertex(target)) {
+            return equations;
+        }
 
-    // Almacenar predecesores para reconstruir ecuaciones
-    Map<String, String> predecessors = new HashMap<>();
-    
-    // n-1 iteraciones
-    for (int i = 0; i < vertices.size() - 1; i++) {
-        for (Edge edge : graphData.edges) {
-            double edgeWeight = getWeight(edge);
-            if (distances.get(edge.source) + edgeWeight < distances.get(edge.destination)) {
-                distances.put(edge.destination, distances.get(edge.source) + edgeWeight);
-                predecessors.put(edge.destination, edge.source);
-            }
-            if (!graphData.isDirected) {
-                if (distances.get(edge.destination) + edgeWeight < distances.get(edge.source)) {
-                    distances.put(edge.source, distances.get(edge.destination) + edgeWeight);
-                    predecessors.put(edge.source, edge.destination);
+        Map<String, Double> distances = new HashMap<>();
+        for (String vertex : vertices) {
+            distances.put(vertex, Double.POSITIVE_INFINITY);
+        }
+        distances.put(source, 0.0);
+
+        Map<String, String> predecessors = new HashMap<>();
+
+        for (int i = 0; i < vertices.size() - 1; i++) {
+            for (Edge edge : graphData.edges) {
+                double edgeWeight = getWeight(edge);
+                if (distances.get(edge.source) + edgeWeight < distances.get(edge.destination)) {
+                    distances.put(edge.destination, distances.get(edge.source) + edgeWeight);
+                    predecessors.put(edge.destination, edge.source);
+                }
+                if (!graphData.isDirected) {
+                    if (distances.get(edge.destination) + edgeWeight < distances.get(edge.source)) {
+                        distances.put(edge.source, distances.get(edge.destination) + edgeWeight);
+                        predecessors.put(edge.source, edge.destination);
+                    }
                 }
             }
         }
-    }
 
-    // Construir ecuaciones solo para el camino relevante (source -> target)
-    if (Double.isInfinite(distances.get(target))) {
-        equations.add("\\text{No existe camino entre } " + source + " \\text{ y } " + target);
+        if (Double.isInfinite(distances.get(target))) {
+            equations.add("\\text{No existe camino entre } " + source + " \\text{ y } " + target);
+            return equations;
+        }
+
+        List<String> path = new ArrayList<>();
+        String current = target;
+        while (current != null && !current.equals(source)) {
+            path.add(0, current);
+            current = predecessors.get(current);
+        }
+        path.add(0, source);
+
+        for (int i = 0; i < path.size() - 1; i++) {
+            String u = path.get(i);
+            String v = path.get(i + 1);
+
+            double weight = 0;
+            for (Edge edge : graphData.edges) {
+                if ((edge.source.equals(u) && edge.destination.equals(v)) ||
+                        (!graphData.isDirected && edge.source.equals(v) && edge.destination.equals(u))) {
+                    weight = getWeight(edge);
+                    break;
+                }
+            }
+
+            double distU = distances.get(u);
+            double distV = distances.get(v);
+
+            String equation = "\\lambda_{" + vertexToNumber(v) + "} = " +
+                    "\\lambda_{" + vertexToNumber(u) + "} + v_{" +
+                    vertexToNumber(u) + vertexToNumber(v) + "} = " +
+                    formatDouble(distU) + " + " + formatDouble(weight) + " = " +
+                    formatDouble(distV);
+            equations.add(equation);
+        }
+
+        equations.add("\\text{Distancia final: } \\lambda_{" + vertexToNumber(target) + "} = " +
+                formatDouble(distances.get(target)));
+
         return equations;
     }
 
-    // Reconstruir el camino óptimo
-    List<String> path = new ArrayList<>();
-    String current = target;
-    while (current != null && !current.equals(source)) {
-        path.add(0, current);
-        current = predecessors.get(current);
+    private String formatDouble(double v) {
+        if (Double.isInfinite(v))
+            return "\\infty";
+        if (Math.abs(v - Math.round(v)) < 1e-9)
+            return String.valueOf((long) Math.round(v));
+        return String.format("%.3f", v);
     }
-    path.add(0, source);
 
-    // Generar ecuaciones para cada paso del camino
-    for (int i = 0; i < path.size() - 1; i++) {
-        String u = path.get(i);
-        String v = path.get(i+1);
-        
-        // Encontrar la arista entre u y v
-        double weight = 0;
-        for (Edge edge : graphData.edges) {
-            if ((edge.source.equals(u) && edge.destination.equals(v)) ||
-                (!graphData.isDirected && edge.source.equals(v) && edge.destination.equals(u))) {
-                weight = getWeight(edge);
-                break;
-            }
+    private int vertexToNumber(String v) {
+        if (v == null || v.isEmpty())
+            return 0;
+        char c = v.toUpperCase().charAt(0);
+        if (c >= 'A' && c <= 'Z')
+            return c - 'A' + 1;
+        try {
+            return Integer.parseInt(v);
+        } catch (NumberFormatException ex) {
+            return Math.abs(v.hashCode()) % 1000;
         }
-        
-        double distU = distances.get(u);
-        double distV = distances.get(v);
-        
-        String equation = "\\lambda_{" + vertexToNumber(v) + "} = " +
-                         "\\lambda_{" + vertexToNumber(u) + "} + v_{" +
-                         vertexToNumber(u) + vertexToNumber(v) + "} = " +
-                         formatDouble(distU) + " + " + formatDouble(weight) + " = " +
-                         formatDouble(distV);
-        equations.add(equation);
     }
-
-    // Agregar la ecuación final de distancia
-    equations.add("\\text{Distancia final: } \\lambda_{" + vertexToNumber(target) + "} = " + 
-                 formatDouble(distances.get(target)));
-
-    return equations;
-}
-
-private String formatDouble(double v) {
-    if (Double.isInfinite(v)) return "\\infty";
-    if (Math.abs(v - Math.round(v)) < 1e-9) return String.valueOf((long) Math.round(v));
-    return String.format("%.3f", v);
-}
-
-private int vertexToNumber(String v) {
-    if (v == null || v.isEmpty()) return 0;
-    char c = v.toUpperCase().charAt(0);
-    if (c >= 'A' && c <= 'Z') return c - 'A' + 1;
-    try {
-        return Integer.parseInt(v);
-    } catch (NumberFormatException ex) {
-        return Math.abs(v.hashCode()) % 1000;
-    }
-}
 
     private double calculateBellmanFordDistance(String source, String destination) {
         Map<String, Double> distances = new HashMap<>();
@@ -852,111 +850,6 @@ private int vertexToNumber(String v) {
         }
     }
 
-    // --- Bellman-Ford detailed iteration helpers ---
-    private static class BellmanStep {
-        Map<String, Double> lambda;
-        List<String> equations;
-
-        BellmanStep(Map<String, Double> lambda, List<String> equations) {
-            this.lambda = new LinkedHashMap<>(lambda);
-            this.equations = new ArrayList<>(equations);
-        }
-    }
-
-    private List<BellmanStep> computeBellmanIterationsWithEquations(String source) {
-    List<BellmanStep> steps = new ArrayList<>();
-    List<String> verts = new ArrayList<>(graphData.vertices);
-    if (verts.isEmpty() || !graphData.hasVertex(source)) return steps;
-
-    Map<String, Double> lambda = new LinkedHashMap<>();
-    for (String v : verts) lambda.put(v, Double.POSITIVE_INFINITY);
-    lambda.put(source, 0.0);
-
-    // initial step (LaTeX)
-    List<String> initialEquations = new ArrayList<>();
-    initialEquations.add("Inicial: \\lambda_{" + vertexToNumber(source) + "} = 0");
-    for (String v : verts) {
-        if (!v.equals(source)) {
-            initialEquations.add("\\lambda_{" + vertexToNumber(v) + "} = \\infty");
-        }
-    }
-    steps.add(new BellmanStep(lambda, initialEquations));
-
-    int iteration = 0;
-    boolean changed;
-    
-    do {
-        iteration++;
-        changed = false;
-        Map<String, Double> prev = new LinkedHashMap<>(lambda);
-        List<String> equations = new ArrayList<>();
-
-        for (String v : verts) {
-            // gather predecessors of v
-            List<Edge> preds = new ArrayList<>();
-            for (Edge e : graphData.edges) {
-                if (e.destination.equals(v)) preds.add(e);
-                if (!graphData.isDirected && e.source.equals(v)) 
-                    preds.add(new Edge(e.destination, e.source, e.label));
-            }
-
-            if (preds.isEmpty()) {
-                String eq = "\\lambda_{" + vertexToNumber(v) + "} = " + 
-                           (Double.isInfinite(prev.get(v)) ? "\\infty" : formatDouble(prev.get(v)));
-                equations.add(eq);
-                continue;
-            }
-
-            List<String> symTerms = new ArrayList<>();
-            List<String> evalTerms = new ArrayList<>();
-            double best = prev.get(v);
-            
-            for (Edge p : preds) {
-                String u = p.source;
-                double w = getWeight(p);
-                double prevU = prev.getOrDefault(u, Double.POSITIVE_INFINITY);
-
-                // symbolic term like (\lambda_{1} + v_{13})
-                String sym = "(\\lambda_{" + vertexToNumber(u) + "} + v_{" + 
-                           vertexToNumber(u) + "" + vertexToNumber(v) + "})";
-                symTerms.add(sym);
-
-                // evaluated term like (2 + 4) or (\infty)
-                String left = Double.isInfinite(prevU) ? "\\infty" : formatDouble(prevU);
-                String right = formatDouble(w);
-                String eval = "(" + left + " + " + right + ")";
-                evalTerms.add(eval);
-
-                if (!Double.isInfinite(prevU) && prevU + w < best) {
-                    best = prevU + w;
-                }
-            }
-
-            // build chained LaTeX equation: \lambda_j=\min{(\lambda_u+v_uv),...}=\min{(prev_u+w),...}=result
-            StringBuilder chain = new StringBuilder();
-            chain.append("\\lambda_{").append(vertexToNumber(v)).append("}=\\min\\{");
-            chain.append(String.join(",", symTerms));
-            chain.append("\\}=\\min\\{");
-            chain.append(String.join(",", evalTerms));
-            chain.append("\\}=");
-            chain.append(Double.isInfinite(best) ? "\\infty" : formatDouble(best));
-
-            equations.add(chain.toString());
-
-            // apply relaxation into lambda
-            if (best != prev.get(v)) {
-                lambda.put(v, best);
-                changed = true;
-            }
-        }
-
-        steps.add(new BellmanStep(lambda, equations));
-        if (iteration >= Math.max(1000, verts.size() * 5)) break; // safety cap
-    } while (changed);
-
-    return steps;
-}
-
     private void updateMetrics() {
         if (graphData.isEmpty()) {
             excText.setText("");
@@ -976,14 +869,16 @@ private int vertexToNumber(String v) {
             double maxDistance = 0;
             boolean unreachable = false;
             for (int j = 0; j < vertices.size(); j++) {
-                if (i == j) continue;
+                if (i == j)
+                    continue;
                 if (distances[i][j] == Double.POSITIVE_INFINITY) {
                     unreachable = true;
                     break;
                 }
                 maxDistance = Math.max(maxDistance, distances[i][j]);
             }
-            if (unreachable) maxDistance = Double.POSITIVE_INFINITY;
+            if (unreachable)
+                maxDistance = Double.POSITIVE_INFINITY;
             eccentricities.put(vertices.get(i), maxDistance);
         }
 
@@ -1048,76 +943,75 @@ private int vertexToNumber(String v) {
     }
 
     private List<double[][]> computeFloydWarshallIterations() {
-    List<String> vertices = new ArrayList<>(graphData.vertices);
-    int n = vertices.size();
-    List<double[][]> iterations = new ArrayList<>();
-    if (n == 0) return iterations;
+        List<String> vertices = new ArrayList<>(graphData.vertices);
+        int n = vertices.size();
+        List<double[][]> iterations = new ArrayList<>();
+        if (n == 0)
+            return iterations;
 
-    double[][] dist = new double[n][n];
-    
-    // Inicialización
-    for (int i = 0; i < n; i++) {
-        for (int j = 0; j < n; j++) {
-            if (i == j) {
-                dist[i][j] = 0;
-            } else {
-                dist[i][j] = Double.POSITIVE_INFINITY;
-            }
-        }
-    }
+        double[][] dist = new double[n][n];
 
-    Map<String, Integer> vertexIndex = new HashMap<>();
-    for (int i = 0; i < n; i++) {
-        vertexIndex.put(vertices.get(i), i);
-    }
-
-    // Llenar con aristas existentes
-    for (Edge edge : graphData.edges) {
-        int u = vertexIndex.get(edge.source);
-        int v = vertexIndex.get(edge.destination);
-        double w = getWeight(edge);
-        
-        dist[u][v] = Math.min(dist[u][v], w);
-        if (!graphData.isDirected) {
-            dist[v][u] = Math.min(dist[v][u], w);
-        }
-    }
-
-    // Guardar matriz inicial
-    iterations.add(copyDoubleMatrix(dist));
-
-    // Algoritmo de Floyd-Warshall
-    for (int k = 0; k < n; k++) {
-        double[][] newDist = copyDoubleMatrix(dist);
-        
         for (int i = 0; i < n; i++) {
             for (int j = 0; j < n; j++) {
-                if (dist[i][k] != Double.POSITIVE_INFINITY && 
-                    dist[k][j] != Double.POSITIVE_INFINITY &&
-                    dist[i][k] + dist[k][j] < dist[i][j]) {
-                    newDist[i][j] = dist[i][k] + dist[k][j];
+                if (i == j) {
+                    dist[i][j] = 0;
+                } else {
+                    dist[i][j] = Double.POSITIVE_INFINITY;
                 }
             }
         }
-        
-        dist = newDist;
-        iterations.add(copyDoubleMatrix(dist));
-    }
 
-    return iterations;
-}
+        Map<String, Integer> vertexIndex = new HashMap<>();
+        for (int i = 0; i < n; i++) {
+            vertexIndex.put(vertices.get(i), i);
+        }
+
+        for (Edge edge : graphData.edges) {
+            int u = vertexIndex.get(edge.source);
+            int v = vertexIndex.get(edge.destination);
+            double w = getWeight(edge);
+
+            dist[u][v] = Math.min(dist[u][v], w);
+            if (!graphData.isDirected) {
+                dist[v][u] = Math.min(dist[v][u], w);
+            }
+        }
+
+        iterations.add(copyDoubleMatrix(dist));
+
+        for (int k = 0; k < n; k++) {
+            double[][] newDist = copyDoubleMatrix(dist);
+
+            for (int i = 0; i < n; i++) {
+                for (int j = 0; j < n; j++) {
+                    if (dist[i][k] != Double.POSITIVE_INFINITY &&
+                            dist[k][j] != Double.POSITIVE_INFINITY &&
+                            dist[i][k] + dist[k][j] < dist[i][j]) {
+                        newDist[i][j] = dist[i][k] + dist[k][j];
+                    }
+                }
+            }
+
+            dist = newDist;
+            iterations.add(copyDoubleMatrix(dist));
+        }
+
+        return iterations;
+    }
 
     private double[][] copyDoubleMatrix(double[][] src) {
-    if (src == null) return new double[0][0];
-    int r = src.length;
-    if (r == 0) return new double[0][0];
-    int c = src[0].length;
-    double[][] dst = new double[r][c];
-    for (int i = 0; i < r; i++) {
-        System.arraycopy(src[i], 0, dst[i], 0, c);
+        if (src == null)
+            return new double[0][0];
+        int r = src.length;
+        if (r == 0)
+            return new double[0][0];
+        int c = src[0].length;
+        double[][] dst = new double[r][c];
+        for (int i = 0; i < r; i++) {
+            System.arraycopy(src[i], 0, dst[i], 0, c);
+        }
+        return dst;
     }
-    return dst;
-}
 
     private void updateMedianaAndCenter(Map<String, Double> eccentricities, double radius, double[][] distances) {
         List<String> vertices = new ArrayList<>(graphData.vertices);
@@ -1140,15 +1034,18 @@ private int vertexToNumber(String v) {
             int idx = vertexIndex.get(vertex);
             boolean unreachable = false;
             for (int j = 0; j < vertices.size(); j++) {
-                if (idx == j) continue;
+                if (idx == j)
+                    continue;
                 if (distances[idx][j] == Double.POSITIVE_INFINITY) {
                     unreachable = true;
                     break;
                 }
                 sum += distances[idx][j];
             }
-            if (unreachable) sumDistances.put(vertex, Double.POSITIVE_INFINITY);
-            else sumDistances.put(vertex, sum);
+            if (unreachable)
+                sumDistances.put(vertex, Double.POSITIVE_INFINITY);
+            else
+                sumDistances.put(vertex, sum);
         }
 
         double minSum = Collections.min(sumDistances.values());
@@ -1241,17 +1138,21 @@ private int vertexToNumber(String v) {
                 String vj = vertices.get(j);
                 int val = 0;
                 for (Edge e : graphData.edges) {
-                    if (e.source.equals(vi) && e.destination.equals(vj)) val += 1;
-                    if (e.source.equals(vj) && e.destination.equals(vi)) val -= 1;
+                    if (e.source.equals(vi) && e.destination.equals(vj))
+                        val += 1;
+                    if (e.source.equals(vj) && e.destination.equals(vi))
+                        val -= 1;
                     if (!graphData.isDirected) {
-                        if ((e.source.equals(vi) && e.destination.equals(vj)) || (e.source.equals(vj) && e.destination.equals(vi))) val = 1;
+                        if ((e.source.equals(vi) && e.destination.equals(vj))
+                                || (e.source.equals(vj) && e.destination.equals(vi)))
+                            val = 1;
                     }
                 }
                 matrix[i][j] = val;
             }
         }
 
-        return createIntMatrixGrid(matrix, vertices, vertices, "Matriz de Adyacencia de Vértices");
+        return createIntMatrixGrid(matrix, vertices, vertices, "Matriz de Adyacencia de Vertices");
     }
 
     private GridPane createEdgeAdjacencyMatrix() {
@@ -1269,19 +1170,26 @@ private int vertexToNumber(String v) {
                 Edge ej = edges.get(j);
                 String cell = "0";
                 List<String> common = new ArrayList<>();
-                if (ei.source.equals(ej.source) || ei.source.equals(ej.destination)) common.add(ei.source);
-                if (ei.destination.equals(ej.source) || ei.destination.equals(ej.destination)) common.add(ei.destination);
+                if (ei.source.equals(ej.source) || ei.source.equals(ej.destination))
+                    common.add(ei.source);
+                if (ei.destination.equals(ej.source) || ei.destination.equals(ej.destination))
+                    common.add(ei.destination);
                 if (!common.isEmpty()) {
                     String v = common.get(0);
                     int si = 0;
                     int sj = 0;
                     if (graphData.isDirected) {
-                        if (ei.destination.equals(v)) si = -1;
-                        else if (ei.source.equals(v)) si = 1;
-                        if (ej.destination.equals(v)) sj = -1;
-                        else if (ej.source.equals(v)) sj = 1;
+                        if (ei.destination.equals(v))
+                            si = -1;
+                        else if (ei.source.equals(v))
+                            si = 1;
+                        if (ej.destination.equals(v))
+                            sj = -1;
+                        else if (ej.source.equals(v))
+                            sj = 1;
                     } else {
-                        si = 1; sj = 1;
+                        si = 1;
+                        sj = 1;
                     }
                     cell = "(" + si + "," + sj + ")";
                 }
@@ -1304,11 +1212,15 @@ private int vertexToNumber(String v) {
             int destIdx = vertices.indexOf(edge.destination);
 
             if (graphData.isDirected) {
-                if (sourceIdx != -1) matrix[sourceIdx][j] = 1;
-                if (destIdx != -1) matrix[destIdx][j] = -1;
+                if (sourceIdx != -1)
+                    matrix[sourceIdx][j] = 1;
+                if (destIdx != -1)
+                    matrix[destIdx][j] = -1;
             } else {
-                if (sourceIdx != -1) matrix[sourceIdx][j] = 1;
-                if (destIdx != -1) matrix[destIdx][j] = 1;
+                if (sourceIdx != -1)
+                    matrix[sourceIdx][j] = 1;
+                if (destIdx != -1)
+                    matrix[destIdx][j] = 1;
             }
         }
 
@@ -1328,9 +1240,8 @@ private int vertexToNumber(String v) {
             return createIntMatrixGrid(matrix, Arrays.asList("Circuitos"), edgeLabels(edges), "Matriz de Circuitos");
         }
 
-        // Reorientar todos los circuitos en sentido horario
         List<List<String>> reorientedCycles = reorientCyclesClockwise(cycles);
-        
+
         int[][] matrix = new int[reorientedCycles.size()][edges.size()];
         for (int i = 0; i < reorientedCycles.size(); i++) {
             List<String> cycle = reorientedCycles.get(i);
@@ -1341,12 +1252,15 @@ private int vertexToNumber(String v) {
                 for (int j = 0; j < edges.size(); j++) {
                     Edge e = edges.get(j);
                     if (!graphData.isDirected) {
-                        if ((e.source.equals(u) && e.destination.equals(v)) || (e.source.equals(v) && e.destination.equals(u))) {
+                        if ((e.source.equals(u) && e.destination.equals(v))
+                                || (e.source.equals(v) && e.destination.equals(u))) {
                             matrix[i][j] = 1;
                         }
                     } else {
-                        if (e.source.equals(u) && e.destination.equals(v)) matrix[i][j] = 1;
-                        else if (e.source.equals(v) && e.destination.equals(u)) matrix[i][j] = -1;
+                        if (e.source.equals(u) && e.destination.equals(v))
+                            matrix[i][j] = 1;
+                        else if (e.source.equals(v) && e.destination.equals(u))
+                            matrix[i][j] = -1;
                     }
                 }
             }
@@ -1362,38 +1276,36 @@ private int vertexToNumber(String v) {
 
     private List<List<String>> reorientCyclesClockwise(List<List<String>> cycles) {
         List<List<String>> reoriented = new ArrayList<>();
-        
+
         for (List<String> cycle : cycles) {
             List<String> clockwiseCycle = reorientSingleCycleClockwise(cycle);
             reoriented.add(clockwiseCycle);
         }
-        
+
         return reoriented;
     }
 
     private List<String> reorientSingleCycleClockwise(List<String> cycle) {
-        if (cycle.size() < 3) return cycle;
-        
-        // Encontrar el vértice más a la izquierda (alfabéticamente)
+        if (cycle.size() < 3)
+            return cycle;
+
         String leftmostVertex = findLeftmostVertex(cycle);
         int startIndex = cycle.indexOf(leftmostVertex);
-        
-        // Reconstruir el ciclo empezando desde este vértice
+
         List<String> reordered = new ArrayList<>();
         for (int i = 0; i < cycle.size(); i++) {
             reordered.add(cycle.get((startIndex + i) % cycle.size()));
         }
-        
-        // Verificar la orientación y revertir si es necesario
+
         if (!isClockwise(reordered)) {
             Collections.reverse(reordered);
-            // Rotar para mantener el mismo vértice inicial
+
             int newStart = reordered.indexOf(leftmostVertex);
             if (newStart > 0) {
                 Collections.rotate(reordered, -newStart);
             }
         }
-        
+
         return reordered;
     }
 
@@ -1408,9 +1320,9 @@ private int vertexToNumber(String v) {
     }
 
     private boolean isClockwise(List<String> cycle) {
-        if (cycle.size() < 3) return true;
-        
-        // Para grafos sin coordenadas, usamos un criterio basado en orden natural
+        if (cycle.size() < 3)
+            return true;
+
         return isCycleInNaturalOrder(cycle);
     }
 
@@ -1426,18 +1338,16 @@ private int vertexToNumber(String v) {
     private GridPane createFundamentalCircuitMatrix() {
         List<Edge> allEdges = new ArrayList<>(graphData.edges);
         List<String> vertices = new ArrayList<>(graphData.vertices);
-        
+
         if (vertices.isEmpty() || allEdges.isEmpty()) {
             int[][] matrix = new int[1][allEdges.size()];
-            return createIntMatrixGrid(matrix, Arrays.asList("Circuitos Fundamentales"), 
+            return createIntMatrixGrid(matrix, Arrays.asList("Circuitos Fundamentales"),
                     edgeLabels(allEdges), "Matriz de Circuitos Fundamentales");
         }
 
-        // 1. Encontrar árbol de expansión mínima
         Set<Edge> mstEdges = computeMSTEdges(graphData);
         List<Edge> mstEdgeList = new ArrayList<>(mstEdges);
-        
-        // 2. Identificar cuerdas (edges no en el MST)
+
         List<Edge> chords = new ArrayList<>();
         for (Edge e : allEdges) {
             if (!mstEdges.contains(e)) {
@@ -1447,43 +1357,38 @@ private int vertexToNumber(String v) {
 
         if (chords.isEmpty()) {
             int[][] matrix = new int[1][allEdges.size()];
-            return createIntMatrixGrid(matrix, Arrays.asList("Circuitos Fundamentales"), 
+            return createIntMatrixGrid(matrix, Arrays.asList("Circuitos Fundamentales"),
                     edgeLabels(allEdges), "Matriz de Circuitos Fundamentales");
         }
 
-        // 3. Construir adjacency list del MST
         Map<String, List<Edge>> mstAdj = new HashMap<>();
         for (Edge e : mstEdgeList) {
             mstAdj.computeIfAbsent(e.source, k -> new ArrayList<>()).add(e);
             mstAdj.computeIfAbsent(e.destination, k -> new ArrayList<>()).add(e);
         }
 
-        // 4. Para cada cuerda, encontrar el circuito fundamental único
         int[][] matrix = new int[chords.size()][allEdges.size()];
         List<String> rowLabels = new ArrayList<>();
 
         for (int i = 0; i < chords.size(); i++) {
             Edge chord = chords.get(i);
-            
-            // Encontrar camino entre los extremos de la cuerda en el MST
+
             List<String> path = findPathInTree(mstAdj, chord.source, chord.destination);
-            
-            if (path.isEmpty()) continue;
-            
-            // Construir el ciclo: path + cuerda
+
+            if (path.isEmpty())
+                continue;
+
             List<String> cycle = new ArrayList<>(path);
-            
-            // Asegurar orientación en sentido horario
+
             cycle = reorientSingleCycleClockwise(cycle);
-            
-            // Marcar las aristas en el circuito fundamental
+
             for (int j = 0; j < cycle.size(); j++) {
                 String u = cycle.get(j);
                 String v = cycle.get((j + 1) % cycle.size());
-                
+
                 for (int k = 0; k < allEdges.size(); k++) {
                     Edge e = allEdges.get(k);
-                    
+
                     if (matchesEdge(e, u, v)) {
                         if (graphData.isDirected) {
                             if (e.source.equals(u) && e.destination.equals(v)) {
@@ -1497,11 +1402,11 @@ private int vertexToNumber(String v) {
                     }
                 }
             }
-            
+
             rowLabels.add("CF" + (i + 1) + "(" + chord.source + "-" + chord.destination + ")");
         }
 
-        return createIntMatrixGrid(matrix, rowLabels, edgeLabels(allEdges), 
+        return createIntMatrixGrid(matrix, rowLabels, edgeLabels(allEdges),
                 "Matriz de Circuitos Fundamentales");
     }
 
@@ -1509,16 +1414,16 @@ private int vertexToNumber(String v) {
         Map<String, String> parent = new HashMap<>();
         Set<String> visited = new HashSet<>();
         Queue<String> queue = new LinkedList<>();
-        
+
         queue.offer(start);
         visited.add(start);
         parent.put(start, null);
-        
+
         while (!queue.isEmpty()) {
             String current = queue.poll();
-            
+
             if (current.equals(end)) {
-                // Reconstruir camino
+
                 List<String> path = new ArrayList<>();
                 String node = end;
                 while (node != null) {
@@ -1528,7 +1433,7 @@ private int vertexToNumber(String v) {
                 Collections.reverse(path);
                 return path;
             }
-            
+
             for (Edge edge : treeAdj.getOrDefault(current, new ArrayList<>())) {
                 String neighbor = edge.source.equals(current) ? edge.destination : edge.source;
                 if (!visited.contains(neighbor)) {
@@ -1538,768 +1443,223 @@ private int vertexToNumber(String v) {
                 }
             }
         }
-        
+
         return new ArrayList<>();
     }
 
     private boolean matchesEdge(Edge edge, String u, String v) {
         if (graphData.isDirected) {
             return (edge.source.equals(u) && edge.destination.equals(v)) ||
-                   (edge.source.equals(v) && edge.destination.equals(u));
+                    (edge.source.equals(v) && edge.destination.equals(u));
         } else {
             return (edge.source.equals(u) && edge.destination.equals(v)) ||
-                   (edge.source.equals(v) && edge.destination.equals(u));
+                    (edge.source.equals(v) && edge.destination.equals(u));
         }
     }
 
     private GridPane createCutSetMatrix() {
-    List<Edge> edges = new ArrayList<>(graphData.edges);
-    
-    if (edges.isEmpty()) {
-        int[][] matrix = new int[1][0];
-        return createIntMatrixGrid(matrix, Arrays.asList("Conjuntos de Corte"), 
-                Collections.emptyList(), "Conjuntos de Corte");
-    }
+        List<Edge> edges = new ArrayList<>(graphData.edges);
 
-    // Encontrar todos los conjuntos de corte minimales usando el enfoque correcto
-    List<Set<Edge>> cutSets = findRealMinimalCutSets(graphData);
-    
-    if (cutSets.isEmpty()) {
-        int[][] matrix = new int[1][edges.size()];
-        return createIntMatrixGrid(matrix, Arrays.asList("Conjuntos de Corte"), 
-                edgeLabels(edges), "Conjuntos de Corte");
-    }
+        if (edges.isEmpty()) {
+            int[][] matrix = new int[1][0];
+            return createIntMatrixGrid(matrix, Arrays.asList("Conjuntos de Corte"),
+                    Collections.emptyList(), "Conjuntos de Corte");
+        }
 
-    int[][] matrix = new int[cutSets.size()][edges.size()];
-    List<String> rowLabels = new ArrayList<>();
-    
-    for (int i = 0; i < cutSets.size(); i++) {
-        Set<Edge> cutSet = cutSets.get(i);
-        
-        for (int j = 0; j < edges.size(); j++) {
-            Edge e = edges.get(j);
-            if (cutSet.contains(e)) {
-                if (graphData.isDirected) {
-                    // Para grafos dirigidos, determinar la dirección basada en la partición
-                    Set<String>[] components = findComponentsAfterCut(graphData, cutSet);
-                    if (components.length >= 2) {
-                        Set<String> compA = components[0];
-                        boolean sourceInA = compA.contains(e.source);
-                        boolean destInA = compA.contains(e.destination);
-                        
-                        if (sourceInA && !destInA) {
-                            matrix[i][j] = 1; // de A a B
-                        } else if (!sourceInA && destInA) {
-                            matrix[i][j] = -1; // de B a A
-                        } else {
-                            matrix[i][j] = 1; // por defecto
-                        }
+        List<Set<Edge>> cutSets = findAllMinimalCutSetsWeakConnectivity(graphData);
+
+        if (cutSets.isEmpty()) {
+            int[][] matrix = new int[1][edges.size()];
+            return createIntMatrixGrid(matrix, Arrays.asList("Conjuntos de Corte"),
+                    edgeLabels(edges), "Conjuntos de Corte");
+        }
+
+        int[][] matrix = new int[cutSets.size()][edges.size()];
+        List<String> rowLabels = new ArrayList<>();
+
+        for (int i = 0; i < cutSets.size(); i++) {
+            Set<Edge> cutSet = cutSets.get(i);
+
+            for (int j = 0; j < edges.size(); j++) {
+                Edge e = edges.get(j);
+                if (cutSet.contains(e)) {
+                    if (graphData.isDirected) {
+
+                        matrix[i][j] = 1;
                     } else {
                         matrix[i][j] = 1;
                     }
                 } else {
-                    matrix[i][j] = 1;
-                }
-            } else {
-                matrix[i][j] = 0;
-            }
-        }
-        
-        rowLabels.add("CC" + (i + 1));
-    }
-
-    return createIntMatrixGrid(matrix, rowLabels, edgeLabels(edges), "Conjuntos de Corte");
-}
-
-private List<Set<Edge>> findRealMinimalCutSets(Graph g) {
-    List<Set<Edge>> minimalCuts = new ArrayList<>();
-    List<String> vertices = new ArrayList<>(g.vertices);
-    
-    if (vertices.size() < 2) {
-        return minimalCuts;
-    }
-
-    // Enfoque: para cada posible partición del conjunto de vértices en dos subconjuntos no vacíos,
-    // el conjunto de aristas que conectan los dos subconjuntos es un corte.
-    // Luego filtramos los minimales.
-    
-    // Generar todas las particiones no triviales (2^(n-1) - 1 particiones)
-    int n = vertices.size();
-    int totalPartitions = (1 << (n - 1)) - 1;
-    
-    for (int mask = 1; mask <= totalPartitions; mask++) {
-        Set<String> setA = new HashSet<>();
-        Set<String> setB = new HashSet<>(vertices);
-        
-        for (int i = 0; i < n; i++) {
-            if ((mask & (1 << i)) != 0) {
-                String vertex = vertices.get(i);
-                setA.add(vertex);
-                setB.remove(vertex);
-            }
-        }
-        
-        // El corte son todas las aristas entre setA y setB
-        Set<Edge> cut = new HashSet<>();
-        for (Edge edge : g.edges) {
-            boolean sourceInA = setA.contains(edge.source);
-            boolean destInA = setA.contains(edge.destination);
-            boolean sourceInB = setB.contains(edge.source);
-            boolean destInB = setB.contains(edge.destination);
-            
-            // La arista cruza entre A y B
-            if ((sourceInA && destInB) || (sourceInB && destInA)) {
-                cut.add(edge);
-            }
-        }
-        
-        // Verificar que el corte sea minimal
-        if (!cut.isEmpty() && isMinimalCut(g, cut)) {
-            // Verificar que no sea duplicado
-            boolean isDuplicate = false;
-            for (Set<Edge> existing : minimalCuts) {
-                if (existing.equals(cut)) {
-                    isDuplicate = true;
-                    break;
+                    matrix[i][j] = 0;
                 }
             }
-            if (!isDuplicate) {
-                minimalCuts.add(cut);
-            }
+
+            rowLabels.add("CC" + (i + 1));
         }
-    }
-    
-    return minimalCuts;
-}
 
-private boolean isMinimalCut(Graph g, Set<Edge> cut) {
-    // Un corte es minimal si al remover cualquier arista, el corte ya no desconecta el grafo
-    for (Edge edge : cut) {
-        Set<Edge> smallerCut = new HashSet<>(cut);
-        smallerCut.remove(edge);
-        
-        if (isValidCutSet(g, smallerCut)) {
-            return false; // No es minimal - un subconjunto más pequeño también desconecta
+        return createIntMatrixGrid(matrix, rowLabels, edgeLabels(edges), "Conjuntos de Corte");
+    }
+
+    private List<Set<Edge>> findAllMinimalCutSetsWeakConnectivity(Graph g) {
+        List<Set<Edge>> minimalCuts = new ArrayList<>();
+        List<String> vertices = new ArrayList<>(g.vertices);
+        List<Edge> allEdges = new ArrayList<>(g.edges);
+
+        if (vertices.size() < 2 || allEdges.isEmpty()) {
+            return minimalCuts;
         }
-    }
-    return true;
-}
 
-private boolean isValidCutSet(Graph g, Set<Edge> cutSet) {
-    // Un conjunto de aristas es un corte válido si al removerlo, el grafo se desconecta
-    // (tiene más de una componente conexa)
-    return countConnectedComponents(g, cutSet) > 1;
-}
+        int maxCutSize = Math.min(4, allEdges.size());
 
-private int countConnectedComponents(Graph g, Set<Edge> removedEdges) {
-    Set<String> visited = new HashSet<>();
-    int componentCount = 0;
-    
-    for (String vertex : g.vertices) {
-        if (!visited.contains(vertex)) {
-            componentCount++;
-            // BFS para encontrar toda la componente conexa
-            Queue<String> queue = new LinkedList<>();
-            queue.offer(vertex);
-            visited.add(vertex);
-            
-            while (!queue.isEmpty()) {
-                String current = queue.poll();
-                
-                for (Edge edge : g.edges) {
-                    if (removedEdges.contains(edge)) {
-                        continue; // Saltar aristas removidas
-                    }
-                    
-                    String neighbor = null;
-                    if (edge.source.equals(current)) {
-                        neighbor = edge.destination;
-                    } else if (!g.isDirected && edge.destination.equals(current)) {
-                        neighbor = edge.source;
-                    }
-                    
-                    if (neighbor != null && !visited.contains(neighbor)) {
-                        visited.add(neighbor);
-                        queue.offer(neighbor);
-                    }
-                }
-            }
-        }
-    }
-    
-    return componentCount;
-}
+        for (int size = 1; size <= maxCutSize; size++) {
+            List<List<Edge>> combinations = generateCombinations(allEdges, size);
 
-@SuppressWarnings("unchecked")
-private Set<String>[] findComponentsAfterCut(Graph g, Set<Edge> cutSet) {
-    Set<String> visited = new HashSet<>();
-    List<Set<String>> components = new ArrayList<>();
-    
-    for (String vertex : g.vertices) {
-        if (!visited.contains(vertex)) {
-            Set<String> component = new HashSet<>();
-            Queue<String> queue = new LinkedList<>();
-            queue.offer(vertex);
-            visited.add(vertex);
-            component.add(vertex);
-            
-            while (!queue.isEmpty()) {
-                String current = queue.poll();
-                
-                for (Edge edge : g.edges) {
-                    if (cutSet.contains(edge)) {
-                        continue;
-                    }
-                    
-                    String neighbor = null;
-                    if (edge.source.equals(current)) {
-                        neighbor = edge.destination;
-                    } else if (!g.isDirected && edge.destination.equals(current)) {
-                        neighbor = edge.source;
-                    }
-                    
-                    if (neighbor != null && !visited.contains(neighbor)) {
-                        visited.add(neighbor);
-                        component.add(neighbor);
-                        queue.offer(neighbor);
-                    }
-                }
-            }
-            
-            components.add(component);
-        }
-    }
-    
-    return components.toArray(new Set[0]);
-}
+            for (List<Edge> candidateList : combinations) {
+                Set<Edge> candidate = new HashSet<>(candidateList);
 
-private List<Set<Edge>> findAllMinimalCutSets(Graph g) {
-    List<Set<Edge>> minimalCuts = new ArrayList<>();
-    List<String> vertices = new ArrayList<>(g.vertices);
-    
-    if (vertices.size() < 2) {
-        return minimalCuts;
-    }
+                if (disconnectsUnderlyingGraph(g, candidate)) {
 
-    // Encontrar todos los pares de vértices y los cortes que los separan
-    for (int i = 0; i < vertices.size(); i++) {
-        for (int j = i + 1; j < vertices.size(); j++) {
-            String source = vertices.get(i);
-            String target = vertices.get(j);
-            
-            List<Set<Edge>> separatingSets = findMinimalSeparatingSets(g, source, target);
-            
-            for (Set<Edge> cutSet : separatingSets) {
-                // Verificar que realmente sea un corte minimal
-                if (isMinimalCutSet(g, cutSet)) {
-                    // Verificar que no sea duplicado
-                    boolean isDuplicate = false;
-                    for (Set<Edge> existing : minimalCuts) {
-                        if (existing.equals(cutSet)) {
-                            isDuplicate = true;
-                            break;
-                        }
-                    }
-                    if (!isDuplicate) {
-                        minimalCuts.add(cutSet);
-                    }
-                }
-            }
-        }
-    }
-    
-    return minimalCuts;
-}
-
-private List<Set<Edge>> findMinimalSeparatingSets(Graph g, String source, String target) {
-    List<Set<Edge>> minimalSeparators = new ArrayList<>();
-    
-    // Encontrar todos los caminos entre source y target
-    List<List<Edge>> allPaths = findAllSimplePaths(g, source, target);
-    
-    if (allPaths.isEmpty()) {
-        return minimalSeparators; // Ya están desconectados
-    }
-    
-    // Obtener todas las aristas que aparecen en algún camino
-    Set<Edge> edgesInPaths = new HashSet<>();
-    for (List<Edge> path : allPaths) {
-        edgesInPaths.addAll(path);
-    }
-    
-    List<Edge> candidateEdges = new ArrayList<>(edgesInPaths);
-    
-    // Probar conjuntos de diferentes tamaños (hasta el número de aristas en los caminos)
-    for (int size = 1; size <= candidateEdges.size(); size++) {
-        List<List<Edge>> combinations = generateCombinations(candidateEdges, size);
-        
-        for (List<Edge> candidate : combinations) {
-            Set<Edge> candidateSet = new HashSet<>(candidate);
-            
-            // Verificar si este conjunto separa source de target
-            if (separatesVertices(g, candidateSet, source, target)) {
-                // Verificar minimalidad
-                boolean isMinimal = true;
-                for (Edge edge : candidateSet) {
-                    Set<Edge> smallerSet = new HashSet<>(candidateSet);
-                    smallerSet.remove(edge);
-                    if (separatesVertices(g, smallerSet, source, target)) {
-                        isMinimal = false;
-                        break;
-                    }
-                }
-                
-                if (isMinimal) {
-                    minimalSeparators.add(candidateSet);
-                }
-            }
-        }
-        
-        // Si encontramos cortes minimales en este tamaño, no necesitamos buscar tamaños mayores
-        if (!minimalSeparators.isEmpty()) {
-            break;
-        }
-    }
-    
-    return minimalSeparators;
-}
-
-private boolean separatesVertices(Graph g, Set<Edge> cutSet, String source, String target) {
-    // Realizar BFS sin las aristas del corte
-    Set<String> visited = new HashSet<>();
-    Queue<String> queue = new LinkedList<>();
-    
-    queue.offer(source);
-    visited.add(source);
-    
-    while (!queue.isEmpty()) {
-        String current = queue.poll();
-        
-        if (current.equals(target)) {
-            return false; // Todavía están conectados
-        }
-        
-        for (Edge edge : g.edges) {
-            if (cutSet.contains(edge)) {
-                continue; // Saltar aristas del corte
-            }
-            
-            String neighbor = null;
-            if (edge.source.equals(current)) {
-                neighbor = edge.destination;
-            } else if (!g.isDirected && edge.destination.equals(current)) {
-                neighbor = edge.source;
-            }
-            
-            if (neighbor != null && !visited.contains(neighbor)) {
-                visited.add(neighbor);
-                queue.offer(neighbor);
-            }
-        }
-    }
-    
-    return !visited.contains(target); // True si target no fue visitado = están desconectados
-}
-
-private List<List<Edge>> findAllSimplePaths(Graph g, String current, String target) {
-    return findAllSimplePaths(g, current, target, new HashSet<>(), new ArrayList<>());
-}
-
-private List<List<Edge>> findAllSimplePaths(Graph g, String current, String target, 
-                                          Set<String> visited, List<Edge> currentPath) {
-    List<List<Edge>> paths = new ArrayList<>();
-    
-    if (current.equals(target)) {
-        paths.add(new ArrayList<>(currentPath));
-        return paths;
-    }
-    
-    visited.add(current);
-    
-    for (Edge edge : g.edges) {
-        String next = null;
-        if (edge.source.equals(current) && !visited.contains(edge.destination)) {
-            next = edge.destination;
-        } else if (!g.isDirected && edge.destination.equals(current) && !visited.contains(edge.source)) {
-            next = edge.source;
-        }
-        
-        if (next != null) {
-            currentPath.add(edge);
-            paths.addAll(findAllSimplePaths(g, next, target, new HashSet<>(visited), currentPath));
-            currentPath.remove(currentPath.size() - 1);
-        }
-    }
-    
-    return paths;
-}
-
-private boolean isMinimalCutSet(Graph g, Set<Edge> cutSet) {
-    // Un conjunto de corte es minimal si al remover cualquier arista, el grafo se reconecta
-    for (Edge edge : cutSet) {
-        Set<Edge> smallerSet = new HashSet<>(cutSet);
-        smallerSet.remove(edge);
-        
-        if (isGraphDisconnected(g, smallerSet)) {
-            return false; // No es minimal - un subconjunto más pequeño también desconecta
-        }
-    }
-    return true;
-}
-
-private boolean isGraphDisconnected(Graph g, Set<Edge> cutSet) {
-    // Un grafo está desconectado si tiene más de una componente conexa
-    return countConnectedComponents(g, cutSet) > 1;
-}
-
-private Set<String> findComponentAfterCut(Graph g, Set<Edge> cutSet) {
-    Set<String> component = new HashSet<>();
-    if (g.vertices.isEmpty()) return component;
-    
-    String startVertex = g.vertices.iterator().next();
-    Queue<String> queue = new LinkedList<>();
-    queue.offer(startVertex);
-    component.add(startVertex);
-    
-    while (!queue.isEmpty()) {
-        String current = queue.poll();
-        
-        for (Edge edge : g.edges) {
-            if (cutSet.contains(edge)) {
-                continue;
-            }
-            
-            String neighbor = null;
-            if (edge.source.equals(current)) {
-                neighbor = edge.destination;
-            } else if (!g.isDirected && edge.destination.equals(current)) {
-                neighbor = edge.source;
-            }
-            
-            if (neighbor != null && !component.contains(neighbor)) {
-                component.add(neighbor);
-                queue.offer(neighbor);
-            }
-        }
-    }
-    
-    return component;
-}
-
-private List<Set<Edge>> findSimpleCutSets(Graph g) {
-    List<Set<Edge>> cutSets = new ArrayList<>();
-    List<Edge> allEdges = new ArrayList<>(g.edges);
-    
-    if (allEdges.isEmpty() || g.vertices.size() < 2) {
-        return cutSets;
-    }
-
-    // Enfoque simple: considerar cortes de una sola arista (puentes)
-    for (Edge edge : allEdges) {
-        Set<Edge> singleEdgeSet = Collections.singleton(edge);
-        if (isValidCutSet(g, singleEdgeSet)) {
-            cutSets.add(new HashSet<>(singleEdgeSet));
-        }
-    }
-
-    // También considerar algunos cortes de 2 aristas (evitar combinaciones demasiado grandes)
-    if (allEdges.size() >= 2) {
-        for (int i = 0; i < allEdges.size(); i++) {
-            for (int j = i + 1; j < allEdges.size(); j++) {
-                Set<Edge> doubleEdgeSet = new HashSet<>();
-                doubleEdgeSet.add(allEdges.get(i));
-                doubleEdgeSet.add(allEdges.get(j));
-                
-                if (isValidCutSet(g, doubleEdgeSet)) {
-                    // Verificar que sea minimal (ningún subconjunto propio también es corte)
                     boolean isMinimal = true;
-                    for (Edge e : doubleEdgeSet) {
-                        Set<Edge> subset = new HashSet<>(doubleEdgeSet);
-                        subset.remove(e);
-                        if (isValidCutSet(g, subset)) {
+                    for (Edge edge : candidate) {
+                        Set<Edge> smaller = new HashSet<>(candidate);
+                        smaller.remove(edge);
+                        if (disconnectsUnderlyingGraph(g, smaller)) {
                             isMinimal = false;
                             break;
                         }
                     }
-                    
+
                     if (isMinimal) {
-                        cutSets.add(doubleEdgeSet);
+
+                        if (!containsCutSet(minimalCuts, candidate)) {
+                            minimalCuts.add(candidate);
+                        }
                     }
                 }
             }
         }
-    }
 
-    return cutSets;
-}
-
-private Set<Set<String>> findConnectedComponentsAfterCut(Graph g, Set<Edge> removedEdges) {
-    Set<Set<String>> components = new HashSet<>();
-    Set<String> visited = new HashSet<>();
-    
-    for (String vertex : g.vertices) {
-        if (!visited.contains(vertex)) {
-            Set<String> component = new HashSet<>();
-            Queue<String> queue = new LinkedList<>();
-            
-            queue.offer(vertex);
-            visited.add(vertex);
-            component.add(vertex);
-            
-            while (!queue.isEmpty()) {
-                String current = queue.poll();
-                
-                for (Edge edge : g.edges) {
-                    if (removedEdges.contains(edge)) continue;
-                    
-                    String neighbor = null;
-                    if (edge.source.equals(current)) {
-                        neighbor = edge.destination;
-                    } else if (!g.isDirected && edge.destination.equals(current)) {
-                        neighbor = edge.source;
-                    }
-                    
-                    if (neighbor != null && !visited.contains(neighbor)) {
-                        visited.add(neighbor);
-                        component.add(neighbor);
-                        queue.offer(neighbor);
-                    }
-                }
-            }
-            
-            components.add(component);
-        }
-    }
-    
-    return components;
-}
-
-private List<Set<Edge>> findMinimalCutSets(Graph g) {
-    List<Set<Edge>> minimalCuts = new ArrayList<>();
-    List<Edge> allEdges = new ArrayList<>(g.edges);
-    
-    if (allEdges.isEmpty() || g.vertices.size() < 2) {
         return minimalCuts;
     }
 
-    // Enfoque: para cada par de vértices, encontrar los conjuntos de corte minimales
-    // que los separan
-    List<String> vertices = new ArrayList<>(g.vertices);
-    
-    for (int i = 0; i < vertices.size(); i++) {
-        for (int j = i + 1; j < vertices.size(); j++) {
-            String source = vertices.get(i);
-            String target = vertices.get(j);
-            
-            // Encontrar todos los caminos entre source y target
-            List<List<Edge>> allPaths = findAllPaths(g, source, target, new HashSet<>(), new ArrayList<>());
-            
-            if (allPaths.isEmpty()) continue;
-            
-            // Los conjuntos de corte minimales son los conjuntos de aristas que intersectan
-            // todos los caminos (teorema de Menger)
-            List<Set<Edge>> separatingSets = findMinimalSeparatingSets(allPaths, 3); // límite de tamaño 3
-            
-            for (Set<Edge> cutSet : separatingSets) {
-                // Verificar que realmente desconecte el grafo
-                if (isValidCutSet(g, cutSet, source, target)) {
-                    // Verificar minimalidad
-                    boolean isMinimal = true;
-                    for (Set<Edge> existing : minimalCuts) {
-                        if (existing.containsAll(cutSet) && existing.size() < cutSet.size()) {
-                            isMinimal = false;
-                            break;
+    private boolean disconnectsUnderlyingGraph(Graph g, Set<Edge> cutSet) {
+        return countConnectedComponentsWeak(g, cutSet) > 1;
+    }
+
+    private int countConnectedComponentsWeak(Graph g, Set<Edge> removedEdges) {
+        Set<String> visited = new HashSet<>();
+        int componentCount = 0;
+
+        for (String vertex : g.vertices) {
+            if (!visited.contains(vertex)) {
+                componentCount++;
+
+                Queue<String> queue = new LinkedList<>();
+                queue.offer(vertex);
+                visited.add(vertex);
+
+                while (!queue.isEmpty()) {
+                    String current = queue.poll();
+
+                    for (Edge edge : g.edges) {
+                        if (removedEdges.contains(edge)) {
+                            continue;
+                        }
+
+                        String neighbor = null;
+                        if (edge.source.equals(current)) {
+                            neighbor = edge.destination;
+                        } else if (edge.destination.equals(current)) {
+                            neighbor = edge.source;
+                        }
+
+                        if (neighbor != null && !visited.contains(neighbor)) {
+                            visited.add(neighbor);
+                            queue.offer(neighbor);
                         }
                     }
-                    
-                    if (isMinimal) {
-                        // Remover conjuntos no minimales que contengan este
-                        minimalCuts.removeIf(existing -> cutSet.containsAll(existing) && cutSet.size() < existing.size());
-                        minimalCuts.add(new HashSet<>(cutSet));
-                    }
                 }
             }
         }
-    }
-    
-    return minimalCuts;
-}
 
-private List<List<Edge>> findAllPaths(Graph g, String current, String target, 
-                                     Set<String> visited, List<Edge> currentPath) {
-    List<List<Edge>> paths = new ArrayList<>();
-    
-    if (current.equals(target)) {
-        paths.add(new ArrayList<>(currentPath));
-        return paths;
+        return componentCount;
     }
-    
-    visited.add(current);
-    
-    for (Edge edge : g.edges) {
-        String next = null;
-        if (edge.source.equals(current) && !visited.contains(edge.destination)) {
-            next = edge.destination;
-        } else if (!g.isDirected && edge.destination.equals(current) && !visited.contains(edge.source)) {
-            next = edge.source;
-        }
-        
-        if (next != null) {
-            currentPath.add(edge);
-            paths.addAll(findAllPaths(g, next, target, new HashSet<>(visited), currentPath));
-            currentPath.remove(currentPath.size() - 1);
-        }
-    }
-    
-    return paths;
-}
 
-private List<Set<Edge>> findMinimalSeparatingSets(List<List<Edge>> allPaths, int maxSize) {
-    List<Set<Edge>> separatingSets = new ArrayList<>();
-    Set<Edge> allEdges = new HashSet<>();
-    
-    for (List<Edge> path : allPaths) {
-        allEdges.addAll(path);
-    }
-    
-    List<Edge> edgesList = new ArrayList<>(allEdges);
-    
-    // Probar conjuntos de diferentes tamaños
-    for (int size = 1; size <= Math.min(maxSize, edgesList.size()); size++) {
-        List<List<Edge>> combinations = generateCombinations(edgesList, size);
-        
-        for (List<Edge> candidate : combinations) {
-            Set<Edge> candidateSet = new HashSet<>(candidate);
-            
-            // Verificar si intersecta todos los caminos
-            boolean intersectsAll = true;
-            for (List<Edge> path : allPaths) {
-                boolean intersects = false;
-                for (Edge edge : path) {
-                    if (candidateSet.contains(edge)) {
-                        intersects = true;
-                        break;
-                    }
-                }
-                if (!intersects) {
-                    intersectsAll = false;
-                    break;
-                }
-            }
-            
-            if (intersectsAll) {
-                separatingSets.add(candidateSet);
+    private boolean containsCutSet(List<Set<Edge>> cutSets, Set<Edge> newCut) {
+        for (Set<Edge> existing : cutSets) {
+            if (existing.size() == newCut.size() && existing.containsAll(newCut)) {
+                return true;
             }
         }
+        return false;
     }
-    
-    return separatingSets;
-}
 
-private boolean isValidCutSet(Graph g, Set<Edge> cutSet, String source, String target) {
-    // Verificar que después de remover el cutSet, source y target estén en componentes diferentes
-    Set<String> visited = new HashSet<>();
-    Queue<String> queue = new LinkedList<>();
-    
-    queue.offer(source);
-    visited.add(source);
-    
-    while (!queue.isEmpty()) {
-        String current = queue.poll();
-        
-        if (current.equals(target)) {
-            return false; // Todavía están conectados
+    private <T> List<List<T>> generateCombinations(List<T> list, int k) {
+        List<List<T>> result = new ArrayList<>();
+        if (k <= 0 || k > list.size())
+            return result;
+
+        generateCombinationsHelper(list, k, 0, new ArrayList<>(), result);
+        return result;
+    }
+
+    private <T> void generateCombinationsHelper(List<T> list, int k, int start,
+            List<T> current, List<List<T>> result) {
+        if (current.size() == k) {
+            result.add(new ArrayList<>(current));
+            return;
         }
-        
-        for (Edge edge : g.edges) {
-            if (cutSet.contains(edge)) continue;
-            
-            String neighbor = null;
-            if (edge.source.equals(current)) {
-                neighbor = edge.destination;
-            } else if (!g.isDirected && edge.destination.equals(current)) {
-                neighbor = edge.source;
-            }
-            
-            if (neighbor != null && !visited.contains(neighbor)) {
-                visited.add(neighbor);
-                queue.offer(neighbor);
-            }
+
+        for (int i = start; i < list.size(); i++) {
+            current.add(list.get(i));
+            generateCombinationsHelper(list, k, i + 1, current, result);
+            current.remove(current.size() - 1);
         }
     }
-    
-    return !visited.contains(target);
-}
-
-   private <T> List<List<T>> generateCombinations(List<T> list, int k) {
-    List<List<T>> result = new ArrayList<>();
-    if (k <= 0 || k > list.size()) return result;
-    
-    generateCombinationsHelper(list, k, 0, new ArrayList<>(), result);
-    return result;
-}
-
-private <T> void generateCombinationsHelper(List<T> list, int k, int start, 
-                                          List<T> current, List<List<T>> result) {
-    if (current.size() == k) {
-        result.add(new ArrayList<>(current));
-        return;
-    }
-    
-    for (int i = start; i < list.size(); i++) {
-        current.add(list.get(i));
-        generateCombinationsHelper(list, k, i + 1, current, result);
-        current.remove(current.size() - 1);
-    }
-}
 
     private GridPane createFundamentalCutSetMatrix() {
         List<Edge> allEdges = new ArrayList<>(graphData.edges);
         List<String> vertices = new ArrayList<>(graphData.vertices);
-        
+
         if (vertices.isEmpty() || allEdges.isEmpty()) {
             int[][] matrix = new int[1][allEdges.size()];
-            return createIntMatrixGrid(matrix, Arrays.asList("Conjuntos de Corte Fundamentales"), 
+            return createIntMatrixGrid(matrix, Arrays.asList("Conjuntos de Corte Fundamentales"),
                     Collections.emptyList(), "Conjuntos de Corte Fundamentales");
         }
 
-        // 1. Encontrar árbol de expansión mínima
         Set<Edge> mstEdges = computeMSTEdges(graphData);
         List<Edge> mstEdgeList = new ArrayList<>(mstEdges);
 
         if (mstEdgeList.isEmpty()) {
             int[][] matrix = new int[1][allEdges.size()];
-            return createIntMatrixGrid(matrix, Arrays.asList("Conjuntos de Corte Fundamentales"), 
+            return createIntMatrixGrid(matrix, Arrays.asList("Conjuntos de Corte Fundamentales"),
                     edgeLabels(allEdges), "Conjuntos de Corte Fundamentales");
         }
 
-        // 2. Para cada rama del MST, encontrar el conjunto de corte fundamental
         int[][] matrix = new int[mstEdgeList.size()][allEdges.size()];
         List<String> rowLabels = new ArrayList<>();
 
         for (int i = 0; i < mstEdgeList.size(); i++) {
             Edge branch = mstEdgeList.get(i);
-            
-            // Remover la rama temporalmente
+
             Set<Edge> tempEdges = new HashSet<>(mstEdgeList);
             tempEdges.remove(branch);
-            
-            // Encontrar las dos componentes conectadas
+
             Set<Set<String>> components = findConnectedComponents(vertices, tempEdges);
-            if (components.size() != 2) continue;
-            
+            if (components.size() != 2)
+                continue;
+
             Iterator<Set<String>> compIterator = components.iterator();
             Set<String> compA = compIterator.next();
             Set<String> compB = compIterator.next();
-            
-            // Marcar todas las aristas que conectan compA con compB
+
             for (int j = 0; j < allEdges.size(); j++) {
                 Edge e = allEdges.get(j);
                 boolean inA = compA.contains(e.source);
                 boolean inB = compB.contains(e.source);
-                boolean connects = (inA && compB.contains(e.destination)) || 
-                                 (inB && compA.contains(e.destination));
-                
+                boolean connects = (inA && compB.contains(e.destination)) ||
+                        (inB && compA.contains(e.destination));
+
                 if (connects) {
                     if (graphData.isDirected) {
                         if (compA.contains(e.source) && compB.contains(e.destination)) {
@@ -2312,30 +1672,30 @@ private <T> void generateCombinationsHelper(List<T> list, int k, int start,
                     }
                 }
             }
-            
+
             rowLabels.add("CCF" + (i + 1) + "(" + branch.source + "-" + branch.destination + ")");
         }
 
-        return createIntMatrixGrid(matrix, rowLabels, edgeLabels(allEdges), 
+        return createIntMatrixGrid(matrix, rowLabels, edgeLabels(allEdges),
                 "Conjuntos de Corte Fundamentales");
     }
 
     private Set<Set<String>> findConnectedComponents(List<String> vertices, Set<Edge> edges) {
         Set<Set<String>> components = new HashSet<>();
         Set<String> visited = new HashSet<>();
-        
+
         for (String vertex : vertices) {
             if (!visited.contains(vertex)) {
                 Set<String> component = new HashSet<>();
                 Queue<String> queue = new LinkedList<>();
-                
+
                 queue.offer(vertex);
                 visited.add(vertex);
                 component.add(vertex);
-                
+
                 while (!queue.isEmpty()) {
                     String current = queue.poll();
-                    
+
                     for (Edge edge : edges) {
                         String neighbor = null;
                         if (edge.source.equals(current)) {
@@ -2343,7 +1703,7 @@ private <T> void generateCombinationsHelper(List<T> list, int k, int start,
                         } else if (edge.destination.equals(current)) {
                             neighbor = edge.source;
                         }
-                        
+
                         if (neighbor != null && !visited.contains(neighbor)) {
                             visited.add(neighbor);
                             component.add(neighbor);
@@ -2351,33 +1711,33 @@ private <T> void generateCombinationsHelper(List<T> list, int k, int start,
                         }
                     }
                 }
-                
+
                 components.add(component);
             }
         }
-        
+
         return components;
     }
 
-    // Compute MST edges using Kruskal
     private Set<Edge> computeMSTEdges(Graph g) {
         Set<Edge> mst = new LinkedHashSet<>();
         List<String> verts = new ArrayList<>(g.vertices);
-        if (verts.isEmpty()) return mst;
+        if (verts.isEmpty())
+            return mst;
 
         List<Edge> edges = new ArrayList<>(g.edges);
         edges.sort(Comparator.comparingDouble(this::getWeight));
 
-        // iterative union-find (DSU)
         Map<String, String> ufParent = new HashMap<>();
-        for (String v : verts) ufParent.put(v, v);
+        for (String v : verts)
+            ufParent.put(v, v);
 
         java.util.function.Function<String, String> findRoot = x -> {
             String r = x;
             while (!ufParent.get(r).equals(r)) {
                 r = ufParent.get(r);
             }
-            // path compression
+
             String cur = x;
             while (!ufParent.get(cur).equals(r)) {
                 String next = ufParent.get(cur);
@@ -2390,14 +1750,16 @@ private <T> void generateCombinationsHelper(List<T> list, int k, int start,
         for (Edge e : edges) {
             String u = e.source;
             String v = e.destination;
-            if (!ufParent.containsKey(u) || !ufParent.containsKey(v)) continue;
+            if (!ufParent.containsKey(u) || !ufParent.containsKey(v))
+                continue;
             String ru = findRoot.apply(u);
             String rv = findRoot.apply(v);
             if (!ru.equals(rv)) {
                 ufParent.put(ru, rv);
                 mst.add(e);
             }
-            if (mst.size() >= Math.max(0, verts.size() - 1)) break;
+            if (mst.size() >= Math.max(0, verts.size() - 1))
+                break;
         }
 
         return mst;
@@ -2411,7 +1773,6 @@ private <T> void generateCombinationsHelper(List<T> list, int k, int start,
         return labels;
     }
 
-    // Helper: find simple cycles by backtracking
     private List<List<String>> findSimpleCycles(Graph g, int maxCycles) {
         if (g.isDirected) {
             return findSimpleCyclesDirected(g, maxCycles);
@@ -2420,7 +1781,8 @@ private <T> void generateCombinationsHelper(List<T> list, int k, int start,
         List<List<String>> cycles = new ArrayList<>();
         List<String> verts = new ArrayList<>(g.vertices);
         Map<String, Integer> index = new HashMap<>();
-        for (int i = 0; i < verts.size(); i++) index.put(verts.get(i), i);
+        for (int i = 0; i < verts.size(); i++)
+            index.put(verts.get(i), i);
 
         Set<String> seen = new HashSet<>();
 
@@ -2429,7 +1791,8 @@ private <T> void generateCombinationsHelper(List<T> list, int k, int start,
             Deque<String> path = new ArrayDeque<>();
             path.addLast(start);
             dfsUndirectedCycles(g, start, start, s, path, cycles, index, seen, maxCycles);
-            if (cycles.size() >= maxCycles) break;
+            if (cycles.size() >= maxCycles)
+                break;
         }
 
         return cycles;
@@ -2437,23 +1800,27 @@ private <T> void generateCombinationsHelper(List<T> list, int k, int start,
 
     private void dfsUndirectedCycles(Graph g, String start, String current, int startIndex, Deque<String> path,
             List<List<String>> cycles, Map<String, Integer> index, Set<String> seen, int maxCycles) {
-        if (cycles.size() >= maxCycles) return;
+        if (cycles.size() >= maxCycles)
+            return;
         for (String neigh : g.getAdjacentVertices(current)) {
             int ni = index.getOrDefault(neigh, -1);
-            if (ni < startIndex) continue;
+            if (ni < startIndex)
+                continue;
             if (neigh.equals(start) && path.size() > 2) {
                 List<String> cycle = new ArrayList<>(path);
                 String key = canonicalizeUndirectedCycle(cycle, index);
                 if (!seen.contains(key)) {
                     seen.add(key);
                     cycles.add(cycle);
-                    if (cycles.size() >= maxCycles) return;
+                    if (cycles.size() >= maxCycles)
+                        return;
                 }
             } else if (!path.contains(neigh)) {
                 path.addLast(neigh);
                 dfsUndirectedCycles(g, start, neigh, startIndex, path, cycles, index, seen, maxCycles);
                 path.removeLast();
-                if (cycles.size() >= maxCycles) return;
+                if (cycles.size() >= maxCycles)
+                    return;
             }
         }
     }
@@ -2464,10 +1831,14 @@ private <T> void generateCombinationsHelper(List<T> list, int k, int start,
         int minIdx = Integer.MAX_VALUE;
         for (int i = 0; i < n; i++) {
             int idx = index.getOrDefault(cycle.get(i), Integer.MAX_VALUE);
-            if (idx < minIdx) { minIdx = idx; minPos = i; }
+            if (idx < minIdx) {
+                minIdx = idx;
+                minPos = i;
+            }
         }
         List<String> rotated = new ArrayList<>();
-        for (int i = 0; i < n; i++) rotated.add(cycle.get((minPos + i) % n));
+        for (int i = 0; i < n; i++)
+            rotated.add(cycle.get((minPos + i) % n));
 
         List<String> rev = new ArrayList<>(rotated);
         Collections.reverse(rev);
@@ -2477,40 +1848,45 @@ private <T> void generateCombinationsHelper(List<T> list, int k, int start,
         return a.compareTo(b) <= 0 ? a : b;
     }
 
-    // Directed simple cycles finder
     private List<List<String>> findSimpleCyclesDirected(Graph g, int maxCycles) {
         List<List<String>> cycles = new ArrayList<>();
         List<String> verts = new ArrayList<>(g.vertices);
         Map<String, Integer> index = new HashMap<>();
-        for (int i = 0; i < verts.size(); i++) index.put(verts.get(i), i);
+        for (int i = 0; i < verts.size(); i++)
+            index.put(verts.get(i), i);
 
         for (int s = 0; s < verts.size(); s++) {
             String start = verts.get(s);
             Deque<String> path = new ArrayDeque<>();
             path.addLast(start);
             dfsDirectedCycles(g, start, start, s, path, cycles, index, maxCycles);
-            if (cycles.size() >= maxCycles) break;
+            if (cycles.size() >= maxCycles)
+                break;
         }
         return filterCyclesByEdgeSets(g, cycles);
     }
 
     private void dfsDirectedCycles(Graph g, String start, String current, int startIndex, Deque<String> path,
             List<List<String>> cycles, Map<String, Integer> index, int maxCycles) {
-        if (cycles.size() >= maxCycles) return;
+        if (cycles.size() >= maxCycles)
+            return;
         for (String neigh : getNeighborsBothDirections(g, current)) {
             if (neigh.equals(start) && path.size() > 1) {
                 List<String> cycle = new ArrayList<>(path);
                 int minIdx = Integer.MAX_VALUE;
-                for (String v : cycle) minIdx = Math.min(minIdx, index.getOrDefault(v, Integer.MAX_VALUE));
+                for (String v : cycle)
+                    minIdx = Math.min(minIdx, index.getOrDefault(v, Integer.MAX_VALUE));
                 if (minIdx == startIndex) {
                     cycles.add(cycle);
-                    if (cycles.size() >= maxCycles) return;
+                    if (cycles.size() >= maxCycles)
+                        return;
                 }
             } else if (!path.contains(neigh)) {
                 path.addLast(neigh);
                 dfsDirectedCycles(g, start, neigh, startIndex, path, cycles, index, maxCycles);
                 path.removeLast();
-                if (cycles.size() >= maxCycles) return;
+                if (cycles.size() >= maxCycles)
+                    return;
             }
         }
     }
@@ -2518,14 +1894,17 @@ private <T> void generateCombinationsHelper(List<T> list, int k, int start,
     private Set<String> getNeighborsBothDirections(Graph g, String vertex) {
         Set<String> neigh = new LinkedHashSet<>();
         for (Edge e : g.edges) {
-            if (e.source.equals(vertex)) neigh.add(e.destination);
-            if (e.destination.equals(vertex)) neigh.add(e.source);
+            if (e.source.equals(vertex))
+                neigh.add(e.destination);
+            if (e.destination.equals(vertex))
+                neigh.add(e.source);
         }
         return neigh;
     }
 
     private List<List<String>> filterCyclesByEdgeSets(Graph g, List<List<String>> cycles) {
-        if (cycles == null || cycles.isEmpty()) return cycles;
+        if (cycles == null || cycles.isEmpty())
+            return cycles;
 
         List<Set<Edge>> edgeSets = new ArrayList<>();
         for (List<String> cycle : cycles) {
@@ -2537,17 +1916,22 @@ private <T> void generateCombinationsHelper(List<T> list, int k, int start,
         boolean[] remove = new boolean[m];
 
         for (int i = 0; i < m; i++) {
-            if (edgeSets.get(i).size() <= 1) remove[i] = true;
+            if (edgeSets.get(i).size() <= 1)
+                remove[i] = true;
         }
 
         for (int i = 0; i < m; i++) {
-            if (remove[i]) continue;
+            if (remove[i])
+                continue;
             for (int j = 0; j < m; j++) {
-                if (i == j) continue;
-                if (remove[j]) continue;
+                if (i == j)
+                    continue;
+                if (remove[j])
+                    continue;
                 Set<Edge> a = edgeSets.get(i);
                 Set<Edge> b = edgeSets.get(j);
-                if (a.isEmpty() || b.isEmpty()) continue;
+                if (a.isEmpty() || b.isEmpty())
+                    continue;
                 if (b.containsAll(a) && b.size() > a.size()) {
                     remove[i] = true;
                     break;
@@ -2556,13 +1940,16 @@ private <T> void generateCombinationsHelper(List<T> list, int k, int start,
         }
 
         List<List<String>> filtered = new ArrayList<>();
-        for (int i = 0; i < m; i++) if (!remove[i]) filtered.add(cycles.get(i));
+        for (int i = 0; i < m; i++)
+            if (!remove[i])
+                filtered.add(cycles.get(i));
         return filtered;
     }
 
     private Set<Edge> edgesFromVertexCycle(Graph g, List<String> cycle) {
         Set<Edge> result = new HashSet<>();
-        if (cycle == null || cycle.size() < 2) return result;
+        if (cycle == null || cycle.size() < 2)
+            return result;
         int n = cycle.size();
         for (int i = 0; i < n; i++) {
             String u = cycle.get(i);
@@ -2590,14 +1977,6 @@ private <T> void generateCombinationsHelper(List<T> list, int k, int start,
         GridPane grid = new GridPane();
         grid.add(new Text("Matriz " + matrixType + " no implementada"), 0, 0);
         return grid;
-    }
-
-    private GridPane createMatrixGrid(double[][] matrix, String title) {
-        List<String> vertices = new ArrayList<>(graphData.vertices);
-        List<String> rowLabels = new ArrayList<>(vertices);
-        List<String> colLabels = new ArrayList<>(vertices);
-
-        return createDoubleMatrixGrid(matrix, rowLabels, colLabels, title);
     }
 
     private GridPane createDoubleMatrixGrid(double[][] matrix, List<String> rowLabels, List<String> colLabels,
@@ -2649,72 +2028,70 @@ private <T> void generateCombinationsHelper(List<T> list, int k, int start,
     }
 
     private GridPane createIntMatrixGrid(int[][] matrix, List<String> rowLabels, List<String> colLabels, String title) {
-    GridPane grid = new GridPane();
-    grid.setGridLinesVisible(true);
+        GridPane grid = new GridPane();
+        grid.setGridLinesVisible(true);
 
-    int rows = matrix.length;
-    int cols = rows > 0 ? matrix[0].length : 0;
+        int rows = matrix.length;
+        int cols = rows > 0 ? matrix[0].length : 0;
 
-    // Validar y ajustar los tamaños
-    if (rowLabels.size() != rows) {
-        // Ajustar rowLabels al tamaño correcto
-        List<String> adjustedRowLabels = new ArrayList<>();
-        for (int i = 0; i < rows; i++) {
-            if (i < rowLabels.size()) {
-                adjustedRowLabels.add(rowLabels.get(i));
-            } else {
-                adjustedRowLabels.add("Fila " + (i + 1));
+        if (rowLabels.size() != rows) {
+
+            List<String> adjustedRowLabels = new ArrayList<>();
+            for (int i = 0; i < rows; i++) {
+                if (i < rowLabels.size()) {
+                    adjustedRowLabels.add(rowLabels.get(i));
+                } else {
+                    adjustedRowLabels.add("Fila " + (i + 1));
+                }
             }
+            rowLabels = adjustedRowLabels;
         }
-        rowLabels = adjustedRowLabels;
-    }
 
-    if (colLabels.size() != cols) {
-        // Ajustar colLabels al tamaño correcto
-        List<String> adjustedColLabels = new ArrayList<>();
-        for (int i = 0; i < cols; i++) {
-            if (i < colLabels.size()) {
-                adjustedColLabels.add(colLabels.get(i));
-            } else {
-                adjustedColLabels.add("Col " + (i + 1));
+        if (colLabels.size() != cols) {
+
+            List<String> adjustedColLabels = new ArrayList<>();
+            for (int i = 0; i < cols; i++) {
+                if (i < colLabels.size()) {
+                    adjustedColLabels.add(colLabels.get(i));
+                } else {
+                    adjustedColLabels.add("Col " + (i + 1));
+                }
             }
+            colLabels = adjustedColLabels;
         }
-        colLabels = adjustedColLabels;
-    }
 
-    for (int i = 0; i <= cols; i++) {
-        grid.getColumnConstraints().add(new ColumnConstraints(60));
-    }
-    for (int i = 0; i <= rows; i++) {
-        grid.getRowConstraints().add(new RowConstraints(30));
-    }
-
-    // Encabezados de columnas
-    for (int j = 0; j < cols; j++) {
-        Text header = new Text(colLabels.get(j));
-        header.setStyle("-fx-font-weight: bold;");
-        grid.add(header, j + 1, 0);
-    }
-
-    // Filas con datos
-    for (int i = 0; i < rows; i++) {
-        Text rowHeader = new Text(rowLabels.get(i));
-        rowHeader.setStyle("-fx-font-weight: bold;");
-        grid.add(rowHeader, 0, i + 1);
+        for (int i = 0; i <= cols; i++) {
+            grid.getColumnConstraints().add(new ColumnConstraints(60));
+        }
+        for (int i = 0; i <= rows; i++) {
+            grid.getRowConstraints().add(new RowConstraints(30));
+        }
 
         for (int j = 0; j < cols; j++) {
-            String value = String.valueOf(matrix[i][j]);
-            Text cell = new Text(value);
-            StackPane cellPane = new StackPane(cell);
-            cellPane.setStyle("-fx-border-color: lightgray;");
-            grid.add(cellPane, j + 1, i + 1);
+            Text header = new Text(colLabels.get(j));
+            header.setStyle("-fx-font-weight: bold;");
+            grid.add(header, j + 1, 0);
         }
+
+        for (int i = 0; i < rows; i++) {
+            Text rowHeader = new Text(rowLabels.get(i));
+            rowHeader.setStyle("-fx-font-weight: bold;");
+            grid.add(rowHeader, 0, i + 1);
+
+            for (int j = 0; j < cols; j++) {
+                String value = String.valueOf(matrix[i][j]);
+                Text cell = new Text(value);
+                StackPane cellPane = new StackPane(cell);
+                cellPane.setStyle("-fx-border-color: lightgray;");
+                grid.add(cellPane, j + 1, i + 1);
+            }
+        }
+
+        return grid;
     }
 
-    return grid;
-}
-
-    private GridPane createStringMatrixGrid(String[][] matrix, List<String> rowLabels, List<String> colLabels, String title) {
+    private GridPane createStringMatrixGrid(String[][] matrix, List<String> rowLabels, List<String> colLabels,
+            String title) {
         GridPane grid = new GridPane();
         grid.setGridLinesVisible(true);
 
@@ -2813,7 +2190,8 @@ private <T> void generateCombinationsHelper(List<T> list, int k, int start,
                         double radius = VERTEX_RADIUS;
                         boolean hasReverse = false;
                         for (Edge check : graph.edges) {
-                            if (check.source.equals(firstEdge.destination) && check.destination.equals(firstEdge.source)) {
+                            if (check.source.equals(firstEdge.destination)
+                                    && check.destination.equals(firstEdge.source)) {
                                 hasReverse = true;
                                 break;
                             }
