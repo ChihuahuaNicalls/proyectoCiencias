@@ -14,7 +14,7 @@
 <?import javafx.scene.text.Text?>
 <?import javafx.scene.text.TextFlow?>
 
-<Pane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="881.0" prefWidth="1020.0" xmlns="http://javafx.com/javafx/22.0.2" xmlns:fx="http://javafx.com/fxml/1" fx:controller="ciencias.Graphs.OperationsController">
+<Pane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="965.0" prefWidth="1020.0" xmlns="http://javafx.com/javafx/24.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="ciencias.Graphs.OperationsController">
    <children>
       <TextFlow layoutX="387.0" layoutY="14.0" prefHeight="35.0" prefWidth="246.0" textAlignment="CENTER">
          <children>
@@ -35,6 +35,7 @@
          </children>
       </TextFlow>
       <ScrollPane fx:id="graph1" layoutX="76.0" layoutY="275.0" prefHeight="200.0" prefWidth="375.0" />
+      <Button fx:id="isomButton1" layoutX="196.0" layoutY="483.0" mnemonicParsing="false" onAction="#onIsomorfismoGraph1" prefHeight="25.0" prefWidth="120.0" text="Isomorfismo" />
       <TextFlow layoutX="646.0" layoutY="240.0" prefHeight="35.0" prefWidth="246.0" textAlignment="CENTER">
          <children>
             <Label text="Grafo 2">
@@ -45,7 +46,8 @@
          </children>
       </TextFlow>
       <ScrollPane fx:id="graph2" layoutX="581.0" layoutY="275.0" prefHeight="200.0" prefWidth="375.0" />
-      <TextFlow layoutX="388.0" layoutY="599.0" prefHeight="35.0" prefWidth="246.0" textAlignment="CENTER">
+      <Button fx:id="isomButton2" layoutX="709.0" layoutY="483.0" mnemonicParsing="false" onAction="#onIsomorfismoGraph2" prefHeight="25.0" prefWidth="120.0" text="Isomorfismo" />
+      <TextFlow layoutX="388.0" layoutY="648.0" prefHeight="35.0" prefWidth="246.0" textAlignment="CENTER">
          <children>
             <Label fx:id="titleHash12" text="Grafo Resultante">
                <font>
@@ -54,25 +56,26 @@
             </Label>
          </children>
       </TextFlow>
-      <ScrollPane fx:id="graphResult" layoutX="323.0" layoutY="638.0" prefHeight="200.0" prefWidth="375.0" />
-      <TextFlow layoutX="96.0" layoutY="489.0" prefHeight="17.0" prefWidth="200.0" textAlignment="CENTER">
+      <ScrollPane fx:id="graphResult" layoutX="323.0" layoutY="687.0" prefHeight="200.0" prefWidth="375.0" />
+      <Button fx:id="isomButtonResult" layoutX="454.0" layoutY="899.0" mnemonicParsing="false" onAction="#onIsomorfismoGraphResult" prefHeight="25.0" prefWidth="120.0" text="Isomorfismo" />
+      <TextFlow layoutX="96.0" layoutY="540.0" prefHeight="17.0" prefWidth="200.0" textAlignment="CENTER">
          <children>
             <Text strokeType="OUTSIDE" strokeWidth="0.0" text="Grafo/s a operar:" textAlignment="CENTER" />
          </children>
       </TextFlow>
-      <TextFlow layoutX="396.0" layoutY="490.0" prefHeight="16.0" prefWidth="145.0" textAlignment="CENTER">
+      <TextFlow layoutX="397.0" layoutY="540.0" prefHeight="16.0" prefWidth="145.0" textAlignment="CENTER">
          <children>
             <Text strokeType="OUTSIDE" strokeWidth="0.0" text="Que operacion realizar:" textAlignment="CENTER" />
          </children>
       </TextFlow>
-      <MenuButton fx:id="graphOperate" layoutX="255.0" layoutY="485.0" mnemonicParsing="false" popupSide="TOP" prefHeight="25.0" prefWidth="120.0" text="Elegir opcion">
+      <MenuButton fx:id="graphOperate" layoutX="255.0" layoutY="535.0" mnemonicParsing="false" popupSide="TOP" prefHeight="25.0" prefWidth="120.0" text="Elegir opcion">
         <items>
           <MenuItem mnemonicParsing="false" text="Grafo 1" />
           <MenuItem mnemonicParsing="false" text="Grafo 2" />
             <MenuItem mnemonicParsing="false" text="Entre los 2 grafos" />
         </items>
       </MenuButton>
-      <MenuButton fx:id="operations" layoutX="541.0" layoutY="485.0" mnemonicParsing="false" popupSide="TOP" prefHeight="25.0" prefWidth="145.0" text="Elegir operacion">
+      <MenuButton fx:id="operations" layoutX="541.0" layoutY="536.0" mnemonicParsing="false" popupSide="TOP" prefHeight="25.0" prefWidth="145.0" text="Elegir operacion">
          <items>
             <MenuItem mnemonicParsing="false" text="Grafo Linea" />
             <MenuItem mnemonicParsing="false" text="Complemento" />
@@ -80,19 +83,19 @@
             <MenuItem mnemonicParsing="false" text="Contraccion Aristas" />
          </items>
       </MenuButton>
-      <Button fx:id="operateButton" layoutX="698.0" layoutY="486.0" mnemonicParsing="false" onAction="#operate" text="Realizar operacion" />
-      <TextFlow layoutX="421.0" layoutY="525.0" prefHeight="16.0" prefWidth="113.0" textAlignment="CENTER">
+      <Button fx:id="operateButton" layoutX="698.0" layoutY="536.0" mnemonicParsing="false" onAction="#operate" text="Realizar operacion" />
+      <TextFlow layoutX="425.0" layoutY="577.0" prefHeight="16.0" prefWidth="113.0" textAlignment="CENTER">
          <children>
             <Text fx:id="fusionContractionText" strokeType="OUTSIDE" strokeWidth="0.0" text="Seleccionar vertices:" textAlignment="CENTER" />
          </children>
       </TextFlow>
-      <TextFlow layoutX="64.0" layoutY="572.0" prefHeight="21.0" prefWidth="900.0" textAlignment="CENTER">
+      <TextFlow layoutX="64.0" layoutY="612.0" prefHeight="21.0" prefWidth="900.0" textAlignment="CENTER">
          <children>
             <Text fx:id="operationText" strokeType="OUTSIDE" strokeWidth="0.0" textAlignment="CENTER" />
          </children>
       </TextFlow>
-      <TextField fx:id="fusionContractionItem1" layoutX="542.0" layoutY="520.0" prefHeight="25.0" prefWidth="54.0" />
-      <TextField fx:id="fusionContractionItem2" layoutX="610.0" layoutY="520.0" prefHeight="25.0" prefWidth="54.0" />
+      <TextField fx:id="fusionContractionItem1" layoutX="543.0" layoutY="573.0" prefHeight="25.0" prefWidth="54.0" />
+      <TextField fx:id="fusionContractionItem2" layoutX="607.0" layoutY="573.0" prefHeight="25.0" prefWidth="54.0" />
       <TextFlow layoutX="67.0" layoutY="117.0" prefHeight="16.0" prefWidth="69.0" textAlignment="CENTER">
          <children>
             <Text strokeType="OUTSIDE" strokeWidth="0.0" text="Vertices:" textAlignment="CENTER" />
@@ -152,7 +155,7 @@
       <Button fx:id="loadButton" layoutX="562.0" layoutY="61.0" mnemonicParsing="false" onAction="#load" text="Cargar" />
       <Line endX="-338.0" endY="-75.0" layoutX="412.0" layoutY="170.0" startX="540.0" startY="-75.0" />
       <CheckBox fx:id="edgePonderation" layoutX="533.0" layoutY="149.0" mnemonicParsing="false" text="Ponderado" />
-      <Button fx:id="restartOpButton" layoutX="698.0" layoutY="520.0" mnemonicParsing="false" onAction="#restartOp" text="Reiniciar" />
-      <Button fx:id="saveButtonResult" layoutX="484.0" layoutY="844.0" mnemonicParsing="false" onAction="#saveResult" text="Guardar" />
+      <Button fx:id="restartOpButton" layoutX="698.0" layoutY="573.0" mnemonicParsing="false" onAction="#restartOp" text="Reiniciar" />
+      <Button fx:id="saveButtonResult" layoutX="485.0" layoutY="933.0" mnemonicParsing="false" onAction="#saveResult" text="Guardar" />
    </children>
 </Pane>
