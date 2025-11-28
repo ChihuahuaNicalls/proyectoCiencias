@@ -15,7 +15,7 @@
 <?import javafx.scene.text.Text?>
 <?import javafx.scene.text.TextFlow?>
 
-<Pane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="870.0" prefWidth="1020.0" xmlns="http://javafx.com/javafx/22.0.2" xmlns:fx="http://javafx.com/fxml/1" fx:controller="ciencias.Graphs.OperationsController">
+<Pane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="1113.0" prefWidth="1020.0" xmlns="http://javafx.com/javafx/24.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="ciencias.Graphs.RepresentationController">
    <children>
       <TextFlow layoutX="387.0" layoutY="14.0" prefHeight="35.0" prefWidth="246.0" textAlignment="CENTER">
          <children>
@@ -28,68 +28,48 @@
       </TextFlow>
       <TextFlow layoutX="376.0" layoutY="212.0" prefHeight="35.0" prefWidth="246.0" textAlignment="CENTER">
          <children>
-            <Label text="Grafo 1">
+            <Label text="Grafo">
                <font>
                   <Font size="23.0" />
                </font>
             </Label>
          </children>
       </TextFlow>
-      <ScrollPane fx:id="graph1" layoutX="320.0" layoutY="247.0" prefHeight="200.0" prefWidth="375.0" />
-      <TextFlow layoutX="96.0" layoutY="489.0" prefHeight="17.0" prefWidth="200.0" textAlignment="CENTER">
+      <ScrollPane fx:id="graph" layoutX="320.0" layoutY="247.0" prefHeight="200.0" prefWidth="375.0" />
+      <TextFlow layoutX="481.0" layoutY="684.0" prefHeight="16.0" prefWidth="145.0" textAlignment="CENTER">
          <children>
-            <Text strokeType="OUTSIDE" strokeWidth="0.0" text="Grafo/s a operar:" textAlignment="CENTER" />
+            <Text strokeType="OUTSIDE" strokeWidth="0.0" text="Matrices a representar" textAlignment="CENTER" />
          </children>
       </TextFlow>
-      <TextFlow layoutX="396.0" layoutY="490.0" prefHeight="16.0" prefWidth="145.0" textAlignment="CENTER">
-         <children>
-            <Text strokeType="OUTSIDE" strokeWidth="0.0" text="Que operacion realizar:" textAlignment="CENTER" />
-         </children>
-      </TextFlow>
-      <MenuButton fx:id="graphOperate" layoutX="255.0" layoutY="485.0" mnemonicParsing="false" popupSide="TOP" prefHeight="25.0" prefWidth="120.0" text="Elegir opcion">
+      <MenuButton fx:id="matrixOptions" layoutX="641.0" layoutY="680.0" mnemonicParsing="false" popupSide="TOP" prefHeight="25.0" prefWidth="145.0" text="Elegir matriz">
          <items>
-            <MenuItem mnemonicParsing="false" text="Grafo 1" />
-            <MenuItem mnemonicParsing="false" text="Grafo 2" />
-            <MenuItem mnemonicParsing="false" text="Entre los 2 grafos" />
+            <MenuItem mnemonicParsing="false" text="Matriz de circuitos" />
+            <MenuItem mnemonicParsing="false" text="Matriz de circuitos fundamentales" />
+            <MenuItem mnemonicParsing="false" text="Conjuntos de corte" />
+            <MenuItem mnemonicParsing="false" text="Conjuntos de corte fundamentales" />
+            <MenuItem mnemonicParsing="false" text="Matriz de adyacencia vertices" />
+            <MenuItem mnemonicParsing="false" text="Matriz de adyacencia aristas" />
+            <MenuItem mnemonicParsing="false" text="Matriz de incidencia" />
          </items>
       </MenuButton>
-      <MenuButton fx:id="operations" layoutX="541.0" layoutY="485.0" mnemonicParsing="false" popupSide="TOP" prefHeight="25.0" prefWidth="145.0" text="Elegir operacion">
-         <items>
-            <MenuItem mnemonicParsing="false" text="Grafo Linea" />
-            <MenuItem mnemonicParsing="false" text="Complemento" />
-            <MenuItem mnemonicParsing="false" text="Fusion Vertices" />
-            <MenuItem mnemonicParsing="false" text="Contraccion Aristas" />
-         </items>
-      </MenuButton>
-      <Button fx:id="operateButton" layoutX="698.0" layoutY="486.0" mnemonicParsing="false" onAction="#operate" text="Realizar operacion" />
-      <TextFlow layoutX="421.0" layoutY="525.0" prefHeight="16.0" prefWidth="113.0" textAlignment="CENTER">
+      <Button fx:id="operateButton" layoutX="814.0" layoutY="680.0" mnemonicParsing="false" onAction="#operate" text="Realizar operacion" />
+      <TextFlow layoutX="136.0" layoutY="704.0" prefHeight="16.0" prefWidth="113.0" textAlignment="CENTER">
          <children>
-            <Text fx:id="fusionContractionText" strokeType="OUTSIDE" strokeWidth="0.0" text="Seleccionar vertices:" textAlignment="CENTER" />
+            <Text fx:id="distanceText" strokeType="OUTSIDE" strokeWidth="0.0" text="Seleccionar vertices:" textAlignment="CENTER" />
          </children>
       </TextFlow>
-      <TextFlow layoutX="64.0" layoutY="572.0" prefHeight="21.0" prefWidth="900.0" textAlignment="CENTER">
+      <TextFlow layoutX="57.0" layoutY="776.0" prefHeight="21.0" prefWidth="913.0" textAlignment="CENTER">
          <children>
             <Text fx:id="operationText" strokeType="OUTSIDE" strokeWidth="0.0" textAlignment="CENTER" />
          </children>
       </TextFlow>
-      <TextField fx:id="fusionContractionItem1" layoutX="542.0" layoutY="520.0" prefHeight="25.0" prefWidth="54.0" />
-      <TextField fx:id="fusionContractionItem2" layoutX="610.0" layoutY="520.0" prefHeight="25.0" prefWidth="54.0" />
+      <TextField fx:id="distanceItem1" layoutX="273.0" layoutY="700.0" prefHeight="25.0" prefWidth="54.0" />
+      <TextField fx:id="distanceItem2" layoutX="357.0" layoutY="700.0" prefHeight="25.0" prefWidth="54.0" />
       <TextFlow layoutX="67.0" layoutY="117.0" prefHeight="16.0" prefWidth="69.0" textAlignment="CENTER">
          <children>
             <Text strokeType="OUTSIDE" strokeWidth="0.0" text="Vertices:" textAlignment="CENTER" />
          </children>
       </TextFlow>
-      <TextFlow layoutX="67.0" layoutY="65.0" prefHeight="16.0" prefWidth="69.0" textAlignment="CENTER">
-         <children>
-            <Text strokeType="OUTSIDE" strokeWidth="0.0" text="Modificar:" textAlignment="CENTER" />
-         </children>
-      </TextFlow>
-      <MenuButton fx:id="graphModify" layoutX="136.0" layoutY="61.0" mnemonicParsing="false" popupSide="TOP" prefHeight="25.0" prefWidth="120.0" text="Elegir grafo">
-         <items>
-            <MenuItem mnemonicParsing="false" text="Grafo 1" />
-            <MenuItem mnemonicParsing="false" text="Grafo 2" />
-         </items>
-      </MenuButton>
       <TextField fx:id="vertDelete" alignment="CENTER" layoutX="140.0" layoutY="145.0" prefHeight="25.0" prefWidth="113.0" promptText="Ej: A" />
       <Button fx:id="vertAddButton" layoutX="261.0" layoutY="113.0" mnemonicParsing="false" onAction="#vertAdd" text="Agregar Vertices" />
       <TextFlow layoutX="407.0" layoutY="116.0" prefHeight="16.0" prefWidth="55.0" textAlignment="CENTER">
@@ -109,21 +89,21 @@
             <Text strokeType="OUTSIDE" strokeWidth="0.0" text="Destino:" textAlignment="CENTER" />
          </children>
       </TextFlow>
-      <CheckBox fx:id="edgeDirection" layoutX="417.0" layoutY="149.0" mnemonicParsing="false" text="Direccionado" />
+      <CheckBox fx:id="edgeDirection" layoutX="514.0" layoutY="149.0" mnemonicParsing="false" text="Direccionado" />
       <TextField fx:id="edgeOrg" alignment="CENTER" layoutX="513.0" layoutY="113.0" prefHeight="25.0" prefWidth="120.0" promptText="Ej: A" />
       <TextField fx:id="edgeDest" alignment="CENTER" layoutX="693.0" layoutY="113.0" prefHeight="25.0" prefWidth="113.0" promptText="Ej: B" />
       <Button fx:id="edgeAddButton" layoutX="825.0" layoutY="113.0" mnemonicParsing="false" onAction="#edgeAdd" text="Agregar Arista" />
       <Button fx:id="edgeDeleteButton" layoutX="825.0" layoutY="145.0" mnemonicParsing="false" onAction="#edgeDelete" text="Eliminar Arista" />
-      <TextFlow layoutX="627.0" layoutY="150.0" prefHeight="16.0" prefWidth="69.0" textAlignment="CENTER">
+      <TextFlow layoutX="612.0" layoutY="150.0" prefHeight="32.0" prefWidth="84.0" textAlignment="CENTER">
          <children>
-            <Text fx:id="textWeightNotation" strokeType="OUTSIDE" strokeWidth="0.0" text="Notacion:" textAlignment="CENTER" />
+            <Text fx:id="textWeightNotation" strokeType="OUTSIDE" strokeWidth="0.0" text="Ponderacion:" textAlignment="CENTER" wrappingWidth="90.43359375" />
          </children>
       </TextFlow>
       <TextField fx:id="edgeWeightNotation" alignment="CENTER" layoutX="693.0" layoutY="145.0" prefHeight="25.0" prefWidth="113.0" promptText="Ej: 1" />
       <Line endX="-6.0" endY="17.0" layoutX="402.0" layoutY="160.0" startX="-6.0" startY="-63.0" />
-      <Button fx:id="undoButton" layoutX="271.0" layoutY="61.0" mnemonicParsing="false" onAction="#undo" text="Deshacer" />
-      <Button fx:id="redoButton" layoutX="349.0" layoutY="61.0" mnemonicParsing="false" onAction="#redo" text="Rehacer" />
-      <Button fx:id="restartButton" layoutX="421.0" layoutY="61.0" mnemonicParsing="false" onAction="#restart" text="Reiniciar" />
+      <Button fx:id="undoButton" layoutX="74.0" layoutY="61.0" mnemonicParsing="false" onAction="#undo" text="Deshacer" />
+      <Button fx:id="redoButton" layoutX="150.0" layoutY="61.0" mnemonicParsing="false" onAction="#redo" text="Rehacer" />
+      <Button fx:id="restartButton" layoutX="223.0" layoutY="61.0" mnemonicParsing="false" onAction="#restart" text="Reiniciar" />
       <TextFlow layoutX="60.0" layoutY="191.0" prefHeight="21.0" prefWidth="900.0" textAlignment="CENTER">
          <children>
             <Text fx:id="modificationText" strokeType="OUTSIDE" strokeWidth="0.0" textAlignment="CENTER" />
@@ -132,18 +112,43 @@
       <Button fx:id="saveButton" layoutX="825.0" layoutY="61.0" mnemonicParsing="false" onAction="#save" text="Guardar" />
       <Button fx:id="loadButton" layoutX="897.0" layoutY="61.0" mnemonicParsing="false" onAction="#load" text="Cargar" />
       <Line endX="-338.0" endY="-75.0" layoutX="412.0" layoutY="170.0" startX="540.0" startY="-75.0" />
-      <CheckBox fx:id="edgePonderation" layoutX="533.0" layoutY="149.0" mnemonicParsing="false" text="Ponderado" />
-      <Button fx:id="restartOpButton" layoutX="698.0" layoutY="520.0" mnemonicParsing="false" onAction="#restartOp" text="Reiniciar" />
-      <TextFlow layoutX="139.0" layoutY="593.0" prefHeight="35.0" prefWidth="246.0" textAlignment="CENTER">
+      <Button fx:id="restartButton" layoutX="493.0" layoutY="732.0" mnemonicParsing="false" onAction="#restart" text="Reiniciar" />
+      <TabPane fx:id="matrixTabPane" layoutX="100.0" layoutY="823.0" prefHeight="274.0" prefWidth="763.0" tabClosingPolicy="UNAVAILABLE" />
+      <TextFlow layoutX="163.0" layoutY="669.0" prefHeight="21.0" prefWidth="128.0" textAlignment="CENTER">
          <children>
-            <Label fx:id="titleHash12" text="Grafo Resultante">
-               <font>
-                  <Font size="23.0" />
-               </font>
-            </Label>
+            <Text fx:id="distanceText1" strokeType="OUTSIDE" strokeWidth="0.0" text="Distancia entre vertices" textAlignment="CENTER" />
          </children>
       </TextFlow>
-      <ScrollPane fx:id="graphResult" layoutX="74.0" layoutY="632.0" prefHeight="200.0" prefWidth="375.0" />
-      <TabPane fx:id="matrixTabPane" layoutX="482.0" layoutY="583.0" prefHeight="274.0" prefWidth="519.0" tabClosingPolicy="UNAVAILABLE" />
+      <Button fx:id="calculateButton" layoutX="300.0" layoutY="668.0" mnemonicParsing="false" onAction="#calculate" prefHeight="25.0" prefWidth="84.0" text="Calcular" />
+      <TextFlow layoutX="143.0" layoutY="513.0" prefHeight="21.0" prefWidth="106.0" textAlignment="CENTER">
+         <children>
+            <Text fx:id="distanceText11" strokeType="OUTSIDE" strokeWidth="0.0" text="Excentricidades:" textAlignment="CENTER" />
+         </children>
+      </TextFlow>
+      <TextFlow layoutX="143.0" layoutY="544.0" prefHeight="21.0" prefWidth="106.0" textAlignment="CENTER">
+         <children>
+            <Text fx:id="distanceText111" strokeType="OUTSIDE" strokeWidth="0.0" text="Radio:" textAlignment="CENTER" />
+         </children>
+      </TextFlow>
+      <TextFlow layoutX="144.0" layoutY="572.0" prefHeight="21.0" prefWidth="106.0" textAlignment="CENTER">
+         <children>
+            <Text fx:id="distanceText1111" strokeType="OUTSIDE" strokeWidth="0.0" text="Diametro:" textAlignment="CENTER" />
+         </children>
+      </TextFlow>
+      <TextFlow layoutX="499.0" layoutY="465.0" prefHeight="17.0" prefWidth="145.0" textAlignment="CENTER">
+         <children>
+            <Label text="Mediana" />
+         </children>
+      </TextFlow>
+      <ScrollPane fx:id="medianaGraph" layoutX="460.0" layoutY="492.0" prefHeight="121.0" prefWidth="224.0" />
+      <TextFlow layoutX="752.0" layoutY="467.0" prefHeight="17.0" prefWidth="145.0" textAlignment="CENTER">
+         <children>
+            <Label text="Centro" />
+         </children>
+      </TextFlow>
+      <ScrollPane fx:id="centerGraph" layoutX="713.0" layoutY="494.0" prefHeight="121.0" prefWidth="224.0" />
+      <TextField fx:id="excText" editable="false" layoutX="246.0" layoutY="511.0" />
+      <TextField fx:id="radiusText" editable="false" layoutX="246.0" layoutY="540.0" />
+      <TextField fx:id="longText" editable="false" layoutX="246.0" layoutY="570.0" />
    </children>
 </Pane>

@@ -3,6 +3,7 @@ module ciencias {
     requires javafx.controls;
     requires javafx.fxml;
     requires javafx.graphics;
+    requires javafx.web;
 
     opens ciencias to javafx.fxml;
     opens ciencias.Research to javafx.fxml;

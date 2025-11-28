@@ -19,6 +19,7 @@ import javafx.scene.shape.QuadCurveTo;
 import javafx.scene.shape.ArcTo;
 import javafx.scene.shape.HLineTo;
 import javafx.scene.shape.VLineTo;
+import javafx.scene.shape.CubicCurve;
 import javafx.scene.input.ScrollEvent;
 
 public class OperationsController {
@@ -84,6 +85,12 @@ public class OperationsController {
     @FXML
     private Button saveButtonResult;
     @FXML
+    private Button isomButton1;
+    @FXML
+    private Button isomButton2;
+    @FXML
+    private Button isomButtonResult;
+    @FXML
     private CheckBox edgePonderation;
     @FXML
     private Button restartOpButton;
@@ -120,82 +127,120 @@ public class OperationsController {
             Color.GRAY, Color.DARKRED, Color.DARKORANGE, Color.DARKGREEN, Color.DARKMAGENTA, Color.SADDLEBROWN
     };
 
+    private Color getLighter(Color c) {
+        if (c == null)
+            return Color.LIGHTGRAY;
+        return c.interpolate(Color.WHITE, 0.45);
+    }
+
+    private Map<String, Point2D> layoutGraph1 = new HashMap<>();
+    private Map<String, Point2D> layoutGraph2 = new HashMap<>();
+    private Map<String, Point2D> layoutGraphResult = new HashMap<>();
+
     private class EdgeLabelConnection {
-        Line edge;
+        javafx.scene.shape.Shape edge;
         Text labelPart;
         int edgeIndex;
+        javafx.scene.paint.Color normalTextColor;
+        javafx.scene.paint.Color hoverTextColor;
 
-        EdgeLabelConnection(Line edge, Text labelPart, int edgeIndex) {
+        EdgeLabelConnection(javafx.scene.shape.Shape edge, Text labelPart, int edgeIndex,
+                javafx.scene.paint.Color normalTextColor, javafx.scene.paint.Color hoverTextColor) {
             this.edge = edge;
             this.labelPart = labelPart;
             this.edgeIndex = edgeIndex;
+            this.normalTextColor = normalTextColor;
+            this.hoverTextColor = hoverTextColor;
+        }
+    }
+
+    private void shuffleLayout(Graph g, String graphId) {
+        if (g == null || g.vertices.isEmpty())
+            return;
+
+        Map<String, Point2D> base = calculateGraphLayout(g, CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2, VERTEX_RADIUS);
+        List<String> verts = new ArrayList<>(base.keySet());
+        List<Point2D> pts = new ArrayList<>(base.values());
+        Collections.shuffle(pts, new Random());
+
+        Map<String, Point2D> map = new HashMap<>();
+        for (int i = 0; i < verts.size(); i++) {
+            map.put(verts.get(i), pts.get(i));
+        }
+
+        if ("graph1".equals(graphId)) {
+            layoutGraph1 = map;
+        } else if ("graph2".equals(graphId)) {
+            layoutGraph2 = map;
+        } else {
+            layoutGraphResult = map;
         }
     }
 
     private static class GraphState implements Serializable {
-        private static final long serialVersionUID = 1L;
-        Set<String> vertices;
-        List<Edge> edges;
-        boolean isDirected;
-        boolean isWeighted;
+    private static final long serialVersionUID = 1L;
+    Set<String> vertices;
+    List<Edge> edges;
+    boolean isDirected;
+    boolean isWeighted;
 
-        public GraphState() {
-            this.vertices = new HashSet<>();
-            this.edges = new ArrayList<>();
-        }
-
-        public GraphState(Set<String> vertices, List<Edge> edges, boolean isDirected, boolean isWeighted) {
-            this.vertices = new HashSet<>(vertices);
-            this.edges = new ArrayList<>(edges);
-            this.isDirected = isDirected;
-            this.isWeighted = isWeighted;
-        }
+    public GraphState() {
+        this.vertices = new HashSet<>();
+        this.edges = new ArrayList<>();
     }
+
+    public GraphState(Set<String> vertices, List<Edge> edges, boolean isDirected, boolean isWeighted) {
+        this.vertices = new HashSet<>(vertices);
+        this.edges = new ArrayList<>(edges);
+        this.isDirected = isDirected;
+        this.isWeighted = isWeighted;
+    }
+}
 
     private static class Edge implements Serializable {
-        private static final long serialVersionUID = 1L;
-        String source;
-        String destination;
-        String label;
-        boolean isSumEdge;
-        boolean isLoop;
+    private static final long serialVersionUID = 1L;
+    String source;
+    String destination;
+    String label;
+    boolean isSumEdge;
+    boolean isLoop;
 
-        public Edge() {
-            this("", "", "");
-        }
-
-        public Edge(String source, String destination, String label) {
-            this.source = source;
-            this.destination = destination;
-            this.label = label;
-            this.isSumEdge = false;
-            this.isLoop = source.equals(destination);
-        }
-
-        public Edge(String source, String destination, String label, boolean isSumEdge) {
-            this.source = source;
-            this.destination = destination;
-            this.label = label;
-            this.isSumEdge = isSumEdge;
-            this.isLoop = source.equals(destination);
-        }
-
-        @Override
-        public boolean equals(Object obj) {
-            if (this == obj)
-                return true;
-            if (obj == null || getClass() != obj.getClass())
-                return false;
-            Edge edge = (Edge) obj;
-            return source.equals(edge.source) && destination.equals(edge.destination) &&
-                    label.equals(edge.label) && isSumEdge == edge.isSumEdge;
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(source, destination, label, isSumEdge);
-        }
+    public Edge() {
+        this("", "", "");
     }
+
+    public Edge(String source, String destination, String label) {
+        this.source = source;
+        this.destination = destination;
+        this.label = label;
+        this.isSumEdge = false;
+        this.isLoop = source.equals(destination);
+    }
+
+    public Edge(String source, String destination, String label, boolean isSumEdge) {
+        this.source = source;
+        this.destination = destination;
+        this.label = label;
+        this.isSumEdge = isSumEdge;
+        this.isLoop = source.equals(destination);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj)
+            return true;
+        if (obj == null || getClass() != obj.getClass())
+            return false;
+        Edge edge = (Edge) obj;
+        return source.equals(edge.source) && destination.equals(edge.destination) &&
+                label.equals(edge.label) && isSumEdge == edge.isSumEdge;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(source, destination, label, isSumEdge);
+    }
+}
 
     private class Graph {
         private Set<String> vertices;
@@ -250,20 +295,19 @@ public class OperationsController {
         }
 
         public void addEdge(String source, String destination, String label, boolean isSumEdge) {
-
-            // Only disallow duplicate labels for the same vertex pair (and same sum flag).
-            for (Edge existingEdge : edges) {
-                boolean samePair;
-                if (!isDirected) {
-                    samePair = (existingEdge.source.equals(source) && existingEdge.destination.equals(destination))
-                            || (existingEdge.source.equals(destination) && existingEdge.destination.equals(source));
-                } else {
-                    samePair = existingEdge.source.equals(source) && existingEdge.destination.equals(destination);
-                }
-
-                if (samePair && existingEdge.label.equals(label) && existingEdge.isSumEdge == isSumEdge) {
-                    throw new IllegalStateException("Ya existe una arista con la notación '" + label +
-                            "' entre " + existingEdge.source + " y " + existingEdge.destination);
+            // Enforce unique label across the entire graph: no two edges may have the same notation
+            // Exception: when performing the "Suma" operation between graphs, duplicate labels are allowed
+            if (label != null && !label.trim().isEmpty()) {
+                boolean isSumOperation = "Suma".equals(currentOperation);
+                for (Edge existingEdge : edges) {
+                    if (label.equals(existingEdge.label)) {
+                        if (!isSumOperation) {
+                            throw new IllegalStateException("No se permiten aristas con la misma notación '" + label + "' en el mismo grafo");
+                        } else {
+                            // allow duplicate labels during Suma operation
+                            break;
+                        }
+                    }
                 }
             }
 
@@ -638,7 +682,7 @@ public class OperationsController {
         operationText.setText("");
 
         updateOperationState();
-        // Initially disable saving the result (no result graph yet)
+
         if (saveButtonResult != null) {
             saveButtonResult.setDisable(true);
         }
@@ -1624,7 +1668,7 @@ public class OperationsController {
                     }
                 }
             } catch (EOFException eof) {
-                // finished reading
+
             }
 
             if (states.isEmpty()) {
@@ -1632,7 +1676,7 @@ public class OperationsController {
             }
 
             if (states.size() >= 3) {
-                // legacy file with three graphs saved: restore all
+
                 graph1Data = new Graph();
                 graph1Data.setState(states.get(0));
                 graph2Data = new Graph();
@@ -1640,7 +1684,6 @@ public class OperationsController {
                 graphResultData = new Graph();
                 graphResultData.setState(states.get(2));
 
-                // clear histories for a fresh load
                 graph1History.clear();
                 graph2History.clear();
                 graph1RedoStack.clear();
@@ -1652,10 +1695,8 @@ public class OperationsController {
                 return;
             }
 
-            // Single graph in file: load into currently selected modifying graph
             GraphState loadedState = states.get(0);
 
-            // Replace the target graph with a fresh Graph built from the loaded state
             if ("Grafo 1".equals(currentModifyingGraph)) {
                 graph1Data = new Graph();
                 graph1Data.setState(loadedState);
@@ -1782,9 +1823,13 @@ public class OperationsController {
 
     private void updateResultGraphDisplay() {
         drawGraph(graphResultData, graphResult);
-        // Enable save button only when result graph has content
+
+        boolean resultEmpty = (graphResultData == null || graphResultData.isEmpty());
         if (saveButtonResult != null) {
-            saveButtonResult.setDisable(graphResultData == null || graphResultData.isEmpty());
+            saveButtonResult.setDisable(resultEmpty);
+        }
+        if (isomButtonResult != null) {
+            isomButtonResult.setDisable(resultEmpty);
         }
     }
 
@@ -1792,9 +1837,181 @@ public class OperationsController {
         drawGraph(graph1Data, graph1);
         drawGraph(graph2Data, graph2);
         drawGraph(graphResultData, graphResult);
+        boolean graph1Empty = (graph1Data == null || graph1Data.isEmpty());
+        boolean graph2Empty = (graph2Data == null || graph2Data.isEmpty());
+        boolean resultEmpty = (graphResultData == null || graphResultData.isEmpty());
         if (saveButtonResult != null) {
-            saveButtonResult.setDisable(graphResultData == null || graphResultData.isEmpty());
+            saveButtonResult.setDisable(resultEmpty);
         }
+        if (isomButton1 != null)
+            isomButton1.setDisable(graph1Empty);
+        if (isomButton2 != null)
+            isomButton2.setDisable(graph2Empty);
+        if (isomButtonResult != null)
+            isomButtonResult.setDisable(resultEmpty);
+    }
+
+    @FXML
+    private void onIsomorfismoGraph1() {
+        if (graph1Data == null || graph1Data.isEmpty()) {
+            showAlert("Isomorfismo", "Grafo 1 vacío");
+            return;
+        }
+
+        shuffleLayout(graph1Data, "graph1");
+        updateGraphDisplay();
+        modificationText.setText("Grafo 1 reorganizado (posiciones aleatorias)");
+        updateOperationState();
+    }
+
+    @FXML
+    private void onIsomorfismoGraph2() {
+        if (graph2Data == null || graph2Data.isEmpty()) {
+            showAlert("Isomorfismo", "Grafo 2 vacío");
+            return;
+        }
+
+        shuffleLayout(graph2Data, "graph2");
+        updateGraphDisplay();
+        modificationText.setText("Grafo 2 reorganizado (posiciones aleatorias)");
+        updateOperationState();
+    }
+
+    @FXML
+    private void onIsomorfismoGraphResult() {
+        if (graphResultData == null || graphResultData.isEmpty()) {
+            showAlert("Isomorfismo", "Grafo Resultante vacío");
+            return;
+        }
+
+        shuffleLayout(graphResultData, "result");
+        updateResultGraphDisplay();
+        operationText.setText("Grafo resultante reorganizado (posiciones aleatorias)");
+    }
+
+    private boolean areIsomorphic(Graph a, Graph b) {
+        if (a == null || b == null)
+            return false;
+        if (a.vertices.size() != b.vertices.size())
+            return false;
+        if (a.edges.size() != b.edges.size())
+            return false;
+        if (a.isDirected() != b.isDirected())
+            return false;
+        if (a.isWeighted() != b.isWeighted())
+            return false;
+
+        List<Integer> seqA = new ArrayList<>();
+        List<Integer> seqB = new ArrayList<>();
+        for (String v : a.vertices)
+            seqA.add(a.getAdjacentVertices(v).size());
+        for (String v : b.vertices)
+            seqB.add(b.getAdjacentVertices(v).size());
+        Collections.sort(seqA);
+        Collections.sort(seqB);
+        if (!seqA.equals(seqB))
+            return false;
+
+        List<String> vertsA = new ArrayList<>(a.vertices);
+        List<String> vertsB = new ArrayList<>(b.vertices);
+
+        Map<String, Map<String, List<Edge>>> adjB = buildAdjacencyMap(b);
+
+        boolean[] used = new boolean[vertsB.size()];
+        Map<String, String> mapping = new HashMap<>();
+
+        return backtrackIsom(0, vertsA, vertsB, used, mapping, a, b, adjB);
+    }
+
+    private boolean backtrackIsom(int idx, List<String> vertsA, List<String> vertsB, boolean[] used,
+            Map<String, String> mapping, Graph a, Graph b,
+            Map<String, Map<String, List<Edge>>> adjB) {
+        if (idx == vertsA.size())
+            return true;
+        String va = vertsA.get(idx);
+        int degA = a.getAdjacentVertices(va).size();
+        for (int j = 0; j < vertsB.size(); j++) {
+            if (used[j])
+                continue;
+            String vb = vertsB.get(j);
+            if (b.getAdjacentVertices(vb).size() != degA)
+                continue;
+
+            mapping.put(va, vb);
+            used[j] = true;
+
+            boolean ok = true;
+            for (Map.Entry<String, String> e : mapping.entrySet()) {
+                String sa = e.getKey();
+                String sb = e.getValue();
+                for (Edge edgeA : getEdgesForVertex(a, sa)) {
+                    String otherA = edgeA.source.equals(sa) ? edgeA.destination : edgeA.source;
+                    if (mapping.containsKey(otherA)) {
+                        String otherB = mapping.get(otherA);
+                        boolean exists = false;
+                        Map<String, List<Edge>> mapFromSb = adjB.get(sb);
+                        if (mapFromSb != null) {
+                            List<Edge> candidates = mapFromSb.get(otherB);
+                            if (candidates != null) {
+                                for (Edge ce : candidates) {
+                                    if (Objects.equals(ce.label, edgeA.label) && ce.isSumEdge == edgeA.isSumEdge) {
+                                        exists = true;
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                        if (!exists) {
+                            ok = false;
+                            break;
+                        }
+                    }
+                }
+                if (!ok)
+                    break;
+            }
+
+            if (ok) {
+                if (backtrackIsom(idx + 1, vertsA, vertsB, used, mapping, a, b, adjB))
+                    return true;
+            }
+
+            used[j] = false;
+            mapping.remove(va);
+        }
+        return false;
+    }
+
+    private List<Edge> getEdgesForVertex(Graph g, String v) {
+        List<Edge> res = new ArrayList<>();
+        for (Edge e : g.edges) {
+            if (e.source.equals(v) || e.destination.equals(v))
+                res.add(e);
+        }
+        return res;
+    }
+
+    private Map<String, Map<String, List<Edge>>> buildAdjacencyMap(Graph g) {
+        Map<String, Map<String, List<Edge>>> map = new HashMap<>();
+        for (Edge e : g.edges) {
+            map.computeIfAbsent(e.source, k -> new HashMap<>()).computeIfAbsent(e.destination, k -> new ArrayList<>())
+                    .add(e);
+            if (!g.isDirected()) {
+                map.computeIfAbsent(e.destination, k -> new HashMap<>())
+                        .computeIfAbsent(e.source, k -> new ArrayList<>()).add(e);
+            }
+        }
+        return map;
+    }
+
+    private void showAlert(String title, String msg) {
+        javafx.application.Platform.runLater(() -> {
+            Alert alert = new Alert(Alert.AlertType.INFORMATION);
+            alert.setTitle(title);
+            alert.setHeaderText(null);
+            alert.setContentText(msg);
+            alert.showAndWait();
+        });
     }
 
     private void drawGraph(Graph graph, ScrollPane scrollPane) {
@@ -1804,7 +2021,20 @@ public class OperationsController {
         double centerX = CANVAS_WIDTH / 2;
         double centerY = CANVAS_HEIGHT / 2;
 
-        Map<String, Point2D> vertexPositions = calculateGraphLayout(graph, centerX, centerY, VERTEX_RADIUS);
+        Map<String, Point2D> custom = null;
+        if (scrollPane == graph1)
+            custom = layoutGraph1;
+        else if (scrollPane == graph2)
+            custom = layoutGraph2;
+        else if (scrollPane == graphResult)
+            custom = layoutGraphResult;
+
+        Map<String, Point2D> vertexPositions;
+        if (custom != null && !custom.isEmpty() && custom.keySet().containsAll(graph.vertices)) {
+            vertexPositions = custom;
+        } else {
+            vertexPositions = calculateGraphLayout(graph, centerX, centerY, VERTEX_RADIUS);
+        }
 
         Map<String, List<Edge>> edgesByPair = groupParallelEdges(graph);
 
@@ -1821,7 +2051,7 @@ public class OperationsController {
                 allLabels.add(edge.label != null ? edge.label : "");
             }
 
-            List<Line> allEdgesInGroup = new ArrayList<>();
+            List<javafx.scene.shape.Shape> allEdgesInGroup = new ArrayList<>();
 
             if (firstEdge.isLoop) {
 
@@ -1861,61 +2091,56 @@ public class OperationsController {
         centerGraphView(scrollPane);
     }
 
-    private void drawLoop(Pane canvas, Point2D vertex, double radius, boolean isDirected,
+        private void drawLoop(Pane canvas, Point2D vertex, double radius, boolean isDirected,
             boolean isSumEdge, String label, int loopIndex, int totalLoops, List<String> allLabels,
-            List<EdgeLabelConnection> connections, List<Line> allEdges) {
-
+            List<EdgeLabelConnection> connections, List<javafx.scene.shape.Shape> allEdges) {
         Color[] loopColors = { Color.BLACK, Color.RED, Color.ORANGE, Color.GREEN };
         Color edgeColor = loopIndex < loopColors.length ? loopColors[loopIndex] : Color.BLACK;
-        final Color hoverColor = HOVER_COLORS[loopIndex % HOVER_COLORS.length];
+        final Color hoverColor = getLighter(edgeColor);
 
-        double loopSize = 40 + loopIndex * 15;
+        // Anchor point on the left-middle of the vertex
+        double anchorX = vertex.getX() - radius;
+        double anchorY = vertex.getY() + (loopIndex - (totalLoops - 1) / 2.0) * (radius / 3.0);
 
-        double startX = vertex.getX();
-        double startY = vertex.getY() - radius;
+        // vertical offset for curve endpoints so they touch near the middle
+        double deltaY = 8 + loopIndex * 4;
+        double startX = anchorX;
+        double startY = anchorY - deltaY;
+        double endX = anchorX;
+        double endY = anchorY + deltaY;
 
-        Path loop = new Path();
+        double controlOffset = 40 + loopIndex * 15;
+        double controlX = anchorX - controlOffset;
+        double controlY1 = startY - controlOffset / 2.0;
+        double controlY2 = endY + controlOffset / 2.0;
 
-        MoveTo moveTo = new MoveTo(startX, startY);
-
-        VLineTo upLine = new VLineTo(startY - loopSize);
-
-        HLineTo leftLine = new HLineTo(startX - loopSize);
-
-        VLineTo downLine = new VLineTo(startY);
-
-        HLineTo rightLine = new HLineTo(startX - radius);
-
-        loop.getElements().addAll(moveTo, upLine, leftLine, downLine, rightLine);
-
-        loop.setFill(Color.TRANSPARENT);
+        CubicCurve curve = new CubicCurve(startX, startY, controlX, controlY1, controlX, controlY2, endX, endY);
+        curve.setFill(Color.TRANSPARENT);
         if (isSumEdge) {
-            loop.getStrokeDashArray().addAll(5d, 5d);
-            loop.setStroke(Color.BLUE);
+            curve.getStrokeDashArray().addAll(5d, 5d);
+            curve.setStroke(Color.BLUE);
         } else {
-            loop.setStroke(edgeColor);
+            curve.setStroke(edgeColor);
         }
-        loop.setStrokeWidth(2);
+        curve.setStrokeWidth(2);
 
-        final Path finalLoop = loop;
-        loop.setOnMouseEntered(e -> {
-            finalLoop.setStroke(hoverColor);
-            finalLoop.setStrokeWidth(3);
+        final CubicCurve finalCurve = curve;
+        curve.setOnMouseEntered(e -> {
+            finalCurve.setStroke(edgeColor);
+            finalCurve.setStrokeWidth(3);
+        });
+        curve.setOnMouseExited(e -> {
+            finalCurve.setStroke(isSumEdge ? Color.BLUE : edgeColor);
+            finalCurve.setStrokeWidth(2);
         });
 
-        loop.setOnMouseExited(e -> {
-            finalLoop.setStroke(isSumEdge ? Color.BLUE : edgeColor);
-            finalLoop.setStrokeWidth(2);
-        });
-
-        canvas.getChildren().add(loop);
+        canvas.getChildren().add(curve);
 
         if (isDirected && !isSumEdge) {
             double arrowLength = 10;
-            double arrowX = startX - radius;
-            double arrowY = startY;
-
-            double angle = 0;
+            double angle = Math.atan2(endY - controlY2, endX - controlX);
+            double arrowX = endX;
+            double arrowY = endY;
 
             Polygon arrowHead = new Polygon();
             arrowHead.getPoints().addAll(
@@ -1927,15 +2152,15 @@ public class OperationsController {
             arrowHead.setFill(edgeColor);
 
             arrowHead.setOnMouseEntered(e -> {
-                arrowHead.setFill(hoverColor);
-                finalLoop.setStroke(hoverColor);
-                finalLoop.setStrokeWidth(3);
+                arrowHead.setFill(getLighter(edgeColor));
+                finalCurve.setStroke(getLighter(edgeColor));
+                finalCurve.setStrokeWidth(3);
             });
 
             arrowHead.setOnMouseExited(e -> {
                 arrowHead.setFill(edgeColor);
-                finalLoop.setStroke(edgeColor);
-                finalLoop.setStrokeWidth(2);
+                finalCurve.setStroke(edgeColor);
+                finalCurve.setStrokeWidth(2);
             });
 
             canvas.getChildren().add(arrowHead);
@@ -1950,22 +2175,57 @@ public class OperationsController {
             }
 
             if (!nonEmptyLabels.isEmpty()) {
-
-                double labelX = vertex.getX() - loopSize / 2 - 20;
-                double labelY = vertex.getY() - loopSize / 2 - radius - 5;
+                double labelX = anchorX - controlOffset / 2 - 20;
+                double labelY = anchorY - controlOffset / 2 - radius - 5;
 
                 List<Color> textColors = Arrays.asList(loopColors);
 
-                Line dummyEdge = new Line();
-                dummyEdge.setStroke(edgeColor);
-                allEdges.add(dummyEdge);
+                // Associate the actual curve with the labels so hovering either updates both
+                allEdges.add(curve);
 
                 drawMultiColorText(canvas, labelX, labelY, nonEmptyLabels, textColors, isSumEdge, connections,
                         allEdges);
+
+                // Ensure hovering the curve updates all its associated label parts
+                final CubicCurve fc = curve;
+                fc.setOnMouseEntered(ev -> {
+                    javafx.scene.paint.Color chosenHover = null;
+                    for (EdgeLabelConnection c : connections) {
+                        if (c.edge == fc) {
+                            if (c.normalTextColor instanceof javafx.scene.paint.Color && chosenHover == null) {
+                                chosenHover = getLighter((javafx.scene.paint.Color) c.normalTextColor);
+                            }
+                            if (c.labelPart != null) {
+                                javafx.scene.paint.Color labelHover = c.hoverTextColor != null
+                                        ? (javafx.scene.paint.Color) c.hoverTextColor
+                                        : (c.normalTextColor != null
+                                                ? getLighter((javafx.scene.paint.Color) c.normalTextColor)
+                                                : Color.LIGHTGRAY);
+                                c.labelPart.setFill(labelHover);
+                            }
+                        }
+                    }
+                    if (chosenHover == null && fc.getStroke() instanceof javafx.scene.paint.Color) {
+                        chosenHover = getLighter((javafx.scene.paint.Color) fc.getStroke());
+                    }
+                    if (chosenHover != null) {
+                        fc.setStroke(chosenHover);
+                        fc.setStrokeWidth(3);
+                    }
+                });
+
+                fc.setOnMouseExited(ev -> {
+                    fc.setStroke(isSumEdge ? Color.BLUE : edgeColor);
+                    fc.setStrokeWidth(2);
+                    for (EdgeLabelConnection c : connections) {
+                        if (c.edge == fc && c.labelPart != null && c.normalTextColor != null) {
+                            c.labelPart.setFill((javafx.scene.paint.Color) c.normalTextColor);
+                        }
+                    }
+                });
             }
         }
-
-        connections.add(new EdgeLabelConnection(null, null, loopIndex));
+            // no placeholder connection needed: drawMultiColorText will create connections for the curve
     }
 
     private void centerGraphView(ScrollPane scrollPane) {
@@ -1978,55 +2238,70 @@ public class OperationsController {
     }
 
     private void setupEdgeLabelConnections(List<EdgeLabelConnection> connections) {
+        // Group connections by edge so we can set a single pair of handlers per Shape
+        Map<javafx.scene.shape.Shape, List<EdgeLabelConnection>> map = new HashMap<>();
         for (EdgeLabelConnection connection : connections) {
-            final Line edge = connection.edge;
-            final Text labelPart = connection.labelPart;
-            final int edgeIndex = connection.edgeIndex;
-
-            if (edge != null && labelPart != null) {
-                final Color normalColor = EDGE_COLORS[edgeIndex % EDGE_COLORS.length];
-                final Color hoverColor = HOVER_COLORS[edgeIndex % HOVER_COLORS.length];
-
-                labelPart.setOnMouseEntered(e -> {
-                    labelPart.setFill(hoverColor);
-                    if (edge != null) {
-                        edge.setStroke(hoverColor);
-                        edge.setStrokeWidth(3);
-                    }
-                });
-
-                labelPart.setOnMouseExited(e -> {
-                    labelPart.setFill(normalColor);
-                    if (edge != null) {
-                        edge.setStroke(normalColor);
-                        edge.setStrokeWidth(2);
-                    }
-                });
-
-                if (edge != null) {
-                    edge.setOnMouseEntered(e -> {
-                        edge.setStroke(hoverColor);
-                        edge.setStrokeWidth(3);
-                        if (labelPart != null) {
-                            labelPart.setFill(hoverColor);
-                        }
-                    });
-
-                    edge.setOnMouseExited(e -> {
-                        edge.setStroke(normalColor);
-                        edge.setStrokeWidth(2);
-                        if (labelPart != null) {
-                            labelPart.setFill(normalColor);
-                        }
-                    });
-                }
+            if (connection.edge != null) {
+                map.computeIfAbsent(connection.edge, k -> new ArrayList<>()).add(connection);
             }
+        }
+
+        for (Map.Entry<javafx.scene.shape.Shape, List<EdgeLabelConnection>> entry : map.entrySet()) {
+            javafx.scene.shape.Shape edge = entry.getKey();
+            List<EdgeLabelConnection> conns = entry.getValue();
+
+            // capture original stroke and width to restore later
+            final javafx.scene.paint.Paint originalStroke = edge.getStroke();
+            final double originalWidth = edge.getStrokeWidth();
+
+            edge.setOnMouseEntered(e -> {
+                // determine hover color per connection; pick first available normal color
+                javafx.scene.paint.Color chosenHover = null;
+                for (EdgeLabelConnection c : conns) {
+                    if (c.normalTextColor instanceof javafx.scene.paint.Color) {
+                        chosenHover = getLighter((javafx.scene.paint.Color) c.normalTextColor);
+                        break;
+                    }
+                }
+                if (chosenHover == null) {
+                    if (originalStroke instanceof javafx.scene.paint.Color) {
+                        chosenHover = getLighter((javafx.scene.paint.Color) originalStroke);
+                    } else {
+                        chosenHover = Color.LIGHTGRAY;
+                    }
+                }
+                edge.setStroke(chosenHover);
+                edge.setStrokeWidth(3);
+                for (EdgeLabelConnection c : conns) {
+                    if (c.labelPart != null) {
+                        javafx.scene.paint.Color labelNormal = c.normalTextColor != null
+                                ? (javafx.scene.paint.Color) c.normalTextColor
+                                : null;
+                        javafx.scene.paint.Color labelHover = c.hoverTextColor != null
+                                ? (javafx.scene.paint.Color) c.hoverTextColor
+                                : (labelNormal != null ? getLighter(labelNormal) : chosenHover);
+                        c.labelPart.setFill(labelHover);
+                    }
+                }
+            });
+
+            edge.setOnMouseExited(e -> {
+                edge.setStroke(originalStroke);
+                edge.setStrokeWidth(originalWidth <= 0 ? 2 : originalWidth);
+                for (EdgeLabelConnection c : conns) {
+                    if (c.labelPart != null) {
+                        if (c.normalTextColor != null) {
+                            c.labelPart.setFill((javafx.scene.paint.Color) c.normalTextColor);
+                        }
+                    }
+                }
+            });
         }
     }
 
     private void drawMultiColorText(Pane canvas, double x, double y, List<String> labels,
             List<Color> colors, boolean isSumEdge, List<EdgeLabelConnection> connections,
-            List<Line> associatedEdges) {
+            List<javafx.scene.shape.Shape> associatedEdges) {
         if (labels.isEmpty())
             return;
 
@@ -2038,7 +2313,8 @@ public class OperationsController {
                 continue;
 
             Color textColor = isSumEdge ? Color.BLUE : colors.get(i % colors.size());
-            final Color hoverColor = HOVER_COLORS[i % HOVER_COLORS.length];
+            // Use a lighter variant of the label color for hover
+            final Color hoverColor = getLighter(textColor);
 
             Text textPart = new Text(currentX, y, label);
             textPart.setFill(textColor);
@@ -2049,7 +2325,7 @@ public class OperationsController {
                 textPart.setFill(hoverColor);
 
                 if (associatedEdges != null && edgeIndex < associatedEdges.size()) {
-                    Line correspondingEdge = associatedEdges.get(edgeIndex);
+                    javafx.scene.shape.Shape correspondingEdge = associatedEdges.get(edgeIndex);
                     if (correspondingEdge != null) {
                         correspondingEdge.setStroke(hoverColor);
                         correspondingEdge.setStrokeWidth(3);
@@ -2061,7 +2337,7 @@ public class OperationsController {
                 textPart.setFill(textColor);
 
                 if (associatedEdges != null && edgeIndex < associatedEdges.size()) {
-                    Line correspondingEdge = associatedEdges.get(edgeIndex);
+                    javafx.scene.shape.Shape correspondingEdge = associatedEdges.get(edgeIndex);
                     if (correspondingEdge != null) {
                         correspondingEdge.setStroke(isSumEdge ? Color.BLUE : colors.get(edgeIndex % colors.size()));
                         correspondingEdge.setStrokeWidth(2);
@@ -2071,10 +2347,16 @@ public class OperationsController {
 
             canvas.getChildren().add(textPart);
 
-            if (associatedEdges != null && i < associatedEdges.size()) {
-                Line edge = associatedEdges.get(i);
+            if (associatedEdges != null && !associatedEdges.isEmpty()) {
+                javafx.scene.shape.Shape edge = null;
+                if (i < associatedEdges.size()) {
+                    edge = associatedEdges.get(i);
+                } else if (associatedEdges.size() == 1) {
+                    // single associated edge (e.g., loop) -> associate same shape to all label parts
+                    edge = associatedEdges.get(0);
+                }
                 if (edge != null) {
-                    connections.add(new EdgeLabelConnection(edge, textPart, i));
+                    connections.add(new EdgeLabelConnection(edge, textPart, i, textColor, hoverColor));
                 }
             }
 
@@ -2090,9 +2372,9 @@ public class OperationsController {
         }
     }
 
-    private void drawEdge(Pane canvas, Point2D source, Point2D target, String label,
+        private void drawEdge(Pane canvas, Point2D source, Point2D target, String label,
             boolean isDirected, double radius, boolean isSumEdge, int parallelIndex, int totalEdges,
-            List<String> allLabels, List<EdgeLabelConnection> connections, List<Line> allEdges) {
+            List<String> allLabels, List<EdgeLabelConnection> connections, List<javafx.scene.shape.Shape> allEdges) {
 
         double arrowLength = 15;
         double arrowWidth = 8;
@@ -2103,25 +2385,31 @@ public class OperationsController {
         double unitX = dx / distance;
         double unitY = dy / distance;
 
-        double adjustedTargetX = target.getX() - unitX * (radius + 2);
-        double adjustedTargetY = target.getY() - unitY * (radius + 2);
-        double adjustedSourceX = source.getX() + unitX * (radius + 2);
-        double adjustedSourceY = source.getY() + unitY * (radius + 2);
-
         double offset = 0;
         if (totalEdges > 1) {
-            double maxOffset = 30.0;
+            // Limit maxOffset so the perpendicular offset never exceeds the vertex radius
+            double maxOffset = Math.min(12.0, Math.max(0, radius - 2));
             offset = (parallelIndex - (totalEdges - 1) / 2.0) * (maxOffset / Math.max(1, totalEdges - 1));
         }
 
         double offsetX = -unitY * offset;
         double offsetY = unitX * offset;
 
-        Color edgeColor = parallelIndex < EDGE_COLORS.length ? EDGE_COLORS[parallelIndex] : Color.BLACK;
-        final Color hoverColor = HOVER_COLORS[parallelIndex % HOVER_COLORS.length];
+        // Center the edge between the two vertices instead of reaching to their extremes.
+        double fullDist = distance;
+        double innerGap = Math.min(fullDist * 0.25, radius); // leave 25% gap at each side, up to radius
 
-        Line line = new Line(adjustedSourceX + offsetX, adjustedSourceY + offsetY,
-                adjustedTargetX + offsetX, adjustedTargetY + offsetY);
+        double adjustedSourceX = source.getX() + offsetX + unitX * innerGap;
+        double adjustedSourceY = source.getY() + offsetY + unitY * innerGap;
+
+        double adjustedTargetX = target.getX() + offsetX - unitX * innerGap;
+        double adjustedTargetY = target.getY() + offsetY - unitY * innerGap;
+
+        Color edgeColor = parallelIndex < EDGE_COLORS.length ? EDGE_COLORS[parallelIndex] : Color.BLACK;
+        final Color hoverColor = getLighter(edgeColor);
+
+        Line line = new Line(adjustedSourceX, adjustedSourceY,
+            adjustedTargetX, adjustedTargetY);
 
         if (isSumEdge) {
             line.getStrokeDashArray().addAll(5d, 5d);
@@ -2132,15 +2420,7 @@ public class OperationsController {
 
         line.setStrokeWidth(2);
 
-        line.setOnMouseEntered(e -> {
-            line.setStroke(hoverColor);
-            line.setStrokeWidth(3);
-        });
-
-        line.setOnMouseExited(e -> {
-            line.setStroke(isSumEdge ? Color.BLUE : edgeColor);
-            line.setStrokeWidth(2);
-        });
+        // Hover behavior for line is handled centrally in setupEdgeLabelConnections (grouped per Shape)
 
         canvas.getChildren().add(line);
 
@@ -2148,11 +2428,47 @@ public class OperationsController {
             allEdges.add(line);
         }
 
+        // Ensure hovering the line updates all its associated label parts
+        line.setOnMouseEntered(e -> {
+            javafx.scene.paint.Color chosenHover = null;
+            for (EdgeLabelConnection c : connections) {
+                if (c.edge == line) {
+                    if (c.normalTextColor instanceof javafx.scene.paint.Color && chosenHover == null) {
+                        chosenHover = getLighter((javafx.scene.paint.Color) c.normalTextColor);
+                    }
+                    if (c.labelPart != null) {
+                        javafx.scene.paint.Color labelHover = c.hoverTextColor != null
+                                ? (javafx.scene.paint.Color) c.hoverTextColor
+                                : (c.normalTextColor != null ? getLighter((javafx.scene.paint.Color) c.normalTextColor)
+                                        : Color.LIGHTGRAY);
+                        c.labelPart.setFill(labelHover);
+                    }
+                }
+            }
+            if (chosenHover == null && line.getStroke() instanceof javafx.scene.paint.Color) {
+                chosenHover = getLighter((javafx.scene.paint.Color) line.getStroke());
+            }
+            if (chosenHover != null) {
+                line.setStroke(chosenHover);
+                line.setStrokeWidth(3);
+            }
+        });
+
+        line.setOnMouseExited(e -> {
+            line.setStroke(isSumEdge ? Color.BLUE : edgeColor);
+            line.setStrokeWidth(2);
+            for (EdgeLabelConnection c : connections) {
+                if (c.edge == line && c.labelPart != null && c.normalTextColor != null) {
+                    c.labelPart.setFill((javafx.scene.paint.Color) c.normalTextColor);
+                }
+            }
+        });
+
         if (isDirected && !isSumEdge) {
             double angle = Math.atan2(adjustedTargetY - adjustedSourceY, adjustedTargetX - adjustedSourceX);
 
-            double arrowX = adjustedTargetX + offsetX - arrowLength * Math.cos(angle);
-            double arrowY = adjustedTargetY + offsetY - arrowLength * Math.sin(angle);
+            double arrowX = adjustedTargetX - arrowLength * Math.cos(angle);
+            double arrowY = adjustedTargetY - arrowLength * Math.sin(angle);
 
             double x2 = arrowX + arrowWidth * Math.cos(angle + Math.PI / 2);
             double y2 = arrowY + arrowWidth * Math.sin(angle + Math.PI / 2);
@@ -2192,8 +2508,8 @@ public class OperationsController {
 
             if (!nonEmptyLabels.isEmpty()) {
 
-                double midX = (adjustedSourceX + adjustedTargetX) / 2 + offsetX;
-                double midY = (adjustedSourceY + adjustedTargetY) / 2 + offsetY;
+                double midX = (adjustedSourceX + adjustedTargetX) / 2;
+                double midY = (adjustedSourceY + adjustedTargetY) / 2;
 
                 double textOffsetX = -unitY * (25 + Math.abs(offset));
                 double textOffsetY = unitX * (25 + Math.abs(offset));
@@ -2205,7 +2521,7 @@ public class OperationsController {
             }
         }
 
-        connections.add(new EdgeLabelConnection(line, null, parallelIndex));
+        connections.add(new EdgeLabelConnection(line, null, parallelIndex, null, null));
     }
 
     private void drawVertex(Pane canvas, double x, double y, double radius, String label) {
