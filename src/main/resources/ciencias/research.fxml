@@ -200,13 +200,10 @@
                                        <content>
                                           <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
                                              <children>
-                                                <MenuButton fx:id="menuButtonMulti" layoutX="22.0" layoutY="22.0" mnemonicParsing="false" onAction="#multiAction" prefHeight="44.0" prefWidth="300.0" text="Elegir">
+                                                <MenuButton fx:id="menuButtonMulti" layoutX="22.0" layoutY="22.0" mnemonicParsing="false" prefHeight="44.0" prefWidth="300.0" text="Elegir">
                                                    <items>
-                                                      <MenuItem mnemonicParsing="false" text="Primaria" />
-                                                      <MenuItem mnemonicParsing="false" text="Secundaria" />
-                                                      <MenuItem mnemonicParsing="false" text="Agrupamiento" />
-                                                      <MenuItem mnemonicParsing="false" text="Denso" />
-                                                      <MenuItem mnemonicParsing="false" text="No denso" />
+                                                      <MenuItem mnemonicParsing="false" onAction="#multiAction" text="Primaria" />
+                                                      <MenuItem mnemonicParsing="false" onAction="#multiAction" text="Secundaria" />
                                                    </items>
                                                    <font>
                                                       <Font size="20.0" />

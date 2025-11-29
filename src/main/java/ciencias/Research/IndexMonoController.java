@@ -234,14 +234,14 @@ public class IndexMonoController {
             contenido = String.format("%d | %d → Registro %d", numeroRegistro, numeroRegistro, numeroRegistro);
         }
         Label label = new Label(contenido);
-        label.setFont(Font.font("Monospace", 7));
+        label.setFont(Font.font("Monospace", 9));
         label.setStyle("-fx-padding: 1;");
         return label;
     }
 
     private Label crearFilaIndiceVacio(int numeroRegistro) {
         Label l = new Label(numeroRegistro + " | ... | [vacío]");
-        l.setFont(Font.font("Monospace", 7));
+        l.setFont(Font.font("Monospace", 9));
         l.setStyle("-fx-font-style: italic; -fx-text-fill: #000000; -fx-padding: 1;");
         return l;
     }
@@ -249,21 +249,21 @@ public class IndexMonoController {
     private Label crearFilaDatos(int numeroRegistro, int numeroBloque) {
         Label label = new Label(String.format("%d | %d | D%d | D%d | ... | Di%d | %d",
                 numeroRegistro, numeroRegistro, numeroRegistro, numeroRegistro + 1000, numeroRegistro, numeroBloque));
-        label.setFont(Font.font("Monospace", 7));
+        label.setFont(Font.font("Monospace", 9));
         label.setStyle("-fx-padding: 1;");
         return label;
     }
 
     private Label crearFilaDatoVacio(int numeroRegistro, int numeroBloque) {
         Label l = new Label(numeroRegistro + " | ... | [vacío] | " + numeroBloque);
-        l.setFont(Font.font("Monospace", 7));
+        l.setFont(Font.font("Monospace", 9));
         l.setStyle("-fx-font-style: italic; -fx-text-fill: #000000; -fx-padding: 1;");
         return l;
     }
 
     private Label crearEncabezado() {
         Label label = new Label("# Regi | PK | D1 | D2 | ... | Di | # Blq");
-        label.setFont(Font.font("Monospace", 7));
+        label.setFont(Font.font("Monospace", 9));
         label.setStyle("-fx-font-weight: bold; -fx-padding: 1;");
         return label;
     }

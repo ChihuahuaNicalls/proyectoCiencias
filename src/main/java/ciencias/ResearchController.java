@@ -384,10 +384,32 @@ private void monoAction(javafx.event.ActionEvent event){
     }
 }
 
-    @FXML
-    private void multiAction(javafx.event.ActionEvent event){
-        //Llenar cuando fxml de multi este listo
+   @FXML
+private void multiAction(javafx.event.ActionEvent event){
+    MenuItem source = (MenuItem) event.getSource();
+    String option = source.getText();
+    menuButtonMulti.setText(option);
+    try {
+        FXMLLoader loader = new FXMLLoader(getClass().getResource("multi.fxml"));
+        Parent vista = loader.load();
+
+        // ✅ OBTENER el controlador del FXML (no crear uno nuevo)
+        IndexMultiController indexMultiController = loader.getController();
+        
+        // ✅ Establecer si es PRIMARIO o SECUNDARIO según la opción seleccionada
+        boolean esPrimario = "Primaria".equals(option);
+        indexMultiController.setTipoIndice(esPrimario);
+        
+        // ✅ Pasar la referencia de ResearchController
+        indexMultiController.setResearchController(this);
+        
+        paneIndexMulti.getChildren().setAll(vista);
+    } catch (IOException e) {
+        System.err.println("Error cargando multi.fxml: " + e.getMessage());
+        e.printStackTrace();
     }
+}
+
 
     public void reloadTabContent(Tab tab) {
         if (tabPaneMapInternal.containsKey(tab) && fxmlMapInternal.containsKey(tab)) {
