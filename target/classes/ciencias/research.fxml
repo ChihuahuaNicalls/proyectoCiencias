@@ -13,11 +13,11 @@
 <?import javafx.scene.text.Text?>
 <?import javafx.scene.text.TextFlow?>
 
-<BorderPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="620.0" prefWidth="1080.0" stylesheets="@estilos.css" xmlns="http://javafx.com/javafx/22.0.2" xmlns:fx="http://javafx.com/fxml/1" fx:controller="ciencias.ResearchController">
+<BorderPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="620.0" prefWidth="1080.0" stylesheets="@estilos.css" xmlns="http://javafx.com/javafx/24.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="ciencias.ResearchController">
    <bottom>
       <ButtonBar prefHeight="53.0" prefWidth="1080.0" BorderPane.alignment="CENTER">
          <buttons>
-            <Button minWidth="58.0" mnemonicParsing="false" onAction="#menu" prefHeight="37.0" prefWidth="75.0" text="Volver" translateX="-10.0">
+            <Button minWidth="58.0" mnemonicParsing="false" onAction="#menu" prefHeight="43.0" prefWidth="165.0" text="Volver al menu" translateX="-10.0">
                <font>
                   <Font size="18.0" />
                </font>

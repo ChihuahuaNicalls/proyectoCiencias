@@ -1,0 +1,153 @@
+Manual Técnico — Sección: Búsquedas Internas
+
+Índice parcial — Búsquedas Internas
+- Secuencial
+- Binaria
+- Funciones Hash
+- Búsquedas por árboles
+
+1. Introducción
+Las búsquedas internas se realizan cuando los datos residen en memoria principal (RAM). En este proyecto, la interfaz y ejemplos relacionados están disponibles en los archivos FXML dentro de `src/main/resources/ciencias/` (por ejemplo: `secuencial.fxml`, `binaria.fxml`, `hash.fxml`, `trees.fxml`). Los controladores Java que manejan la lógica de interacción con la UI suelen encontrarse en `src/main/java/ciencias/` o sus subpaquetes.
+2. Búsquedas internas — Estructura y controladores
+Esta sección describe primero qué hace cada controlador de la parte de "Búsquedas internas" y luego ofrece, por cada subtema, la explicación técnica indicada.
+
+2.1 Estructura general
+- FXML relevantes: `src/main/resources/ciencias/secuencial.fxml`, `binaria.fxml`, `hash.fxml`, `trees.fxml`.
+- Controladores principales (implementación del comportamiento):
+  - `src/main/java/ciencias/Research/SecuencialController.java` — controlador de búsqueda secuencial.
+  - `src/main/java/ciencias/Research/BinariaController.java` — controlador de búsqueda binaria.
+  - `src/main/java/ciencias/Research/HashController.java` — controlador de funciones hash.
+  - `src/main/java/ciencias/Research/TreesController.java` — controlador de búsquedas por árboles.
+
+2.2 Secuencial — `SecuencialController`
+Descripción general del controlador:
+El controlador `SecuencialController` gestiona la interacción con la vista de búsqueda secuencial y la estructura simulada en memoria. Su responsabilidad principal es permitir al usuario crear un arreglo de prueba (tamaños predefinidos desde el menú), insertar claves, buscar y eliminar elementos, así como persistir el estado del arreglo y soportar operaciones de deshacer/rehacer. La vista asociada es `src/main/resources/ciencias/secuencial.fxml` y el controlador se encuentra en `src/main/java/ciencias/Research/SecuencialController.java`.
+
+Métodos importantes y qué hacen:
+- `initialize()` — configura validaciones de entrada, fábrica de celdas para la `ListView`, y estado inicial de botones.
+- `initData()` — inicializa textos y etiquetas de la UI (títulos y descripciones funcionales).
+- `crearArray()` — crea y reserva el arreglo simulado según el rango seleccionado en la UI, inicializa colores y tamaños.
+- `addToArray()` — inserta una nueva clave en la siguiente posición disponible y actualiza la vista.
+- `findItem(String claveStr, boolean eliminar)` — lógica interna que recorre el arreglo secuencialmente para localizar una clave; acepta bandera para eliminar si se solicita.
+- `animateSearch(List<Integer> recorrido, boolean found, int foundPos, boolean eliminar)` — gestiona la animación/visualización del recorrido de búsqueda y la marca del resultado.
+- `searchItem()` — manejador del botón de búsqueda que valida entrada y llama a `findItem`.
+- `eliminateItem()` — manejador para eliminar una clave encontrada y actualizar estructuras y stacks de estado.
+- `saveState(int lastModifiedPosition)` — serializa o guarda un snapshot en la pila de undo antes de cambios relevantes.
+- `undoAction()` / `redoAction()` — restauran estados previos o posteriores usando las pilas `undoStack` y `redoStack`.
+- `reiniciar()` — reinicia la estructura a su estado sin elementos y limpia animaciones/colores.
+- `actualizarVistaArray()` — refresca el `ListView` y textos de estado para reflejar el contenido actual del arreglo.
+- `saveArray()` / `loadArray()` — persistencia a disco de la estructura completa (serialización y deserialización).
+Funcionamiento principal:
+- Maneja la creación del array simulado (botón "Crear"), con tamaños predefinidos (10, 100, 1000, 10000) desde el `MenuButton` `rangeSec`.
+- Permite insertar claves (`addToArray`), buscar (`searchItem`) y eliminar (`eliminateItem`) mediante entrada en `TextField` y botones asociados.
+- Implementa undo/redo mediante pilas `undoStack` y `redoStack` que guardan snapshots (clase interna `ActionState`).
+- Soporta persistencia local (guardar/cargar) usando serialización a archivo (`saveArray` / `loadArray`).
+- Visualización: actualiza un `ListView` (`miViewList`) y colores de celdas (array) mediante `cellColors`, además de animaciones/scroll para resaltar búsquedas.
+
+Notas técnicas y referencias:
+- Métodos clave: `crearArray()`, `addToArray()`, `findItem()`, `animateSearch()`, `reiniciar()`, `saveArray()`, `loadArray()`.
+- Consideraciones de usabilidad: validar entrada numérica, deshabilitar botones hasta crear el array, manejo de strings numéricos con longitud máxima (`numberDigits`).
+
+2.3 Binaria — `BinariaController`
+Descripción general del controlador:
+El controlador `BinariaController` administra la vista y la lógica para operaciones sobre un arreglo ordenado, asegurando que las inserciones mantengan el orden y permitiendo búsquedas binarias visuales. Además ofrece eliminación, undo/redo y opciones de guardar/cargar el arreglo. La vista asociada es `src/main/resources/ciencias/binaria.fxml` y el controlador está en `src/main/java/ciencias/Research/BinariaController.java`.
+
+Métodos importantes y qué hacen:
+- `initialize()` — configura la UI (formatos, spinners, deshabilita botones hasta crear el arreglo) y crea la fábrica de celdas para la lista.
+- `initData()` — establece títulos y etiquetas informativas (p. ej. complejidad mostrada en la UI).
+- `crearArray()` — crea el arreglo con el tamaño elegido y prepara arrays auxiliares como `cellColors`.
+- `addToArray()` — inserta una clave en la posición correcta para mantener el orden (usa `encontrarPosicionInsercion`).
+- `encontrarPosicionInsercion(String clave)` — calcula la posición donde debe insertarse una clave para mantener el orden del arreglo.
+- `busquedaBinaria(String clave, int low, int high)` — algoritmo central de búsqueda binaria que retorna índice o -1 y puede usarse para construir el recorrido para visualización.
+- `findItem(String claveStr, boolean eliminar)` — coordina la búsqueda (invoca `busquedaBinaria`) y posteriormente elimina si la bandera `eliminar` está activa.
+- `animateSearch(List<Integer> recorrido, boolean found, int foundPos, boolean eliminar)` — anima el recorrido de la búsqueda mostrando índices inspeccionados y destaca el resultado.
+- `searchItem()` — manejador del botón Buscar que lanza la búsqueda interactiva.
+- `eliminateItem()` — elimina el elemento encontrado y actualiza los snapshots de estado.
+- `saveState(int lastModifiedPosition)` — guarda snapshot para undo/redo antes de modificaciones.
+- `undoAction()` / `redoAction()` — restauran estados previos o posteriores mediante las pilas de acciones.
+- `reiniciar()` — restablece el arreglo a estado inicial.
+- `actualizarVistaArray()` — actualiza la `ListView` y textos que muestran elementos y longitud.
+- `saveArray()` / `loadArray()` — persistencia del arreglo en disco usando serialización de objetos.
+Funcionamiento principal:
+- Crea un array simulado con tamaños seleccionables (`rangeBin`) y controla el número de dígitos permitidos.
+- Inserta claves de forma ordenada (método `encontrarPosicionInsercion`) para mantener la precondición de orden necesario para la búsqueda binaria.
+- Implementa la búsqueda binaria (`busquedaBinaria`) devolviendo posición y generando la lista de nodos recorridos para animación (`animateSearch`).
+- Implementa undo/redo con snapshots (`ActionState`) y persistencia mediante guardar/cargar objetos.
+
+Notas técnicas y referencias:
+- Métodos clave: `crearArray()`, `addToArray()`, `encontrarPosicionInsercion()`, `busquedaBinaria()`, `findItem()`, `animateSearch()`, `saveArray()`, `loadArray()`.
+- Comportamiento educativo: la búsqueda se muestra paso a paso (recorrido de índices), y el controlador gestiona colores y scroll para resaltar el proceso.
+
+2.4 Funciones Hash — `HashController`
+Descripción general del controlador:
+El controlador `HashController` provee la interfaz y la lógica para experimentar con tablas hash y diferentes políticas de colisión. Permite configurar tamaño, método de colisión, truncamiento de dígitos, inserción y búsqueda en distintas configuraciones (encadenamiento, direccionamiento abierto, estructuras anidadas). La vista asociada es `src/main/resources/ciencias/hash.fxml` y el controlador se ubica en `src/main/java/ciencias/Research/HashController.java`.
+
+Métodos importantes y qué hacen:
+- `initialize()` — inicializa componentes UI, listas auxiliares, y estado de botones; prepara animaciones y estructuras vacías.
+- `initData()` — ajusta títulos y textos explicativos de la UI.
+- `crearArray()` — crea la tabla hash (arreglo `table`) con el tamaño seleccionado y prepara estructuras auxiliares (`auxiliaryStructures`, `chainedStructures`).
+- `doInsert(String claveStr)` — función de alto nivel que gestiona la inserción aplicando la función hash y la política de colisión actualmente seleccionada.
+- `doInsertChained(String claveStr, int claveInt, boolean hayColision)` — inserción para la estrategia de encadenamiento: agrega la clave a la lista del bucket correspondiente.
+- `doInsertStandard(String claveStr, int claveInt)` — inserción para direccionamiento abierto u otra estrategia estándar.
+- `doInsertNested(String claveStr, int claveInt, int structureLevel)` — inserción en estructuras auxiliares anidadas (multinivel) cuando aplica.
+- `aplicarFuncionHash(int clave)` — calcula el índice base a partir de la clave según la función hash implementada.
+- `siguientePosicion(int posActual, int step, int claveInt)` — calcula la siguiente posición a inspeccionar en sondeos (linear/quadratic/doble hashing).
+- `defineCollitions()` — abre o configura parámetros adicionales para la política de colisión seleccionada.
+- `findItem(String claveStr, boolean eliminar)` — coordina la búsqueda según la estrategia activa; delega en `searchStandard`, `searchInChainedStructures` o `searchInNestedStructures`.
+- `searchStandard(...)`, `searchInChainedStructures(...)`, `searchInNestedStructures(...)` — implementaciones específicas para cada estrategia de búsqueda en la tabla.
+- `animateInsertion(List<Integer> recorrido, int finalPosition, int structureLevel)` / `animateSearch(...)` — animaciones para mostrar pasos de inserción y búsqueda.
+- `limpiarEstructurasVacias()` — normaliza/limpia estructuras auxiliares después de operaciones.
+- Operaciones de undo/redo y persistencia: `saveState(...)`, `undoAction()`, `redoAction()`, `saveArray()`, `loadArray()` — manejo de snapshots y serialización.
+Funcionamiento principal:
+- Gestiona la creación de la tabla hash (tamaños desde el `MenuButton` `rangeHash`) y el número de dígitos para claves.
+- Permite elegir y configurar la estrategia de colisión (`collisionHash`, `collisionCustomButton`) y truncamiento (`truncElegir`, `truncButton`).
+- Inserta claves aplicando la función hash (`aplicarFuncionHash`) y la política de colisión seleccionada; soporta variantes: encadenamiento, direccionamiento abierto y estructuras auxiliares anidadas.
+- Implementa animaciones para inserción/búsqueda (`animateInsertion`, `animateSearch`), manejo de estructuras auxiliares (`auxiliaryStructures`, `chainedStructures`) y operaciones de limpieza/normalización.
+- Soporta undo/redo y persistencia (serialización), y mantiene una lista `insertedKeys` para control y visualización.
+
+Notas técnicas y referencias:
+- Métodos clave: `crearArray()`, `doInsert()`, `aplicarFuncionHash()`, `siguientePosicion()`, `searchStandard()`, `searchInChainedStructures()`, `searchInNestedStructures()`, `animateSearch()`, `defineCollitions()`.
+- Estructuras auxiliares: `table`, `auxiliaryStructures`, `chainedStructures`, `cellColors`.
+- Atención a la documentación: identificar si la implementación usa encadenamiento o direccionamiento abierto y documentar las implicaciones en el rendimiento.
+
+2.5 Búsquedas por árboles — `TreesController`
+Descripción general del controlador:
+El controlador `TreesController` centraliza la lógica para la creación, modificación y visualización de distintos tipos de árboles: digitales, por residuos, multinivel y árboles de Huffman. Ofrece operaciones de inserción, búsqueda, eliminación, reconstrucción y serialización de los árboles, además de una representación gráfica que permite zoom, desplazamiento y animaciones para destacar recorridos y nodos. La vista asociada es `src/main/resources/ciencias/trees.fxml` y el código se encuentra en `src/main/java/ciencias/Research/TreesController.java`.
+
+Métodos importantes y qué hacen:
+- `initialize()` — configura la UI, restricciones de campos y prepara estructuras iniciales según el tipo de árbol.
+- `initData()` — establece títulos, descripciones y tipo de árbol activo.
+- `insertTree()` — manejador para insertar un nuevo elemento en el árbol activo; delega según el tipo de árbol (digital, residue, multipleResidue, huffman).
+- `searchTree()` — busca una clave en el árbol activo y prepara la animación/visualización del recorrido.
+- `deleteTree()` — elimina una clave del árbol y actualiza la representación y el estado.
+- `insertDigitalSimple()` / `insertResidueSimple()` / `insertMultipleResidueSimple()` — implementaciones específicas de inserción para cada tipo de árbol.
+- `insertResidueDigital(ResidueNode node, Character letter, String binary, int bitIndex)` — método auxiliar para las inserciones en árboles de residuos que recorre bits o niveles.
+- `buildMultipleResidueLinkStructure(MultipleResidueNode node, int currentDepth, int maxDepth)` — construye/enlaza nodos en la variante multinivel para facilitar inserciones y búsquedas.
+- `rebuildDigitalTree()` / `rebuildResidueTree()` / `rebuildMultipleResidueTree()` — reconstruyen la estructura desde la lista de elementos para mantener invariantes o tras cambios masivos.
+- `calculateFrequencies()` y métodos relacionados con Huffman — calculan frecuencias y generan códigos en el caso de árbol de Huffman.
+- `undoAction()` / `redoAction()` — manejan la restauración de estados del árbol usando `TreeState`.
+- `saveTree()` / `loadTree()` — persistencia del árbol completo en disco.
+- Métodos de visualización y utilidades: funciones que dibujan `Circle`, `Line`, `Text`, manejan `FillTransition`, `SequentialTransition`, y controlan el zoom/scroll de `treePane`.
+
+3. Integración y recomendaciones
+ - El `ResearchController` (`src/main/java/ciencias/ResearchController.java`) actúa como orquestador: carga los FXML en tabs, mantiene mappings entre `Tab` y `Pane`, y dispara la carga de contenido bajo demanda.
+ - Recomendación: ampliar cada subsección con fragmentos de código relevantes (ej. extractos de `busquedaBinaria`, `aplicarFuncionHash`, o `insertTree`) para facilitar comprensión técnica.
+ - Próximo paso: completar la sección "Búsquedas Externas" e "Índices" siguiendo la misma plantilla (descripción general del controlador, funcionamiento, métodos clave, referencias a ficheros FXML/Java y recomendaciones).
+Funcionamiento principal:
+- Soporta múltiples implementaciones/variantes de árbol en la misma UI: `DigitalNode`, `ResidueNode`, `MultipleResidueNode`, `HuffmanNode`.
+- Proporciona inserción (`insertTree()`), búsqueda (`searchTree()`), eliminación (`deleteTree()`), y reconstrucción de árboles (`rebuildDigitalTree()`, `rebuildResidueTree()`, `rebuildMultipleResidueTree()`).
+- Maneja la representación gráfica del árbol en `treePane`/`principalPane`, con zoom/scroll (`currentScale`, `treePane`) y animaciones para destacar nodos y recorridos.
+- Implementa undo/redo mediante snapshots (`TreeState`) y persistencia mediante guardado/carga de estructuras.
+
+Notas técnicas y referencias:
+- Métodos y clases internas clave: `insertDigitalSimple()`, `insertResidueSimple()`, `insertMultipleResidueSimple()`, `buildMultipleResidueLinkStructure()`, `calculateFrequencies()` (Huffman), y las clases internas `DigitalNode`, `ResidueNode`, `MultipleResidueNode`, `HuffmanNode`.
+- Visualización: usa `Pane`/`ScrollPane` para dibujar `Circle`, `Line`, `Text` y transiciones (`FillTransition`, `SequentialTransition`).
+
+3. Integración y recomendaciones
+- El `ResearchController` (`src/main/java/ciencias/ResearchController.java`) actúa como orquestador: carga los FXML en tabs, mantiene mappings entre `Tab` y `Pane`, y dispara la carga de contenido bajo demanda.
+- Recomendación: ampliar cada subsección con fragmentos de código relevantes (ej. extractos de `busquedaBinaria`, `aplicarFuncionHash`, o `insertTree`) para facilitar comprensión técnica.
+- Próximo paso: completar la sección "Búsquedas Externas" e "Índices" siguiendo la misma plantilla (descripción general del controlador, funcionamiento, métodos clave, referencias a ficheros FXML/Java y recomendaciones).
+
+---
+Archivo actualizado: `c:\Users\chseb\OneDrive\Escritorio\Sebastian\Proyectos\proyectoCiencias2\proyectoCiencias\src\main\resources\docs\manual_tecnico_busquedas_internas.txt`
+Si quieres, continúo ahora con la sección de "Búsquedas Externas" y genero `manual_tecnico_busquedas_externas.txt` con la misma estructura.
