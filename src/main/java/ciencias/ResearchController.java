@@ -2,11 +2,15 @@ package ciencias;
 
 import java.io.IOException;
 import java.util.Arrays;
-import java.util.List;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
-import ciencias.Research.*;
+import ciencias.Research.HashController;
+import ciencias.Research.HashControllerExternal;
+import ciencias.Research.IndexMonoController;
+import ciencias.Research.IndexMultiController;
+import ciencias.Research.TreesController;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
@@ -68,7 +72,6 @@ public class ResearchController {
     @FXML
     private Tab tabDinamicas;
 
-
     @FXML
     private TabPane tabPaneInternal;
     @FXML
@@ -76,6 +79,14 @@ public class ResearchController {
 
     @FXML
     private Text textHashMenu;
+    @FXML
+    private Text textHashExternalMenu;
+    @FXML
+    private Text textTreeMenu;
+    @FXML
+    private Text textMonoMenu;
+    @FXML
+    private Text textMultiMenu;
 
     private List<MenuButton> menuButtons;
     private List<Pane> panes;
@@ -110,7 +121,7 @@ public class ResearchController {
 
         fxmlMapExternal = new HashMap<>();
         fxmlMapExternal.put(tabSecuencialExt, "secuencialExt.fxml");
-        fxmlMapExternal.put(tabBinariaExt, "secuencialExt.fxml");
+        fxmlMapExternal.put(tabBinariaExt, "binariaExt.fxml");
         fxmlMapExternal.put(tabDinamicas, "dinamicas.fxml");
     }
 
@@ -232,6 +243,18 @@ public class ResearchController {
         if (textHashMenu != null) {
             textHashMenu.setText(null);
         }
+        if (textHashExternalMenu != null) {
+            textHashExternalMenu.setText(null);
+        }
+        if (textTreeMenu != null) {
+            textTreeMenu.setText(null);
+        }
+        if (textMonoMenu != null) {
+            textMonoMenu.setText(null);
+        }
+        if (textMultiMenu != null) {
+            textMultiMenu.setText(null);
+        }
     }
 
     @FXML
@@ -253,6 +276,18 @@ public class ResearchController {
         }
         if (textHashMenu != null) {
             textHashMenu.setText(null);
+        }
+        if (textHashExternalMenu != null) {
+            textHashExternalMenu.setText(null);
+        }
+        if (textTreeMenu != null) {
+            textTreeMenu.setText(null);
+        }
+        if (textMonoMenu != null) {
+            textMonoMenu.setText(null);
+        }
+        if (textMultiMenu != null) {
+            textMultiMenu.setText(null);
         }
     }
 
@@ -282,6 +317,10 @@ public class ResearchController {
         MenuItem source = (MenuItem) event.getSource();
         String option = source.getText();
         menuButtonHash.setText(option);
+
+        if (textHashMenu != null) {
+            textHashMenu.setText(getHashDescription(option));
+        }
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("hash.fxml"));
             Parent vista = loader.load();
@@ -302,6 +341,9 @@ public class ResearchController {
         MenuItem source = (MenuItem) event.getSource();
         String option = source.getText();
         menuButtonClaves.setText(option);
+        if (textHashExternalMenu != null) {
+            textHashExternalMenu.setText(getHashExternalDescription(option));
+        }
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("hashExt.fxml"));
             Parent vista = loader.load();
@@ -329,6 +371,9 @@ public class ResearchController {
         MenuItem source = (MenuItem) event.getSource();
         String option = source.getText();
         menuButtonTrees.setText(option);
+        if (textTreeMenu != null) {
+            textTreeMenu.setText(getTreesDescription(option));
+        }
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("trees.fxml"));
             Parent vista = loader.load();
@@ -358,58 +403,121 @@ public class ResearchController {
         return menuButtonTrees.getText();
     }
 
-   @FXML
-private void monoAction(javafx.event.ActionEvent event){
-    MenuItem source = (MenuItem) event.getSource();
-    String option = source.getText();
-    menuButtonMono.setText(option);
-    try {
-        FXMLLoader loader = new FXMLLoader(getClass().getResource("mono.fxml"));
-        Parent vista = loader.load();
+    @FXML
+    private void monoAction(javafx.event.ActionEvent event) {
+        MenuItem source = (MenuItem) event.getSource();
+        String option = source.getText();
+        menuButtonMono.setText(option);
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("mono.fxml"));
+            Parent vista = loader.load();
 
-        // ✅ OBTENER el controlador del FXML (no crear uno nuevo)
-        IndexMonoController indexMonoController = loader.getController();
-        
-        // ✅ Establecer si es PRIMARIO o SECUNDARIO según la opción seleccionada
-        boolean esPrimario = "Primaria".equals(option);
-        indexMonoController.setTipoIndice(esPrimario);
-        
-        // ✅ Pasar la referencia de ResearchController
-        indexMonoController.setResearchController(this);
-        
-        paneIndexMono.getChildren().setAll(vista);
-    } catch (IOException e) {
-        System.err.println("Error cargando mono.fxml: " + e.getMessage());
-        e.printStackTrace();
+            IndexMonoController indexMonoController = loader.getController();
+
+            boolean esPrimario = "Primaria".equals(option);
+            indexMonoController.setTipoIndice(esPrimario);
+
+            indexMonoController.setResearchController(this);
+
+            paneIndexMono.getChildren().setAll(vista);
+            if (textMonoMenu != null) {
+                textMonoMenu.setText(getIndexDescription(option, true));
+            }
+        } catch (IOException e) {
+            System.err.println("Error cargando mono.fxml: " + e.getMessage());
+            e.printStackTrace();
+        }
     }
-}
 
-   @FXML
-private void multiAction(javafx.event.ActionEvent event){
-    MenuItem source = (MenuItem) event.getSource();
-    String option = source.getText();
-    menuButtonMulti.setText(option);
-    try {
-        FXMLLoader loader = new FXMLLoader(getClass().getResource("multi.fxml"));
-        Parent vista = loader.load();
+    @FXML
+    private void multiAction(javafx.event.ActionEvent event) {
+        MenuItem source = (MenuItem) event.getSource();
+        String option = source.getText();
+        menuButtonMulti.setText(option);
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("multi.fxml"));
+            Parent vista = loader.load();
 
-        // ✅ OBTENER el controlador del FXML (no crear uno nuevo)
-        IndexMultiController indexMultiController = loader.getController();
-        
-        // ✅ Establecer si es PRIMARIO o SECUNDARIO según la opción seleccionada
-        boolean esPrimario = "Primaria".equals(option);
-        indexMultiController.setTipoIndice(esPrimario);
-        
-        // ✅ Pasar la referencia de ResearchController
-        indexMultiController.setResearchController(this);
-        
-        paneIndexMulti.getChildren().setAll(vista);
-    } catch (IOException e) {
-        System.err.println("Error cargando multi.fxml: " + e.getMessage());
-        e.printStackTrace();
+            IndexMultiController indexMultiController = loader.getController();
+
+            boolean esPrimario = "Primaria".equals(option);
+            indexMultiController.setTipoIndice(esPrimario);
+
+            indexMultiController.setResearchController(this);
+
+            paneIndexMulti.getChildren().setAll(vista);
+            if (textMultiMenu != null) {
+                textMultiMenu.setText(getIndexDescription(option, false));
+            }
+        } catch (IOException e) {
+            System.err.println("Error cargando multi.fxml: " + e.getMessage());
+            e.printStackTrace();
+        }
     }
-}
 
+    private String getHashDescription(String option) {
+        if (option == null || "Elegir".equals(option))
+            return null;
+        switch (option) {
+            case "Modulo":
+                return "La funcion mas comun, donde se divide la clave entre el tamaño de la estructura y se toma el resto como indice. Es rapido y uniforme si el tamaño de la estructura es un numero primo, evitando agrupamientos.";
+            case "Cuadrada":
+                return "Se eleva la clave al cuadrado y se extraen digitos centrales del resultado para formar el indice. Mitiga colisiones al dispersar claves similares, pero es mas costosa computacionalmente.";
+            case "Truncamiento":
+                return "Ignora parte de la clave y usa los digitos restantes directamente como indice. Simple pero propenso a colisiones si la parte eliminada contiene variabilidad importante.";
+            case "Plegamiento":
+                return "Divide la clave en segmentos que se suman o combinan para producir el indice. Efectivo para claves largas, distribuyendo valores de forma uniforme al mezclar todos los digitos.";
+            default:
+                return option;
+        }
+    }
+
+    private String getHashExternalDescription(String option) {
+        if (option == null || "Elegir".equals(option))
+            return null;
+        switch (option) {
+            case "Modulo":
+                return "En almacenamiento externo, la funcion modulo distribuye las claves entre multiples bloques calculando el resto de la division entre el tamaño total de la estructura. Cada bloque contiene un segmento contiguo de posiciones, y el resultado del hash determina en que bloque especifico debe ubicarse el registro, optimizando el acceso directo mediante calculo aritmetico simple.";
+            case "Cuadrada":
+                return "Eleva la clave al cuadrado y extrae digitos centrales para determinar el bloque de destino. En estructuras multi-bloque, esta tecnica dispersa eficientemente claves similares evitando concentracion en bloques especificos, aunque requiere mayor procesamiento para el calculo y extraccion de digitos en cada operacion.";
+            case "Truncamiento":
+                return "Selecciona posiciones especificas de la clave como indice de bloque. En contextos multi-bloque, ignora partes de la clave que podrian generar desbalance, pero requiere configuracion cuidadosa de las posiciones a conservar para evitar colisiones excesivas en bloques particulares.";
+            case "Plegamiento":
+                return "Divide la clave en segmentos que se suman para generar el indice de bloque. Particularmente util para claves largas en almacenamiento externo, ya que combina todos los digitos en la determinacion de posicion, distribuyendo uniformemente los registros entre los diferentes bloques fisicos.";
+            case "Transferencia de clave":
+                return "Convierte la clave a base no decimal (en este aplicativo a base 7) y toma digitos especificos de esta representacion para calcular el bloque destino. En almacenamiento externo, esta transformacion rompe patrones secuenciales y distribuye uniformemente entre bloques, aprovechando propiedades de numeracion no decimal para optimizar dispersion.";
+            default:
+                return option;
+        }
+    }
+
+    private String getTreesDescription(String option) {
+        if (option == null || "Elegir".equals(option))
+            return null;
+        switch (option) {
+            case "Arboles de busqueda digital":
+                return "Representa explicitamente cada bit de la clave en el recorrido del arbol, creando nodos para cada bit incluyendo caminos con un solo hijo. La busqueda sigue secuencialmente los bits de la clave desde el mas significativo, ideal para claves de longitud fija y busquedas por prefijos.";
+            case "Arboles de busqueda por residuos":
+                return "Convierte nodos hoja en nodos de enlace cuando varias claves comparten prefijo, bifurcandose al primer bit diferente. Optimiza el espacio colapsando rutas comunes y expandiendo solo en puntos de divergencia, eficiente para claves con prefijos compartidos.";
+            case "Arboles de busqueda por residuos multiple":
+                return "Procesa multiples bits por nivel, creando hasta 4 hijos por nodo. Reduce la altura del arbol procesando segmentos de bits en cada nivel, acelerando busquedas a costa de mayor complejidad en la estructura nodal.";
+            case "Arboles de Huffman":
+                return "Construye un arbol mas optimo basado en frecuencias de caracteres, donde los simbolos mas frecuentes tienen codigos mas cortos. Emplea un algoritmo vorzano que combina repetidamente los dos nodos de menor frecuencia hasta formar el arbol completo, utilizado para compresion eficiente de datos.";
+            default:
+                return option;
+        }
+    }
+
+    private String getIndexDescription(String option, boolean isMono) {
+        if (option == null || "Elegir".equals(option))
+            return null;
+        String tipo = isMono ? "Mononivel" : "Multinivel";
+        if ("Primaria".equals(option))
+            return tipo + " - indice Primario\nSe construyen sobre la clave primaria, manteniendo la secuencia fisica de los datos en disco. Proporcionan acceso directo y secuencial eficiente, con una estructura que refleja el orden de almacenamiento real de los registros en el archivo.";
+        if ("Secundaria".equals(option))
+            return tipo + " - indice Secundario\nSe crean sobre campos no ordenados fisicamente, permitiendo acceso eficiente por atributos distintos a la clave primaria. Mantienen un nivel adicional de indireccion mediante punteros a registros, independientes de la organizacion fisica, ideales para consultas por campos frecuentemente consultados pero no principales.";
+        return tipo + " - " + option;
+    }
 
     public void reloadTabContent(Tab tab) {
         if (tabPaneMapInternal.containsKey(tab) && fxmlMapInternal.containsKey(tab)) {

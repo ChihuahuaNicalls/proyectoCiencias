@@ -118,7 +118,7 @@ public class BinariaControllerExternal implements Initializable {
         configurarBotones();
         configurarMenuBloques();
         titleBin.setText("Busqueda Binaria Externa");
-        functionBin.setText("Busqueda dinamica por bloques (binaria entre bloques, secuencial dentro)");
+        functionBin.setText("Busqueda binaria en las estructuras de bloques.");
     }
 
     private void configurarValidadores() {

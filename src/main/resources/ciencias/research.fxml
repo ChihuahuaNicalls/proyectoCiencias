@@ -38,7 +38,7 @@
                                  <content>
                                     <AnchorPane prefHeight="184.0" prefWidth="1080.0">
                                        <children>
-                                          <Pane fx:id="paneSecuencialInt" layoutX="175.0" layoutY="15.0" prefHeight="440.0" prefWidth="730.0" />
+                                          <Pane fx:id="paneSecuencialInt" layoutX="175.0" layoutY="5.0" prefHeight="440.0" prefWidth="730.0" />
                                        </children>
                                     </AnchorPane>
                                  </content>
@@ -47,7 +47,7 @@
                                  <content>
                                     <AnchorPane prefHeight="180.0" prefWidth="200.0">
                                        <children>
-                                          <Pane fx:id="paneBinariaInt" layoutX="175.0" layoutY="15.0" prefHeight="440.0" prefWidth="730.0" />
+                                          <Pane fx:id="paneBinariaInt" layoutX="175.0" layoutY="5.0" prefHeight="440.0" prefWidth="730.0" />
                                        </children>
                                     </AnchorPane>
                                  </content>
@@ -67,12 +67,12 @@
                                                 <Font size="20.0" />
                                              </font>
                                           </MenuButton>
-                                          <Pane fx:id="paneHashInt" layoutX="335.0" layoutY="15.0" prefHeight="440.0" prefWidth="730.0" />
-                                          <TextFlow layoutX="21.0" layoutY="95.0" prefHeight="374.0" prefWidth="300.0" textAlignment="CENTER">
+                                          <Pane fx:id="paneHashInt" layoutX="310.0" layoutY="5.0" prefHeight="440.0" prefWidth="730.0" />
+                                          <TextFlow layoutX="20.0" layoutY="95.0" prefHeight="340.0" prefWidth="210.0">
                                              <children>
                                                 <Text fx:id="textHashMenu" strokeType="OUTSIDE" strokeWidth="0.0">
                                                    <font>
-                                                      <Font size="18.0" />
+                                                      <Font size="14.0" />
                                                    </font>
                                                 </Text>
                                              </children>
@@ -96,7 +96,16 @@
                                                 <Font size="20.0" />
                                              </font>
                                           </MenuButton>
-                                          <Pane fx:id="paneTrees" layoutX="335.0" layoutY="15.0" prefHeight="440.0" prefWidth="730.0" />
+                                          <Pane fx:id="paneTrees" layoutX="310.0" layoutY="5.0" prefHeight="440.0" prefWidth="730.0" />
+                                          <TextFlow layoutX="20.0" layoutY="95.0" prefHeight="340.0" prefWidth="210.0">
+                                             <children>
+                                                <Text fx:id="textTreeMenu" strokeType="OUTSIDE" strokeWidth="0.0">
+                                                   <font>
+                                                      <Font size="14.0" />
+                                                   </font>
+                                                </Text>
+                                             </children>
+                                          </TextFlow>
                                        </children>
                                     </AnchorPane>
                                  </content>
@@ -107,7 +116,7 @@
                   </AnchorPane>
             </content>
           </Tab>
-          <Tab fx:id="tabSecuencialExt" onSelectionChanged="#external" text="Busquedas externas">
+          <Tab onSelectionChanged="#external" text="Busquedas externas">
             <content>
               <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
                      <children>
@@ -115,11 +124,11 @@
                            <children>
                               <TabPane fx:id="tabPaneExternal" prefHeight="594.0" prefWidth="1080.0" tabClosingPolicy="UNAVAILABLE" tabMinHeight="60.0" tabMinWidth="150.0">
                                  <tabs>
-                                    <Tab closable="false" text="Secuencial">
+                                    <Tab fx:id="tabSecuencialExt" closable="false" text="Secuencial">
                                        <content>
                                           <AnchorPane prefHeight="184.0" prefWidth="1080.0">
                                              <children>
-                                                <Pane fx:id="paneSecuencialExt" layoutX="175.0" layoutY="15.0" prefHeight="440.0" prefWidth="730.0" />
+                                                <Pane fx:id="paneSecuencialExt" layoutX="175.0" layoutY="5.0" prefHeight="440.0" prefWidth="730.0" />
                                              </children></AnchorPane>
                                        </content>
                                     </Tab>
@@ -127,7 +136,7 @@
                                       <content>
                                         <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
                                              <children>
-                                                <Pane fx:id="paneBinariaExt" layoutX="175.0" layoutY="15.0" prefHeight="440.0" prefWidth="730.0" />
+                                                <Pane fx:id="paneBinariaExt" layoutX="175.0" layoutY="5.0" prefHeight="440.0" prefWidth="730.0" />
                                              </children></AnchorPane>
                                       </content>
                                     </Tab>
@@ -147,7 +156,16 @@
                                                       <Font size="20.0" />
                                                    </font>
                                                 </MenuButton>
-                                                <Pane fx:id="paneHashExt" layoutX="335.0" layoutY="15.0" prefHeight="440.0" prefWidth="730.0" />
+                                                <Pane fx:id="paneHashExt" layoutX="310.0" layoutY="5.0" prefHeight="440.0" prefWidth="730.0" />
+                                                <TextFlow layoutX="20.0" layoutY="95.0" prefHeight="340.0" prefWidth="210.0">
+                                                   <children>
+                                                      <Text fx:id="textHashExternalMenu" strokeType="OUTSIDE" strokeWidth="0.0">
+                                                         <font>
+                                                            <Font size="14.0" />
+                                                         </font>
+                                                      </Text>
+                                                   </children>
+                                                </TextFlow>
                                              </children>
                                           </AnchorPane>
                                       </content>
@@ -156,7 +174,7 @@
                                       <content>
                                         <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
                                              <children>
-                                                <Pane fx:id="paneDynamic" layoutX="175.0" layoutY="15.0" prefHeight="440.0" prefWidth="730.0" />
+                                                <Pane fx:id="paneDynamic" layoutX="175.0" layoutY="5.0" prefHeight="440.0" prefWidth="730.0" />
                                              </children>
                                           </AnchorPane>
                                       </content>
@@ -191,7 +209,16 @@
                                                       <Font size="20.0" />
                                                    </font>
                                                 </MenuButton>
-                                                <Pane fx:id="paneIndexMono" layoutX="335.0" layoutY="15.0" prefHeight="440.0" prefWidth="730.0" />
+                                                <Pane fx:id="paneIndexMono" layoutX="310.0" layoutY="5.0" prefHeight="440.0" prefWidth="730.0" />
+                                                <TextFlow layoutX="20.0" layoutY="95.0" prefHeight="340.0" prefWidth="210.0">
+                                                   <children>
+                                                      <Text fx:id="textMonoMenu" strokeType="OUTSIDE" strokeWidth="0.0">
+                                                         <font>
+                                                            <Font size="14.0" />
+                                                         </font>
+                                                      </Text>
+                                                   </children>
+                                                </TextFlow>
                                              </children>
                                           </AnchorPane>
                                        </content>
@@ -209,7 +236,16 @@
                                                       <Font size="20.0" />
                                                    </font>
                                                 </MenuButton>
-                                                <Pane fx:id="paneIndexMulti" layoutX="335.0" layoutY="15.0" prefHeight="440.0" prefWidth="730.0" />
+                                                <Pane fx:id="paneIndexMulti" layoutX="310.0" layoutY="5.0" prefHeight="440.0" prefWidth="730.0" />
+                                                <TextFlow layoutX="20.0" layoutY="95.0" prefHeight="340.0" prefWidth="210.0">
+                                                   <children>
+                                                      <Text fx:id="textMultiMenu" strokeType="OUTSIDE" strokeWidth="0.0">
+                                                         <font>
+                                                            <Font size="14.0" />
+                                                         </font>
+                                                      </Text>
+                                                   </children>
+                                                </TextFlow>
                                              </children>
                                           </AnchorPane>
                                        </content>
