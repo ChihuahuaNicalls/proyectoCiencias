@@ -1,15 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<?import javafx.scene.canvas.Canvas?>
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.Label?>
-<?import javafx.scene.control.TextField?>
 <?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.control.TextField?>
 <?import javafx.scene.layout.Pane?>
 <?import javafx.scene.layout.VBox?>
-<?import javafx.scene.text.Font?>
-<?import javafx.scene.canvas.Canvas?>
 
-<Pane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="440.0" prefWidth="730.0" xmlns="http://javafx.com/javafx/22.0.2" xmlns:fx="http://javafx.com/fxml/1" fx:controller="ciencias.Research.IndexMonoController">
+<Pane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="440.0" prefWidth="730.0" xmlns="http://javafx.com/javafx/24.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="ciencias.Research.IndexMonoController">
    <children>
       <!-- HEADER -->
       <Label layoutX="10.0" layoutY="5.0" style="-fx-font-size: 13; -fx-font-weight: bold;" text="Estructura de Índices" />
@@ -17,28 +16,32 @@
       <!-- PARÁMETROS (Compactados en una línea) -->
       <Label layoutX="10.0" layoutY="25.0" style="-fx-font-size: 8; -fx-font-weight: bold;" text="Parámetros:" />
 
-      <Label layoutX="10.0" layoutY="38.0" style="-fx-font-size: 8;" text="Tam.Reg:" />
-      <TextField fx:id="txtLongitudRegistro" layoutX="45.0" layoutY="35.0" prefHeight="16.0" prefWidth="40.0" promptText="128" style="-fx-font-size: 7;" />
+      <Label layoutX="10.0" layoutY="38.0" style="-fx-font-size: 12;" text="Tam.Reg:" />
+      <TextField fx:id="txtLongitudRegistro" layoutX="66.0" layoutY="36.0" prefHeight="16.0" prefWidth="40.0" promptText="128" style="-fx-font-size: 10;" />
 
-      <Label layoutX="90.0" layoutY="38.0" style="-fx-font-size: 8;" text="Cap.Blq:" />
-      <TextField fx:id="txtTamañoBloque" layoutX="135.0" layoutY="35.0" prefHeight="16.0" prefWidth="45.0" promptText="4096" style="-fx-font-size: 7;" />
+      <Label layoutX="116.0" layoutY="39.0" style="-fx-font-size: 12;" text="Cap.Blq:" />
+      <TextField fx:id="txtTamañoBloque" layoutX="165.0" layoutY="36.0" prefHeight="22.0" prefWidth="40.0" promptText="4096" style="-fx-font-size: 10;" />
 
-      <Label layoutX="185.0" layoutY="38.0" style="-fx-font-size: 8;" text="Nú.Reg:" />
-      <TextField fx:id="txtCantidadRegistros" layoutX="227.0" layoutY="35.0" prefHeight="16.0" prefWidth="45.0" promptText="1000" style="-fx-font-size: 7;" />
+      <Label layoutX="232.0" layoutY="39.0" style="-fx-font-size: 12;" text="Nú.Reg:" />
+      <TextField fx:id="txtCantidadRegistros" layoutX="282.0" layoutY="36.0" prefHeight="16.0" prefWidth="45.0" promptText="1000" style="-fx-font-size: 10;" />
 
-      <Label layoutX="277.0" layoutY="38.0" style="-fx-font-size: 8;" text="Tam.Idx:" />
-      <TextField fx:id="txtLongitudCampoIndice" layoutX="320.0" layoutY="35.0" prefHeight="16.0" prefWidth="40.0" promptText="14" style="-fx-font-size: 7;" />
+      <Label layoutX="343.0" layoutY="39.0" style="-fx-font-size: 12;" text="Tam.Idx:" />
+      <TextField fx:id="txtLongitudCampoIndice" layoutX="397.0" layoutY="36.0" prefHeight="16.0" prefWidth="40.0" promptText="14" style="-fx-font-size: 10;" />
 
-      <Button fx:id="btnGenerar" layoutX="365.0" layoutY="35.0" mnemonicParsing="false" onAction="#generarEstructura" prefHeight="16.0" prefWidth="50.0" style="-fx-font-size: 7; -fx-font-weight: bold;" text="Generar" />
+      <Button fx:id="btnGenerar" layoutX="462.0" layoutY="36.0" mnemonicParsing="false" onAction="#generarEstructura" prefHeight="22.0" prefWidth="58.0" style="-fx-font-size: 10; -fx-font-weight: bold;" text="Generar" />
 
-      <Button fx:id="btnLimpiar" layoutX="420.0" layoutY="35.0" mnemonicParsing="false" onAction="#limpiar" prefHeight="16.0" prefWidth="50.0" style="-fx-font-size: 7;" text="Limpiar" />
+      <Button fx:id="btnLimpiar" layoutX="531.0" layoutY="37.0" mnemonicParsing="false" onAction="#limpiar" prefHeight="16.0" prefWidth="50.0" style="-fx-font-size: 10;" text="Limpiar" />
+
+      <Button fx:id="btnGuardar" layoutX="589.0" layoutY="37.0" mnemonicParsing="false" onAction="#guardarEstructura" prefHeight="22.0" prefWidth="64.0" style="-fx-font-size: 10;" text="Guardar" />
+
+      <Button fx:id="btnCargar" layoutX="665.0" layoutY="36.0" mnemonicParsing="false" onAction="#cargarEstructura" prefHeight="16.0" prefWidth="50.0" style="-fx-font-size: 10;" text="Cargar" />
 
       <!-- CANVAS PARA FLECHAS -->
       <Canvas fx:id="canvasFlechas" height="365.0" layoutX="10.0" layoutY="60.0" width="710.0" />
 
       <!-- TABLA INDICES (IZQUIERDA con SCROLL) -->
       <Label layoutX="15.0" layoutY="62.0" style="-fx-font-size: 8; -fx-font-weight: bold;" text="Índices" />
-      <ScrollPane layoutX="15.0" layoutY="76.0" prefHeight="320.0" prefWidth="340.0" fitToWidth="true" style="-fx-padding: 0; -fx-border-color: #cccccc;">
+      <ScrollPane fitToWidth="true" layoutX="15.0" layoutY="76.0" prefHeight="320.0" prefWidth="340.0" style="-fx-padding: 0; -fx-border-color: #cccccc;">
          <content>
             <VBox fx:id="vboxIndices" spacing="3.0" style="-fx-padding: 3;" />
          </content>
@@ -46,12 +49,10 @@
 
       <!-- TABLA DATOS (DERECHA con SCROLL) -->
       <Label layoutX="375.0" layoutY="62.0" style="-fx-font-size: 8; -fx-font-weight: bold;" text="Datos" />
-      <ScrollPane layoutX="375.0" layoutY="76.0" prefHeight="320.0" prefWidth="340.0" fitToWidth="true" style="-fx-padding: 0; -fx-border-color: #cccccc;">
+      <ScrollPane fitToWidth="true" layoutX="375.0" layoutY="76.0" prefHeight="320.0" prefWidth="340.0" style="-fx-padding: 0; -fx-border-color: #cccccc;">
          <content>
             <VBox fx:id="vboxDatos" spacing="3.0" style="-fx-padding: 3;" />
          </content>
       </ScrollPane>
    </children>
 </Pane>
-
-

@@ -28,23 +28,25 @@
                </content>
             </ScrollPane>
             <!-- Canvas para flechas (encima) -->
-            <Canvas fx:id="canvasFlechas" width="712.0" height="405.0" />
+            <Canvas fx:id="canvasFlechas" height="405.0" width="712.0" />
          </children>
       </StackPane>
 
       <Pane layoutY="31.0" prefHeight="72.0" prefWidth="730.0">
          <children>
-            <TextField fx:id="txtLongitudRegistro" layoutX="90.0" layoutY="26.0" prefHeight="16.0" prefWidth="40.0" promptText="128" style="-fx-font-size: 12;" />
+            <TextField fx:id="txtLongitudRegistro" layoutX="70.0" layoutY="26.0" prefHeight="16.0" prefWidth="40.0" promptText="128" style="-fx-font-size: 12;" />
             <Label layoutX="14.0" layoutY="4.0" style="-fx-font-size: 12; -fx-font-weight: bold;" text="Parámetros:" />
-            <Button fx:id="btnLimpiar" layoutX="647.0" layoutY="36.0" mnemonicParsing="false" onAction="#limpiar" prefHeight="25.0" prefWidth="60.0" style="-fx-font-size: 12;" text="Limpiar" />
-            <Button fx:id="btnGenerar" layoutX="562.0" layoutY="36.0" mnemonicParsing="false" onAction="#generarEstructura" prefHeight="25.0" prefWidth="70.0" style="-fx-font-size: 12; -fx-font-weight: bold;" text="Generar" />
-            <TextField fx:id="txtLongitudCampoIndice" layoutX="445.0" layoutY="26.0" prefHeight="25.0" prefWidth="33.0" promptText="16" style="-fx-font-size: 12;" />
-            <Label layoutX="388.0" layoutY="30.0" style="-fx-font-size: 12;" text="Tam.Idx:" />
-            <TextField fx:id="txtCantidadRegistros" layoutX="315.0" layoutY="26.0" prefHeight="16.0" prefWidth="50.0" promptText="10000" style="-fx-font-size: 12;" />
-            <Label layoutX="266.0" layoutY="30.0" style="-fx-font-size: 12;" text="Nú.Reg:" />
-            <TextField fx:id="txtTamañoBloque" layoutX="197.0" layoutY="26.0" prefHeight="16.0" prefWidth="50.0" promptText="4000" style="-fx-font-size: 12;" />
-            <Label layoutX="146.0" layoutY="30.0" style="-fx-font-size: 12;" text="Cap.Blq:" />
-            <Label layoutX="33.0" layoutY="30.0" style="-fx-font-size: 12;" text="Tam.Reg:" />
+            <Button fx:id="btnLimpiar" layoutX="667.0" layoutY="24.0" mnemonicParsing="false" onAction="#limpiar" prefHeight="25.0" prefWidth="56.0" style="-fx-font-size: 10;" text="Limpiar" />
+            <Button fx:id="btnGenerar" layoutX="460.0" layoutY="24.0" mnemonicParsing="false" onAction="#generarEstructura" prefHeight="25.0" prefWidth="70.0" style="-fx-font-size: 10; -fx-font-weight: bold;" text="Generar" />
+            <Button fx:id="btnGuardar" layoutX="536.0" layoutY="24.0" mnemonicParsing="false" onAction="#guardarEstructura" prefHeight="25.0" prefWidth="68.0" style="-fx-font-size: 10;" text="Guardar" />
+            <Button fx:id="btnCargar" layoutX="610.0" layoutY="24.0" mnemonicParsing="false" onAction="#cargarEstructura" prefHeight="25.0" prefWidth="50.0" style="-fx-font-size: 10;" text="Cargar" />
+            <TextField fx:id="txtLongitudCampoIndice" layoutX="409.0" layoutY="26.0" prefHeight="25.0" prefWidth="33.0" promptText="16" style="-fx-font-size: 12;" />
+            <Label layoutX="355.0" layoutY="30.0" style="-fx-font-size: 12;" text="Tam.Idx:" />
+            <TextField fx:id="txtCantidadRegistros" layoutX="285.0" layoutY="26.0" prefHeight="16.0" prefWidth="50.0" promptText="10000" style="-fx-font-size: 12;" />
+            <Label layoutX="235.0" layoutY="30.0" style="-fx-font-size: 12;" text="Nú.Reg:" />
+            <TextField fx:id="txtTamañoBloque" layoutX="173.0" layoutY="26.0" prefHeight="16.0" prefWidth="50.0" promptText="4000" style="-fx-font-size: 12;" />
+            <Label layoutX="122.0" layoutY="30.0" style="-fx-font-size: 12;" text="Cap.Blq:" />
+            <Label layoutX="14.0" layoutY="30.0" style="-fx-font-size: 12;" text="Tam.Reg:" />
          </children>
       </Pane>
    </children>

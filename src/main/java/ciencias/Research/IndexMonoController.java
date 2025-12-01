@@ -10,9 +10,10 @@ import javafx.scene.control.*;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
-import javafx.animation.PauseTransition;
 import javafx.util.Duration;
+import javafx.stage.FileChooser;
 
+import java.io.*;
 import java.util.*;
 
 public class IndexMonoController {
@@ -23,6 +24,8 @@ public class IndexMonoController {
     @FXML private TextField txtLongitudCampoIndice;
     @FXML private Button btnGenerar;
     @FXML private Button btnLimpiar;
+    @FXML private Button btnGuardar;
+    @FXML private Button btnCargar;
     @FXML private Canvas canvasFlechas;
     @FXML private VBox vboxIndices;
     @FXML private VBox vboxDatos;
@@ -234,14 +237,14 @@ public class IndexMonoController {
             contenido = String.format("%d | %d → Registro %d", numeroRegistro, numeroRegistro, numeroRegistro);
         }
         Label label = new Label(contenido);
-        label.setFont(Font.font("Monospace", 9));
+        label.setFont(Font.font("Monospace", 11));
         label.setStyle("-fx-padding: 1;");
         return label;
     }
 
     private Label crearFilaIndiceVacio(int numeroRegistro) {
         Label l = new Label(numeroRegistro + " | ... | [vacío]");
-        l.setFont(Font.font("Monospace", 9));
+        l.setFont(Font.font("Monospace", 11));
         l.setStyle("-fx-font-style: italic; -fx-text-fill: #000000; -fx-padding: 1;");
         return l;
     }
@@ -249,21 +252,21 @@ public class IndexMonoController {
     private Label crearFilaDatos(int numeroRegistro, int numeroBloque) {
         Label label = new Label(String.format("%d | %d | D%d | D%d | ... | Di%d | %d",
                 numeroRegistro, numeroRegistro, numeroRegistro, numeroRegistro + 1000, numeroRegistro, numeroBloque));
-        label.setFont(Font.font("Monospace", 9));
+        label.setFont(Font.font("Monospace", 11));
         label.setStyle("-fx-padding: 1;");
         return label;
     }
 
     private Label crearFilaDatoVacio(int numeroRegistro, int numeroBloque) {
         Label l = new Label(numeroRegistro + " | ... | [vacío] | " + numeroBloque);
-        l.setFont(Font.font("Monospace", 9));
+        l.setFont(Font.font("Monospace", 11));
         l.setStyle("-fx-font-style: italic; -fx-text-fill: #000000; -fx-padding: 1;");
         return l;
     }
 
     private Label crearEncabezado() {
         Label label = new Label("# Regi | PK | D1 | D2 | ... | Di | # Blq");
-        label.setFont(Font.font("Monospace", 9));
+        label.setFont(Font.font("Monospace", 11));
         label.setStyle("-fx-font-weight: bold; -fx-padding: 1;");
         return label;
     }
@@ -407,6 +410,112 @@ public class IndexMonoController {
         alert.setTitle("Error");
         alert.setContentText(mensaje);
         alert.showAndWait();
+    }
+
+    private void mostrarExito(String mensaje) {
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle("Éxito");
+        alert.setContentText(mensaje);
+        alert.showAndWait();
+    }
+
+    @FXML
+    public void guardarEstructura() {
+        try {
+            // Validar que haya algo que guardar
+            if (vboxIndices.getChildren().isEmpty() && vboxDatos.getChildren().isEmpty()) {
+                mostrarError("No hay estructura generada para guardar");
+                return;
+            }
+
+            // Abrir diálogo de selección de archivo
+            FileChooser fileChooser = new FileChooser();
+            fileChooser.setTitle("Guardar Estructura de Índices");
+            fileChooser.getExtensionFilters().add(
+                new FileChooser.ExtensionFilter("Archivos de Índices (*.idx)", "*.idx")
+            );
+            fileChooser.setInitialFileName("estructura.idx");
+
+            File archivoGuardar = fileChooser.showSaveDialog(btnGuardar.getScene().getWindow());
+            if (archivoGuardar == null) {
+                return; // Usuario canceló
+            }
+
+            // Preparar datos para guardar
+            EstructuraGuardada estructura = new EstructuraGuardada();
+            estructura.longitudRegistro = Integer.parseInt(txtLongitudRegistro.getText());
+            estructura.tamañoBloque = Integer.parseInt(txtTamañoBloque.getText());
+            estructura.cantidadRegistros = Integer.parseInt(txtCantidadRegistros.getText());
+            estructura.longitudCampoIndice = Integer.parseInt(txtLongitudCampoIndice.getText());
+            estructura.esPrimario = esPrimario;
+
+            // Serializar y guardar
+            try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(archivoGuardar))) {
+                oos.writeObject(estructura);
+                oos.flush();
+            }
+
+            mostrarExito("Estructura guardada exitosamente en:\n" + archivoGuardar.getAbsolutePath());
+
+        } catch (NumberFormatException e) {
+            mostrarError("Error: Ingrese valores numéricos válidos en los parámetros");
+        } catch (IOException e) {
+            mostrarError("Error al guardar archivo: " + e.getMessage());
+        } catch (Exception e) {
+            mostrarError("Error inesperado: " + e.getMessage());
+        }
+    }
+
+    @FXML
+    public void cargarEstructura() {
+        try {
+            // Abrir diálogo de selección de archivo
+            FileChooser fileChooser = new FileChooser();
+            fileChooser.setTitle("Cargar Estructura de Índices");
+            fileChooser.getExtensionFilters().add(
+                new FileChooser.ExtensionFilter("Archivos de Índices (*.idx)", "*.idx")
+            );
+
+            File archivoCargar = fileChooser.showOpenDialog(btnCargar.getScene().getWindow());
+            if (archivoCargar == null) {
+                return; // Usuario canceló
+            }
+
+            // Deserializar
+            EstructuraGuardada estructura;
+            try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(archivoCargar))) {
+                estructura = (EstructuraGuardada) ois.readObject();
+            }
+
+            // Cargar valores en los campos
+            txtLongitudRegistro.setText(String.valueOf(estructura.longitudRegistro));
+            txtTamañoBloque.setText(String.valueOf(estructura.tamañoBloque));
+            txtCantidadRegistros.setText(String.valueOf(estructura.cantidadRegistros));
+            txtLongitudCampoIndice.setText(String.valueOf(estructura.longitudCampoIndice));
+            esPrimario = estructura.esPrimario;
+
+            // Generar la estructura automáticamente
+            generarEstructura();
+            mostrarExito("Estructura cargada exitosamente");
+
+        } catch (ClassNotFoundException e) {
+            mostrarError("Error: Archivo de estructura inválido");
+        } catch (IOException e) {
+            mostrarError("Error al cargar archivo: " + e.getMessage());
+        } catch (Exception e) {
+            mostrarError("Error inesperado: " + e.getMessage());
+        }
+    }
+
+    // Clase interna para serializar la estructura
+    private static class EstructuraGuardada implements Serializable {
+        private static final long serialVersionUID = 1L;
+        
+        int longitudRegistro;
+        int tamañoBloque;
+        int cantidadRegistros;
+        int longitudCampoIndice;
+        boolean esPrimario;
     }
 }
 
