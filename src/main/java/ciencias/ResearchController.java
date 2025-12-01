@@ -16,6 +16,7 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.control.MenuButton;
 import javafx.scene.control.MenuItem;
+import javafx.scene.control.ScrollPane;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
 import javafx.scene.layout.Pane;
@@ -57,9 +58,9 @@ public class ResearchController {
     @FXML
     private Pane paneTrees;
     @FXML
-    private Pane paneIndexMono;
+    private ScrollPane paneIndexMono;
     @FXML
-    private Pane paneIndexMulti;
+    private ScrollPane paneIndexMulti;
 
     @FXML
     private Tab tabBinaria;
@@ -90,6 +91,7 @@ public class ResearchController {
 
     private List<MenuButton> menuButtons;
     private List<Pane> panes;
+    private List<ScrollPane> scrollPanes;
 
     private Map<Tab, Pane> tabPaneMapInternal;
     private Map<Tab, Pane> tabPaneMapExternal;
@@ -136,16 +138,17 @@ public class ResearchController {
                 menuButtonMono,
                 menuButtonMulti);
         panes = Arrays.asList(
-                paneHashInt,
-                paneBinariaInt,
-                paneSecuencialInt,
-                paneHashExt,
-                paneBinariaExt,
-                paneSecuencialExt,
-                paneDynamic,
-                paneTrees,
-                paneIndexMono,
-                paneIndexMulti);
+            paneHashInt,
+            paneBinariaInt,
+            paneSecuencialInt,
+            paneHashExt,
+            paneBinariaExt,
+            paneSecuencialExt,
+            paneDynamic,
+            paneTrees);
+        scrollPanes = Arrays.asList(
+            paneIndexMono,
+            paneIndexMulti);
     }
 
     private void loadInitialContent() {
@@ -271,6 +274,13 @@ public class ResearchController {
             panes.forEach(pane -> {
                 if (pane != null) {
                     pane.getChildren().clear();
+                }
+            });
+        }
+        if (scrollPanes != null) {
+            scrollPanes.forEach(sp -> {
+                if (sp != null) {
+                    sp.setContent(null);
                 }
             });
         }
@@ -419,7 +429,7 @@ public class ResearchController {
 
             indexMonoController.setResearchController(this);
 
-            paneIndexMono.getChildren().setAll(vista);
+            paneIndexMono.setContent(vista);
             if (textMonoMenu != null) {
                 textMonoMenu.setText(getIndexDescription(option, true));
             }
@@ -445,7 +455,7 @@ public class ResearchController {
 
             indexMultiController.setResearchController(this);
 
-            paneIndexMulti.getChildren().setAll(vista);
+            paneIndexMulti.setContent(vista);
             if (textMultiMenu != null) {
                 textMultiMenu.setText(getIndexDescription(option, false));
             }

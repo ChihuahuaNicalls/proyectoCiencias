@@ -4,6 +4,7 @@
 <?import javafx.scene.control.ButtonBar?>
 <?import javafx.scene.control.MenuButton?>
 <?import javafx.scene.control.MenuItem?>
+<?import javafx.scene.control.ScrollPane?>
 <?import javafx.scene.control.Tab?>
 <?import javafx.scene.control.TabPane?>
 <?import javafx.scene.layout.AnchorPane?>
@@ -209,7 +210,7 @@
                                                       <Font size="20.0" />
                                                    </font>
                                                 </MenuButton>
-                                                <Pane fx:id="paneIndexMono" layoutX="310.0" layoutY="5.0" prefHeight="440.0" prefWidth="730.0" />
+                                                <ScrollPane fx:id="paneIndexMono" layoutX="310.0" layoutY="5.0" prefHeight="440.0" prefWidth="730.0" />
                                                 <TextFlow layoutX="20.0" layoutY="95.0" prefHeight="340.0" prefWidth="210.0">
                                                    <children>
                                                       <Text fx:id="textMonoMenu" strokeType="OUTSIDE" strokeWidth="0.0">
@@ -236,7 +237,6 @@
                                                       <Font size="20.0" />
                                                    </font>
                                                 </MenuButton>
-                                                <Pane fx:id="paneIndexMulti" layoutX="310.0" layoutY="5.0" prefHeight="440.0" prefWidth="730.0" />
                                                 <TextFlow layoutX="20.0" layoutY="95.0" prefHeight="340.0" prefWidth="210.0">
                                                    <children>
                                                       <Text fx:id="textMultiMenu" strokeType="OUTSIDE" strokeWidth="0.0">
@@ -246,6 +246,7 @@
                                                       </Text>
                                                    </children>
                                                 </TextFlow>
+                                                <ScrollPane fx:id="paneIndexMulti" layoutX="310.0" layoutY="5.0" prefHeight="440.0" prefWidth="730.0" />
                                              </children>
                                           </AnchorPane>
                                        </content>
