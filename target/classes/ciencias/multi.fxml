@@ -1,56 +1,51 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<?import javafx.scene.canvas.Canvas?>
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.Label?>
-<?import javafx.scene.control.TextField?>
 <?import javafx.scene.control.ScrollPane?>
-<?import javafx.scene.layout.Pane?>
-<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.control.TextField?>
 <?import javafx.scene.layout.HBox?>
-<?import javafx.scene.layout.BorderPane?>
-<?import javafx.scene.text.Font?>
-<?import javafx.scene.canvas.Canvas?>
-<?import javafx.geometry.Insets?>
+<?import javafx.scene.layout.Pane?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.VBox?>
 
-<Pane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="440.0" prefWidth="730.0" xmlns="http://javafx.com/javafx/22.0.2" xmlns:fx="http://javafx.com/fxml/1" fx:controller="ciencias.Research.IndexMultiController">
+<Pane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="577.0" prefWidth="730.0" xmlns="http://javafx.com/javafx/24.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="ciencias.Research.IndexMultiController">
    <children>
-      <VBox layoutX="10.0" layoutY="5.0" spacing="5.0" prefWidth="710.0">
+      <VBox layoutX="10.0" layoutY="5.0" prefWidth="710.0" spacing="5.0">
          <children>
             <Label style="-fx-font-size: 13; -fx-font-weight: bold;" text="Estructura de Índices Multinivel" />
-            <HBox spacing="10.0">
-               <children>
-                  <Label style="-fx-font-size: 8; -fx-font-weight: bold;" text="Parámetros:" />
-                  <Label style="-fx-font-size: 8;" text="Tam.Reg:" />
-                  <TextField fx:id="txtLongitudRegistro" prefHeight="16.0" prefWidth="40.0" promptText="128" style="-fx-font-size: 7;" />
-                  <Label style="-fx-font-size: 8;" text="Cap.Blq:" />
-                  <TextField fx:id="txtTamañoBloque" prefHeight="16.0" prefWidth="50.0" promptText="4000" style="-fx-font-size: 7;" />
-                  <Label style="-fx-font-size: 8;" text="Nú.Reg:" />
-                  <TextField fx:id="txtCantidadRegistros" prefHeight="16.0" prefWidth="50.0" promptText="10000" style="-fx-font-size: 7;" />
-                  <Label style="-fx-font-size: 8;" text="Tam.Idx:" />
-                  <TextField fx:id="txtLongitudCampoIndice" prefHeight="16.0" prefWidth="40.0" promptText="16" style="-fx-font-size: 7;" />
-                  <Button fx:id="btnGenerar" mnemonicParsing="false" onAction="#generarEstructura" prefHeight="16.0" prefWidth="50.0" style="-fx-font-size: 7; -fx-font-weight: bold;" text="Generar" />
-                  <Button fx:id="btnLimpiar" mnemonicParsing="false" onAction="#limpiar" prefHeight="16.0" prefWidth="50.0" style="-fx-font-size: 7;" text="Limpiar" />
-                  <Button fx:id="btnMaximizar" mnemonicParsing="false" onAction="#maximizar" prefHeight="16.0" prefWidth="70.0" style="-fx-font-size: 7;" text="Maximizar" />
-               </children>
-               <padding>
-                  <Insets top="5.0" />
-               </padding>
-            </HBox>
          </children>
       </VBox>
 
-      <BorderPane layoutX="10.0" layoutY="55.0" prefHeight="370.0" prefWidth="710.0" style="-fx-border-color: #cccccc;">
-         <center>
-            <ScrollPane fx:id="scrollPanePrincipal" fitToHeight="true" fitToWidth="false" hbarPolicy="ALWAYS" vbarPolicy="NEVER" style="-fx-padding: 0;">
+      <!-- StackPane para superponer Canvas sobre ScrollPane -->
+      <StackPane layoutX="10.0" layoutY="103.0" prefHeight="405.0" prefWidth="712.0" style="-fx-border-color: #cccccc;">
+         <children>
+            <!-- ScrollPane con contenido (abajo) -->
+            <ScrollPane fx:id="scrollPanePrincipal" fitToHeight="true" fitToWidth="false" hbarPolicy="ALWAYS" prefHeight="405.0" prefWidth="712.0" style="-fx-padding: 0;" vbarPolicy="NEVER">
                <content>
                   <HBox fx:id="hboxTablas" spacing="10.0" style="-fx-padding: 5;" />
                </content>
             </ScrollPane>
-         </center>
-         <top>
-            <Canvas fx:id="canvasFlechas" height="50.0" width="710.0" />
-         </top>
-      </BorderPane>
+            <!-- Canvas para flechas (encima) -->
+            <Canvas fx:id="canvasFlechas" width="712.0" height="405.0" />
+         </children>
+      </StackPane>
+
+      <Pane layoutY="31.0" prefHeight="72.0" prefWidth="730.0">
+         <children>
+            <TextField fx:id="txtLongitudRegistro" layoutX="90.0" layoutY="26.0" prefHeight="16.0" prefWidth="40.0" promptText="128" style="-fx-font-size: 12;" />
+            <Label layoutX="14.0" layoutY="4.0" style="-fx-font-size: 12; -fx-font-weight: bold;" text="Parámetros:" />
+            <Button fx:id="btnLimpiar" layoutX="647.0" layoutY="36.0" mnemonicParsing="false" onAction="#limpiar" prefHeight="25.0" prefWidth="60.0" style="-fx-font-size: 12;" text="Limpiar" />
+            <Button fx:id="btnGenerar" layoutX="562.0" layoutY="36.0" mnemonicParsing="false" onAction="#generarEstructura" prefHeight="25.0" prefWidth="70.0" style="-fx-font-size: 12; -fx-font-weight: bold;" text="Generar" />
+            <TextField fx:id="txtLongitudCampoIndice" layoutX="445.0" layoutY="26.0" prefHeight="25.0" prefWidth="33.0" promptText="16" style="-fx-font-size: 12;" />
+            <Label layoutX="388.0" layoutY="30.0" style="-fx-font-size: 12;" text="Tam.Idx:" />
+            <TextField fx:id="txtCantidadRegistros" layoutX="315.0" layoutY="26.0" prefHeight="16.0" prefWidth="50.0" promptText="10000" style="-fx-font-size: 12;" />
+            <Label layoutX="266.0" layoutY="30.0" style="-fx-font-size: 12;" text="Nú.Reg:" />
+            <TextField fx:id="txtTamañoBloque" layoutX="197.0" layoutY="26.0" prefHeight="16.0" prefWidth="50.0" promptText="4000" style="-fx-font-size: 12;" />
+            <Label layoutX="146.0" layoutY="30.0" style="-fx-font-size: 12;" text="Cap.Blq:" />
+            <Label layoutX="33.0" layoutY="30.0" style="-fx-font-size: 12;" text="Tam.Reg:" />
+         </children>
+      </Pane>
    </children>
 </Pane>
-

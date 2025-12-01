@@ -36,6 +36,7 @@ public class IndexMultiController {
     
     private List<VBox> nivelesIndices = new ArrayList<>();
     private VBox contenedorDatos;
+    private Map<Integer, List<List<VBox>>> bloquePorNivel = new HashMap<>(); // nivel -> lista de bloques mostrados
 
     public void setResearchController(ResearchController researchController) {
         this.researchController = researchController;
@@ -50,10 +51,23 @@ public class IndexMultiController {
         scrollPanePrincipal.setFitToHeight(true);
         scrollPanePrincipal.setFitToWidth(false);
         
-        // Redimensionar canvas cuando la ventana cambia
-        canvasFlechas.widthProperty().bind(scrollPanePrincipal.widthProperty());
-        canvasFlechas.heightProperty().addListener((obs, old, newVal) -> dibujarFlechasDinamicas());
-        canvasFlechas.widthProperty().addListener((obs, old, newVal) -> dibujarFlechasDinamicas());
+        // Hacer que el canvas no capture eventos del mouse para permitir scrollear
+        if (canvasFlechas != null) {
+            canvasFlechas.setMouseTransparent(true);
+        }
+
+        // Ajustar tamaño del canvas al viewport del ScrollPane para no cubrir las barras
+        scrollPanePrincipal.viewportBoundsProperty().addListener((obs, oldBounds, newBounds) -> {
+            if (newBounds != null && canvasFlechas != null) {
+                canvasFlechas.setWidth(newBounds.getWidth());
+                canvasFlechas.setHeight(newBounds.getHeight());
+                // Redibujar flechas cuando cambia el tamaño del viewport
+                dibujarFlechasDinamicas();
+            }
+        });
+
+        // Redibujar flechas cuando se scrollea horizontalmente
+        scrollPanePrincipal.hvalueProperty().addListener((obs, oldVal, newVal) -> dibujarFlechasDinamicas());
     }
 
     @FXML
@@ -102,6 +116,7 @@ public class IndexMultiController {
     private void generarIndicesMultinivel(int bloquesNivel, int entradasPorBloque) {
         int nivelActual = 1;
         int registrosActuales = bloquesNivel;
+        bloquePorNivel.clear();
 
         while (registrosActuales > 1) {
             int bloquesNivelActual = (int) Math.ceil((double) registrosActuales / entradasPorBloque);
@@ -132,6 +147,7 @@ public class IndexMultiController {
         };
 
         List<Integer> bloquesAMostrar = obtenerBloquesAMostrar(bloquesTotales);
+        List<VBox> bloquesMostrados = new ArrayList<>();
 
         for (int i = 0; i < bloquesAMostrar.size(); i++) {
             int numeroBloque = bloquesAMostrar.get(i);
@@ -183,7 +199,11 @@ public class IndexMultiController {
 
             bloqueBox.getChildren().add(filasBox);
             contenedorNivel.getChildren().add(bloqueBox);
+            bloquesMostrados.add(bloqueBox);
         }
+
+        // Almacenar referencias a los bloques mostrados para este nivel
+        bloquePorNivel.put(nivelActual, List.of(bloquesMostrados));
 
         return contenedorNivel;
     }
@@ -208,6 +228,7 @@ public class IndexMultiController {
         };
 
         List<Integer> bloquesAMostrar = obtenerBloquesAMostrar(bloquesTotales);
+        List<VBox> bloquesDatosMostrados = new ArrayList<>();
 
         for (int i = 0; i < bloquesAMostrar.size(); i++) {
             int numeroBloque = bloquesAMostrar.get(i);
@@ -262,7 +283,11 @@ public class IndexMultiController {
 
             bloqueBox.getChildren().add(filasBox);
             contenedorDatos.getChildren().add(bloqueBox);
+            bloquesDatosMostrados.add(bloqueBox);
         }
+
+        // Almacenar referencias a los bloques de datos
+        bloquePorNivel.put(0, List.of(bloquesDatosMostrados));
     }
 
     @FXML
@@ -367,25 +392,30 @@ public class IndexMultiController {
 
             if (contenedores.size() < 2) return;
 
-            // Flechas entre cada contenedor consecutivo
+            // Flechas entre cada contenedor consecutivo (nivel a nivel)
             for (int i = 0; i < contenedores.size() - 1; i++) {
                 List<VBox> bloquesActuales = obtenerBloquesDeContenedor(contenedores.get(i));
                 List<VBox> bloquesSiguientes = obtenerBloquesDeContenedor(contenedores.get(i + 1));
                 
                 if (!bloquesActuales.isEmpty() && !bloquesSiguientes.isEmpty()) {
+                    // FLECHA 1: Verde (Primer bloque)
                     dibujarFlechaDesdeBloques(gc, canvas, bloquesActuales.get(0), bloquesSiguientes.get(0), Color.GREEN);
                     
+                    // FLECHA 2: Azul (Bloque medio) - SOLO si hay más de 2 bloques
                     if (bloquesSiguientes.size() > 2) {
+                        int midIdx = bloquesActuales.size() / 2;
+                        int midDat = bloquesSiguientes.size() / 2;
                         dibujarFlechaDesdeBloques(gc, canvas, 
-                            bloquesActuales.get(Math.min(bloquesActuales.size()/2, bloquesActuales.size()-1)), 
-                            bloquesSiguientes.get(bloquesSiguientes.size()/2), 
+                            bloquesActuales.get(midIdx), 
+                            bloquesSiguientes.get(midDat), 
                             Color.BLUE);
                     }
                     
+                    // FLECHA 3: Rojo (Último bloque) - SOLO si hay más de 1 bloque
                     if (bloquesSiguientes.size() > 1) {
                         dibujarFlechaDesdeBloques(gc, canvas, 
-                            bloquesActuales.get(bloquesActuales.size()-1), 
-                            bloquesSiguientes.get(bloquesSiguientes.size()-1), 
+                            bloquesActuales.get(bloquesActuales.size() - 1), 
+                            bloquesSiguientes.get(bloquesSiguientes.size() - 1), 
                             Color.RED);
                     }
                 }
@@ -430,45 +460,49 @@ public class IndexMultiController {
     }
 
     private void dibujarFlechasDinamicas() {
-        if (canvasFlechas == null || hboxTablas.getChildren().isEmpty()) return;
+        if (canvasFlechas == null || bloquePorNivel.isEmpty()) {
+            return;
+        }
 
         GraphicsContext gc = canvasFlechas.getGraphicsContext2D();
         gc.clearRect(0, 0, canvasFlechas.getWidth(), canvasFlechas.getHeight());
 
         try {
-            List<VBox> contenedores = new ArrayList<>();
-            for (javafx.scene.Node node : hboxTablas.getChildren()) {
-                if (node instanceof VBox) {
-                    contenedores.add((VBox) node);
+            // Obtener orden de niveles (de mayor a menor nivel)
+            List<Integer> nivelesOrdenados = new ArrayList<>(bloquePorNivel.keySet());
+            Collections.sort(nivelesOrdenados, Collections.reverseOrder());
+
+            // Dibujar flechas entre niveles consecutivos
+            for (int i = 0; i < nivelesOrdenados.size() - 1; i++) {
+                int nivelActual = nivelesOrdenados.get(i);
+                int nivelSiguiente = nivelesOrdenados.get(i + 1);
+
+                List<VBox> bloquesActuales = bloquePorNivel.get(nivelActual).get(0);
+                List<VBox> bloquesSiguientes = bloquePorNivel.get(nivelSiguiente).get(0);
+
+                if (bloquesActuales.isEmpty() || bloquesSiguientes.isEmpty()) {
+                    continue;
                 }
-            }
 
-            if (contenedores.size() < 2) return;
+                // FLECHA 1: Verde (Primer bloque)
+                dibujarFlechaDesdeBloques(gc, canvasFlechas, bloquesActuales.get(0), bloquesSiguientes.get(0), Color.GREEN);
 
-            // Flechas entre cada contenedor consecutivo
-            for (int i = 0; i < contenedores.size() - 1; i++) {
-                List<VBox> bloquesActuales = obtenerBloquesDeContenedor(contenedores.get(i));
-                List<VBox> bloquesSiguientes = obtenerBloquesDeContenedor(contenedores.get(i + 1));
+                // FLECHA 2: Azul (Bloque medio) - SOLO si hay más de 2 bloques
+                if (bloquesSiguientes.size() > 2) {
+                    int midIdx = bloquesActuales.size() / 2;
+                    int midDat = bloquesSiguientes.size() / 2;
+                    dibujarFlechaDesdeBloques(gc, canvasFlechas, 
+                        bloquesActuales.get(midIdx), 
+                        bloquesSiguientes.get(midDat), 
+                        Color.BLUE);
+                }
                 
-                if (!bloquesActuales.isEmpty() && !bloquesSiguientes.isEmpty()) {
-                    // Verde: primero
-                    dibujarFlechaDesdeBloques(gc, canvasFlechas, bloquesActuales.get(0), bloquesSiguientes.get(0), Color.GREEN);
-                    
-                    // Azul: medio
-                    if (bloquesSiguientes.size() > 2) {
-                        dibujarFlechaDesdeBloques(gc, canvasFlechas, 
-                            bloquesActuales.get(Math.min(bloquesActuales.size()/2, bloquesActuales.size()-1)), 
-                            bloquesSiguientes.get(bloquesSiguientes.size()/2), 
-                            Color.BLUE);
-                    }
-                    
-                    // Roja: último
-                    if (bloquesSiguientes.size() > 1) {
-                        dibujarFlechaDesdeBloques(gc, canvasFlechas, 
-                            bloquesActuales.get(bloquesActuales.size()-1), 
-                            bloquesSiguientes.get(bloquesSiguientes.size()-1), 
-                            Color.RED);
-                    }
+                // FLECHA 3: Rojo (Último bloque) - SOLO si hay más de 1 bloque
+                if (bloquesSiguientes.size() > 1) {
+                    dibujarFlechaDesdeBloques(gc, canvasFlechas, 
+                        bloquesActuales.get(bloquesActuales.size() - 1), 
+                        bloquesSiguientes.get(bloquesSiguientes.size() - 1), 
+                        Color.RED);
                 }
             }
 
@@ -479,25 +513,36 @@ public class IndexMultiController {
 
     private void dibujarFlechaDesdeBloques(GraphicsContext gc, Canvas canvas, VBox bloqueOrigen, VBox bloqueDestino, Color color) {
         try {
-            Bounds boundsOrigen = bloqueOrigen.localToScene(bloqueOrigen.getBoundsInLocal());
-            Bounds boundsDestino = bloqueDestino.localToScene(bloqueDestino.getBoundsInLocal());
-            Bounds canvasBounds = canvas.localToScene(canvas.getBoundsInLocal());
+            // Obtener bounds en coordenadas de scene
+            Bounds boundsOrigenScene = bloqueOrigen.localToScene(bloqueOrigen.getBoundsInLocal());
+            Bounds boundsDestinoScene = bloqueDestino.localToScene(bloqueDestino.getBoundsInLocal());
+            Bounds canvasSceneBounds = canvas.localToScene(canvas.getBoundsInLocal());
+            Bounds scrollBounds = scrollPanePrincipal.localToScene(scrollPanePrincipal.getBoundsInLocal());
 
-            if (boundsOrigen == null || boundsDestino == null || canvasBounds == null) return;
+            if (boundsOrigenScene == null || boundsDestinoScene == null || canvasSceneBounds == null || scrollBounds == null) {
+                return;
+            }
 
-            double x1 = boundsOrigen.getCenterX() - canvasBounds.getMinX();
-            double y1 = boundsOrigen.getMaxY() - canvasBounds.getMinY();
-            double x2 = boundsDestino.getCenterX() - canvasBounds.getMinX();
-            double y2 = boundsDestino.getMinY() - canvasBounds.getMinY();
+            if (boundsOrigenScene.isEmpty() || boundsDestinoScene.isEmpty()) {
+                return;
+            }
 
-            // Línea
+            // Convertir de coordenadas de scene a coordenadas del canvas
+            // Usar borde derecho del origen y borde izquierdo del destino para unir flecha
+            double x1 = boundsOrigenScene.getMaxX() - canvasSceneBounds.getMinX();
+            double y1 = boundsOrigenScene.getCenterY() - canvasSceneBounds.getMinY();
+
+            double x2 = boundsDestinoScene.getMinX() - canvasSceneBounds.getMinX();
+            double y2 = boundsDestinoScene.getCenterY() - canvasSceneBounds.getMinY();
+
+            // Dibujar línea
             gc.setStroke(color);
-            gc.setLineWidth(2.5);
+            gc.setLineWidth(3.0);
             gc.strokeLine(x1, y1, x2, y2);
 
-            // Punta de flecha
+            // Dibujar punta de flecha
             double angle = Math.atan2(y2 - y1, x2 - x1);
-            double arrowSize = 12;
+            double arrowSize = 10;
             gc.setFill(color);
             gc.fillPolygon(
                     new double[]{x2, x2 - arrowSize * Math.cos(angle - Math.PI / 6), x2 - arrowSize * Math.cos(angle + Math.PI / 6)},
@@ -506,7 +551,7 @@ public class IndexMultiController {
             );
 
         } catch (Exception e) {
-            System.err.println("Error dibujando flecha: " + e.getMessage());
+            // Silent - flecha fallida no debe causar error
         }
     }
 
@@ -566,6 +611,7 @@ public class IndexMultiController {
     public void limpiar() {
         hboxTablas.getChildren().clear();
         nivelesIndices.clear();
+        bloquePorNivel.clear();
         contenedorDatos = null;
         if (isMaximized && maximizedStage != null) {
             maximizedStage.close();
