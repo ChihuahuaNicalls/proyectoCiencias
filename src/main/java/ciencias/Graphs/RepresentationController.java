@@ -2898,6 +2898,15 @@ public class RepresentationController {
                 return "AA";
             }
         } else {
+            char[] chars = lastVertex.toCharArray();
+            for (int i = chars.length - 1; i >= 0; i--) {
+                if (chars[i] < 'Z') {
+                    chars[i]++;
+                    return new String(chars);
+                } else {
+                    chars[i] = 'A';
+                }
+            }
             return lastVertex + "A";
         }
     }
