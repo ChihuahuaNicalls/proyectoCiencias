@@ -2911,6 +2911,7 @@ public class RepresentationController {
         }
     }
 
+    
     @FXML
     private void save() {
         FileChooser fileChooser = new FileChooser();
@@ -2925,7 +2926,9 @@ public class RepresentationController {
         }
 
         try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(file))) {
-            oos.writeObject(graphData.getState());
+            // Convert to SharedGraphData for cross-tab compatibility
+            SharedGraphData sharedData = convertToSharedGraphData(graphData);
+            oos.writeObject(sharedData);
             modificationText.setText("Grafo guardado: " + file.getName());
         } catch (Exception e) {
             modificationText.setText("Error al guardar: " + e.getMessage());
@@ -2946,8 +2949,18 @@ public class RepresentationController {
         }
 
         try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(file))) {
-            GraphState loadedState = (GraphState) ois.readObject();
-            graphData.setState(loadedState);
+            Object loadedObject = ois.readObject();
+            
+            if (loadedObject instanceof SharedGraphData) {
+                // Load from shared format (compatible with other tabs)
+                SharedGraphData sharedData = (SharedGraphData) loadedObject;
+                convertFromSharedGraphData(graphData, sharedData);
+            } else if (loadedObject instanceof GraphState) {
+                // Fallback: load from legacy format
+                GraphState loadedState = (GraphState) loadedObject;
+                graphData.setState(loadedState);
+            }
+            
             layoutGraph.clear();
             history.clear();
             redoStack.clear();
@@ -2957,6 +2970,44 @@ public class RepresentationController {
             modificationText.setText("Grafo cargado: " + file.getName());
         } catch (Exception e) {
             modificationText.setText("Error al cargar: " + e.getMessage());
+        }
+    }
+
+    private SharedGraphData convertToSharedGraphData(Graph graph) {
+        SharedGraphData sharedData = new SharedGraphData();
+        sharedData.vertices = new LinkedHashSet<>(graph.vertices);
+        sharedData.isDirected = graph.isDirected;
+        sharedData.isWeighted = graph.isWeighted;
+        
+        for (Edge e : graph.edges) {
+            // RepresentationController.Edge doesn't have isSumEdge field
+            SharedGraphData.SharedEdge sharedEdge = new SharedGraphData.SharedEdge(
+                    e.source,
+                    e.destination,
+                    e.label,
+                    false  // RepresentationController doesn't use sum edges
+            );
+            sharedData.edges.add(sharedEdge);
+        }
+        
+        return sharedData;
+    }
+
+    private void convertFromSharedGraphData(Graph graph, SharedGraphData sharedData) {
+        graph.vertices.clear();
+        graph.edges.clear();
+        graph.isDirected = sharedData.isDirected;
+        graph.isWeighted = sharedData.isWeighted;
+        
+        graph.vertices.addAll(sharedData.vertices);
+        
+        for (SharedGraphData.SharedEdge sharedEdge : sharedData.edges) {
+            try {
+                // RepresentationController.Graph only has addEdge(String, String, String)
+                graph.addEdge(sharedEdge.source, sharedEdge.destination, sharedEdge.label);
+            } catch (IllegalStateException ex) {
+                // Edge might already exist, skip
+            }
         }
     }
 

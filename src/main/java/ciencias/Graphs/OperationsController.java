@@ -1603,6 +1603,7 @@ public class OperationsController {
         operationText.setText("Grafo resultado reiniciado");
     }
 
+    
     @FXML
     private void save() {
         Graph currentGraph = getCurrentModifyingGraph();
@@ -1627,7 +1628,9 @@ public class OperationsController {
         }
 
         try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(file))) {
-            oos.writeObject(currentGraph.getState());
+            // Convert to SharedGraphData for cross-tab compatibility
+            SharedGraphData sharedData = convertToSharedGraphData(currentGraph);
+            oos.writeObject(sharedData);
             modificationText.setText("Grafo guardado: " + file.getName());
         } catch (Exception e) {
             modificationText.setText("Error al guardar: " + e.getMessage());
@@ -1659,58 +1662,79 @@ public class OperationsController {
         }
 
         try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(file))) {
-            List<GraphState> states = new ArrayList<>();
-            try {
-                while (true) {
-                    Object obj = ois.readObject();
-                    if (obj instanceof GraphState) {
-                        states.add((GraphState) obj);
-                    }
+            Object loadedObject = ois.readObject();
+            
+            if (loadedObject instanceof SharedGraphData) {
+                // Load from shared format (compatible with other tabs)
+                SharedGraphData sharedData = (SharedGraphData) loadedObject;
+                convertFromSharedGraphData(currentGraph, sharedData);
+                
+                if ("Grafo 1".equals(currentModifyingGraph)) {
+                    graph1History.clear();
+                    graph1RedoStack.clear();
+                    currentScaleGraph1 = 1.0;
+                    drawGraph(graph1Data, graph1);
+                } else if ("Grafo 2".equals(currentModifyingGraph)) {
+                    graph2History.clear();
+                    graph2RedoStack.clear();
+                    currentScaleGraph2 = 1.0;
+                    drawGraph(graph2Data, graph2);
                 }
-            } catch (EOFException eof) {
+            } else if (loadedObject instanceof GraphState) {
+                // Fallback: load from legacy format
+                List<GraphState> states = new ArrayList<>();
+                states.add((GraphState) loadedObject);
+                
+                try {
+                    while (true) {
+                        Object obj = ois.readObject();
+                        if (obj instanceof GraphState) {
+                            states.add((GraphState) obj);
+                        }
+                    }
+                } catch (EOFException eof) {
+                }
 
-            }
+                if (states.isEmpty()) {
+                    throw new IllegalArgumentException("Archivo no contiene grafos válidos");
+                }
 
-            if (states.isEmpty()) {
-                throw new IllegalArgumentException("Archivo no contiene grafos válidos");
-            }
+                if (states.size() >= 3) {
+                    graph1Data = new Graph();
+                    graph1Data.setState(states.get(0));
+                    graph2Data = new Graph();
+                    graph2Data.setState(states.get(1));
+                    graphResultData = new Graph();
+                    graphResultData.setState(states.get(2));
 
-            if (states.size() >= 3) {
+                    graph1History.clear();
+                    graph2History.clear();
+                    graph1RedoStack.clear();
+                    graph2RedoStack.clear();
 
-                graph1Data = new Graph();
-                graph1Data.setState(states.get(0));
-                graph2Data = new Graph();
-                graph2Data.setState(states.get(1));
-                graphResultData = new Graph();
-                graphResultData.setState(states.get(2));
+                    updateAllGraphDisplays();
+                    modificationText.setText("Grafos cargados desde: " + file.getName());
+                    updateOperationState();
+                    return;
+                }
 
-                graph1History.clear();
-                graph2History.clear();
-                graph1RedoStack.clear();
-                graph2RedoStack.clear();
+                GraphState loadedState = states.get(0);
 
-                updateAllGraphDisplays();
-                modificationText.setText("Grafos cargados desde: " + file.getName());
-                updateOperationState();
-                return;
-            }
-
-            GraphState loadedState = states.get(0);
-
-            if ("Grafo 1".equals(currentModifyingGraph)) {
-                graph1Data = new Graph();
-                graph1Data.setState(loadedState);
-                graph1History.clear();
-                graph1RedoStack.clear();
-                currentScaleGraph1 = 1.0;
-                drawGraph(graph1Data, graph1);
-            } else if ("Grafo 2".equals(currentModifyingGraph)) {
-                graph2Data = new Graph();
-                graph2Data.setState(loadedState);
-                graph2History.clear();
-                graph2RedoStack.clear();
-                currentScaleGraph2 = 1.0;
-                drawGraph(graph2Data, graph2);
+                if ("Grafo 1".equals(currentModifyingGraph)) {
+                    graph1Data = new Graph();
+                    graph1Data.setState(loadedState);
+                    graph1History.clear();
+                    graph1RedoStack.clear();
+                    currentScaleGraph1 = 1.0;
+                    drawGraph(graph1Data, graph1);
+                } else if ("Grafo 2".equals(currentModifyingGraph)) {
+                    graph2Data = new Graph();
+                    graph2Data.setState(loadedState);
+                    graph2History.clear();
+                    graph2RedoStack.clear();
+                    currentScaleGraph2 = 1.0;
+                    drawGraph(graph2Data, graph2);
+                }
             }
 
             modificationText.setText("Grafo cargado: " + file.getName());
@@ -1718,6 +1742,42 @@ public class OperationsController {
         } catch (Exception e) {
             modificationText.setText("Error al cargar: " + e.getMessage());
             e.printStackTrace();
+        }
+    }
+
+    private SharedGraphData convertToSharedGraphData(Graph graph) {
+        SharedGraphData sharedData = new SharedGraphData();
+        sharedData.vertices = new LinkedHashSet<>(graph.vertices);
+        sharedData.isDirected = graph.isDirected;
+        sharedData.isWeighted = graph.isWeighted;
+        
+        for (Edge e : graph.edges) {
+            SharedGraphData.SharedEdge sharedEdge = new SharedGraphData.SharedEdge(
+                    e.source,
+                    e.destination,
+                    e.label,
+                    e.isSumEdge
+            );
+            sharedData.edges.add(sharedEdge);
+        }
+        
+        return sharedData;
+    }
+
+    private void convertFromSharedGraphData(Graph graph, SharedGraphData sharedData) {
+        graph.vertices.clear();
+        graph.edges.clear();
+        graph.isDirected = sharedData.isDirected;
+        graph.isWeighted = sharedData.isWeighted;
+        
+        graph.vertices.addAll(sharedData.vertices);
+        
+        for (SharedGraphData.SharedEdge sharedEdge : sharedData.edges) {
+            try {
+                graph.addEdge(sharedEdge.source, sharedEdge.destination, sharedEdge.label, sharedEdge.isSumEdge);
+            } catch (IllegalStateException ex) {
+                // Edge might already exist, skip
+            }
         }
     }
 
