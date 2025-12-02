@@ -13,12 +13,6 @@ import java.util.*;
 import java.io.*;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
-import javafx.scene.shape.Path;
-import javafx.scene.shape.MoveTo;
-import javafx.scene.shape.QuadCurveTo;
-import javafx.scene.shape.ArcTo;
-import javafx.scene.shape.HLineTo;
-import javafx.scene.shape.VLineTo;
 import javafx.scene.shape.CubicCurve;
 import javafx.scene.input.ScrollEvent;
 
@@ -178,69 +172,69 @@ public class OperationsController {
     }
 
     private static class GraphState implements Serializable {
-    private static final long serialVersionUID = 1L;
-    Set<String> vertices;
-    List<Edge> edges;
-    boolean isDirected;
-    boolean isWeighted;
+        private static final long serialVersionUID = 1L;
+        Set<String> vertices;
+        List<Edge> edges;
+        boolean isDirected;
+        boolean isWeighted;
 
-    public GraphState() {
-        this.vertices = new HashSet<>();
-        this.edges = new ArrayList<>();
-    }
+        public GraphState() {
+            this.vertices = new HashSet<>();
+            this.edges = new ArrayList<>();
+        }
 
-    public GraphState(Set<String> vertices, List<Edge> edges, boolean isDirected, boolean isWeighted) {
-        this.vertices = new HashSet<>(vertices);
-        this.edges = new ArrayList<>(edges);
-        this.isDirected = isDirected;
-        this.isWeighted = isWeighted;
+        public GraphState(Set<String> vertices, List<Edge> edges, boolean isDirected, boolean isWeighted) {
+            this.vertices = new HashSet<>(vertices);
+            this.edges = new ArrayList<>(edges);
+            this.isDirected = isDirected;
+            this.isWeighted = isWeighted;
+        }
     }
-}
 
     private static class Edge implements Serializable {
-    private static final long serialVersionUID = 1L;
-    String source;
-    String destination;
-    String label;
-    boolean isSumEdge;
-    boolean isLoop;
+        private static final long serialVersionUID = 1L;
+        String source;
+        String destination;
+        String label;
+        boolean isSumEdge;
+        boolean isLoop;
 
-    public Edge() {
-        this("", "", "");
-    }
+        public Edge() {
+            this("", "", "");
+        }
 
-    public Edge(String source, String destination, String label) {
-        this.source = source;
-        this.destination = destination;
-        this.label = label;
-        this.isSumEdge = false;
-        this.isLoop = source.equals(destination);
-    }
+        public Edge(String source, String destination, String label) {
+            this.source = source;
+            this.destination = destination;
+            this.label = label;
+            this.isSumEdge = false;
+            this.isLoop = source.equals(destination);
+        }
 
-    public Edge(String source, String destination, String label, boolean isSumEdge) {
-        this.source = source;
-        this.destination = destination;
-        this.label = label;
-        this.isSumEdge = isSumEdge;
-        this.isLoop = source.equals(destination);
-    }
+        public Edge(String source, String destination, String label, boolean isSumEdge) {
+            this.source = source;
+            this.destination = destination;
+            this.label = label;
+            this.isSumEdge = isSumEdge;
+            this.isLoop = source.equals(destination);
+        }
 
-    @Override
-    public boolean equals(Object obj) {
-        if (this == obj)
-            return true;
-        if (obj == null || getClass() != obj.getClass())
-            return false;
-        Edge edge = (Edge) obj;
-        return source.equals(edge.source) && destination.equals(edge.destination) &&
-                label.equals(edge.label) && isSumEdge == edge.isSumEdge;
-    }
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj)
+                return true;
+            if (obj == null || getClass() != obj.getClass())
+                return false;
+            Edge edge = (Edge) obj;
+            return source.equals(edge.source) && destination.equals(edge.destination) &&
+                    label.equals(edge.label) && isSumEdge == edge.isSumEdge;
+        }
 
-    @Override
-    public int hashCode() {
-        return Objects.hash(source, destination, label, isSumEdge);
+        @Override
+        public int hashCode() {
+            return Objects.hash(source, destination, label, isSumEdge);
+        }
     }
-}
 
     private class Graph {
         private Set<String> vertices;
@@ -295,16 +289,16 @@ public class OperationsController {
         }
 
         public void addEdge(String source, String destination, String label, boolean isSumEdge) {
-            // Enforce unique label across the entire graph: no two edges may have the same notation
-            // Exception: when performing the "Suma" operation between graphs, duplicate labels are allowed
+
             if (label != null && !label.trim().isEmpty()) {
                 boolean isSumOperation = "Suma".equals(currentOperation);
                 for (Edge existingEdge : edges) {
                     if (label.equals(existingEdge.label)) {
                         if (!isSumOperation) {
-                            throw new IllegalStateException("No se permiten aristas con la misma notación '" + label + "' en el mismo grafo");
+                            throw new IllegalStateException(
+                                    "No se permiten aristas con la misma notacion '" + label + "' en el mismo grafo");
                         } else {
-                            // allow duplicate labels during Suma operation
+
                             break;
                         }
                     }
@@ -319,12 +313,12 @@ public class OperationsController {
             if (source.equals(destination)) {
                 if (edgesBetween.size() >= maxLoops) {
                     throw new IllegalStateException(
-                            "No se pueden tener más de " + maxLoops + " bucles en el vértice " + source);
+                            "No se pueden tener mas de " + maxLoops + " bucles en el vertice " + source);
                 }
             } else {
                 if (edgesBetween.size() >= maxEdges && !isOperation) {
                     throw new IllegalStateException(
-                            "No se pueden tener más de " + maxEdges + " aristas entre " + source + " y " + destination);
+                            "No se pueden tener mas de " + maxEdges + " aristas entre " + source + " y " + destination);
                 }
             }
 
@@ -809,7 +803,7 @@ public class OperationsController {
             fusionContractionText.setText("Seleccionar arista a contraer (v1 v2):");
         }
 
-        operationText.setText("Operación seleccionada: " + operation);
+        operationText.setText("Operacion seleccionada: " + operation);
         updateOperationState();
     }
 
@@ -833,7 +827,7 @@ public class OperationsController {
         }
 
         updateGraphDisplay();
-        modificationText.setText("Añadidos vértices: " + String.join(", ", addedVertices));
+        modificationText.setText("Añadidos vertices: " + String.join(", ", addedVertices));
         updateOperationState();
     }
 
@@ -848,19 +842,19 @@ public class OperationsController {
         }
 
         if (vertex.isEmpty()) {
-            modificationText.setText("Error: Ingrese un vértice a eliminar");
+            modificationText.setText("Error: Ingrese un vertice a eliminar");
             return;
         }
 
         if (!currentGraph.hasVertex(vertex)) {
-            modificationText.setText("Error: El vértice " + vertex + " no existe");
+            modificationText.setText("Error: El vertice " + vertex + " no existe");
             return;
         }
 
         saveGraphState();
         currentGraph.removeVertex(vertex);
         updateGraphDisplay();
-        modificationText.setText("Vértice " + vertex + " eliminado");
+        modificationText.setText("Vertice " + vertex + " eliminado");
         updateOperationState();
     }
 
@@ -877,7 +871,7 @@ public class OperationsController {
         }
 
         if (source.isEmpty()) {
-            modificationText.setText("Error: Ingrese al menos el vértice origen");
+            modificationText.setText("Error: Ingrese al menos el vertice origen");
             return;
         }
 
@@ -886,7 +880,7 @@ public class OperationsController {
         }
 
         if (!currentGraph.hasVertex(source) || !currentGraph.hasVertex(destination)) {
-            modificationText.setText("Error: Los vértices deben existir");
+            modificationText.setText("Error: Los vertices deben existir");
             return;
         }
 
@@ -896,7 +890,7 @@ public class OperationsController {
             int maxLoops = isOperation ? 4 : 2;
             if (loops.size() >= maxLoops) {
                 modificationText
-                        .setText("Error: No se pueden tener más de " + maxLoops + " bucles en el vértice " + source);
+                        .setText("Error: No se pueden tener mas de " + maxLoops + " bucles en el vertice " + source);
                 return;
             }
         }
@@ -914,7 +908,7 @@ public class OperationsController {
                     }
                     label = weightText;
                 } catch (NumberFormatException e) {
-                    modificationText.setText("Error: Peso debe ser un número");
+                    modificationText.setText("Error: Peso debe ser un numero");
                     return;
                 }
             }
@@ -923,7 +917,7 @@ public class OperationsController {
                 label = "";
             } else {
                 if (weightText.length() != 1 || !Character.isLetter(weightText.charAt(0))) {
-                    modificationText.setText("Error: La notación debe ser una letra (a-z)");
+                    modificationText.setText("Error: La notacion debe ser una letra (a-z)");
                     return;
                 }
                 label = weightText.toLowerCase();
@@ -938,7 +932,7 @@ public class OperationsController {
             String edgeType = source.equals(destination) ? "Bucle en " + source : source + " → " + destination;
             modificationText.setText("Arista añadida: " + edgeType +
                     (edgePonderation.isSelected() ? " (peso: " + labelDisplay + ")"
-                            : " (notación: " + labelDisplay + ")"));
+                            : " (notacion: " + labelDisplay + ")"));
             updateOperationState();
         } catch (IllegalStateException e) {
             modificationText.setText("Error: " + e.getMessage());
@@ -958,7 +952,7 @@ public class OperationsController {
         }
 
         if (source.isEmpty()) {
-            modificationText.setText("Error: Ingrese al menos el vértice origen");
+            modificationText.setText("Error: Ingrese al menos el vertice origen");
             return;
         }
 
@@ -975,7 +969,7 @@ public class OperationsController {
                     Double.parseDouble(weightText);
                     label = weightText;
                 } catch (NumberFormatException e) {
-                    modificationText.setText("Error: Peso debe ser un número");
+                    modificationText.setText("Error: Peso debe ser un numero");
                     return;
                 }
             }
@@ -1003,7 +997,7 @@ public class OperationsController {
 
         if (!found) {
             modificationText.setText("Error: No existe arista con la " +
-                    (edgePonderation.isSelected() ? "peso" : "notación") + " especificada");
+                    (edgePonderation.isSelected() ? "peso" : "notacion") + " especificada");
             return;
         }
 
@@ -1017,28 +1011,28 @@ public class OperationsController {
     @FXML
     private void operate() {
         if (currentOperation == null) {
-            operationText.setText("Error: Seleccione una operación");
+            operationText.setText("Error: Seleccione una operacion");
             return;
         }
 
         if ("Entre los 2 grafos".equals(currentOperatingGraph)) {
             if (graph1Data.isEmpty() || graph2Data.isEmpty()) {
-                operationText.setText("Error: Ambos grafos deben contener vértices para operar entre ellos");
+                operationText.setText("Error: Ambos grafos deben contener vertices para operar entre ellos");
                 return;
             }
 
             if (graph1Data.isDirected() != graph2Data.isDirected()) {
-                operationText.setText("Error: No se pueden operar grafos con diferente tipo de dirección");
+                operationText.setText("Error: No se pueden operar grafos con diferente tipo de direccion");
                 return;
             }
             if (graph1Data.isWeighted() != graph2Data.isWeighted()) {
-                operationText.setText("Error: No se pueden operar grafos con diferente tipo de ponderación");
+                operationText.setText("Error: No se pueden operar grafos con diferente tipo de ponderacion");
                 return;
             }
         } else {
             Graph targetGraph = "Grafo 1".equals(currentOperatingGraph) ? graph1Data : graph2Data;
             if (targetGraph.isEmpty()) {
-                operationText.setText("Error: El grafo operado está vacío");
+                operationText.setText("Error: El grafo operado esta vacio");
                 return;
             }
         }
@@ -1050,9 +1044,9 @@ public class OperationsController {
                 performSingleGraphOperation();
             }
             updateResultGraphDisplay();
-            operationText.setText("Operación completada: " + currentOperation);
+            operationText.setText("Operacion completada: " + currentOperation);
         } catch (Exception e) {
-            operationText.setText("Error en operación: " + e.getMessage());
+            operationText.setText("Error en operacion: " + e.getMessage());
         }
     }
 
@@ -1070,7 +1064,7 @@ public class OperationsController {
                 String v1 = fusionContractionItem1.getText().trim().toUpperCase();
                 String v2 = fusionContractionItem2.getText().trim().toUpperCase();
                 if (v1.isEmpty() || v2.isEmpty()) {
-                    throw new IllegalArgumentException("Ingrese ambos vértices para fusionar");
+                    throw new IllegalArgumentException("Ingrese ambos vertices para fusionar");
                 }
                 graphResultData = fuseVertices(targetGraph, v1, v2);
                 break;
@@ -1078,12 +1072,12 @@ public class OperationsController {
                 String e1 = fusionContractionItem1.getText().trim().toUpperCase();
                 String e2 = fusionContractionItem2.getText().trim().toUpperCase();
                 if (e1.isEmpty() || e2.isEmpty()) {
-                    throw new IllegalArgumentException("Ingrese ambos vértices de la arista a contraer");
+                    throw new IllegalArgumentException("Ingrese ambos vertices de la arista a contraer");
                 }
                 graphResultData = contractEdge(targetGraph, e1, e2);
                 break;
             default:
-                throw new UnsupportedOperationException("Operación no implementada: " + currentOperation);
+                throw new UnsupportedOperationException("Operacion no implementada: " + currentOperation);
         }
     }
 
@@ -1111,7 +1105,7 @@ public class OperationsController {
                 graphResultData = composition(graph1Data, graph2Data);
                 break;
             default:
-                throw new UnsupportedOperationException("Operación no implementada: " + currentOperation);
+                throw new UnsupportedOperationException("Operacion no implementada: " + currentOperation);
         }
     }
 
@@ -1203,7 +1197,7 @@ public class OperationsController {
 
     private Graph fuseVertices(Graph original, String v1, String v2) {
         if (!original.hasVertex(v1) || !original.hasVertex(v2)) {
-            throw new IllegalArgumentException("Los vértices deben existir en el grafo");
+            throw new IllegalArgumentException("Los vertices deben existir en el grafo");
         }
 
         Graph result = new Graph();
@@ -1506,12 +1500,12 @@ public class OperationsController {
         setOperationControlsEnabled(anyGraphHasData);
 
         if (!anyGraphHasData) {
-            operationText.setText("Agregue vértices a los grafos para habilitar operaciones");
+            operationText.setText("Agregue vertices a los grafos para habilitar operaciones");
         } else {
             if (currentOperatingGraph != null && currentOperation != null) {
                 if ("Entre los 2 grafos".equals(currentOperatingGraph)) {
                     if (!graph1HasData || !graph2HasData) {
-                        operationText.setText("Error: Para operar entre los 2 grafos, ambos deben contener vértices");
+                        operationText.setText("Error: Para operar entre los 2 grafos, ambos deben contener vertices");
                         operateButton.setDisable(true);
                     } else {
                         operateButton.setDisable(false);
@@ -1520,7 +1514,7 @@ public class OperationsController {
                 } else {
                     Graph targetGraph = "Grafo 1".equals(currentOperatingGraph) ? graph1Data : graph2Data;
                     if (targetGraph.isEmpty()) {
-                        operationText.setText("Error: El grafo operado está vacío");
+                        operationText.setText("Error: El grafo operado esta vacio");
                         operateButton.setDisable(true);
                     } else {
                         operateButton.setDisable(false);
@@ -1532,7 +1526,7 @@ public class OperationsController {
                 if (currentOperatingGraph == null) {
                     operationText.setText("Seleccione un grafo para operar");
                 } else if (currentOperation == null) {
-                    operationText.setText("Seleccione una operación");
+                    operationText.setText("Seleccione una operacion");
                 }
             }
         }
@@ -1554,7 +1548,7 @@ public class OperationsController {
         currentGraph.setState(previousState);
 
         updateGraphDisplay();
-        modificationText.setText("Acción deshecha");
+        modificationText.setText("Accion deshecha");
         updateOperationState();
     }
 
@@ -1574,7 +1568,7 @@ public class OperationsController {
         currentGraph.setState(nextState);
 
         updateGraphDisplay();
-        modificationText.setText("Acción rehecha");
+        modificationText.setText("Accion rehecha");
         updateOperationState();
     }
 
@@ -1603,7 +1597,6 @@ public class OperationsController {
         operationText.setText("Grafo resultado reiniciado");
     }
 
-    
     @FXML
     private void save() {
         Graph currentGraph = getCurrentModifyingGraph();
@@ -1628,7 +1621,7 @@ public class OperationsController {
         }
 
         try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(file))) {
-            // Convert to SharedGraphData for cross-tab compatibility
+
             SharedGraphData sharedData = convertToSharedGraphData(currentGraph);
             oos.writeObject(sharedData);
             modificationText.setText("Grafo guardado: " + file.getName());
@@ -1663,12 +1656,12 @@ public class OperationsController {
 
         try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(file))) {
             Object loadedObject = ois.readObject();
-            
+
             if (loadedObject instanceof SharedGraphData) {
-                // Load from shared format (compatible with other tabs)
+
                 SharedGraphData sharedData = (SharedGraphData) loadedObject;
                 convertFromSharedGraphData(currentGraph, sharedData);
-                
+
                 if ("Grafo 1".equals(currentModifyingGraph)) {
                     graph1History.clear();
                     graph1RedoStack.clear();
@@ -1681,10 +1674,10 @@ public class OperationsController {
                     drawGraph(graph2Data, graph2);
                 }
             } else if (loadedObject instanceof GraphState) {
-                // Fallback: load from legacy format
+
                 List<GraphState> states = new ArrayList<>();
                 states.add((GraphState) loadedObject);
-                
+
                 try {
                     while (true) {
                         Object obj = ois.readObject();
@@ -1696,7 +1689,7 @@ public class OperationsController {
                 }
 
                 if (states.isEmpty()) {
-                    throw new IllegalArgumentException("Archivo no contiene grafos válidos");
+                    throw new IllegalArgumentException("Archivo no contiene grafos validos");
                 }
 
                 if (states.size() >= 3) {
@@ -1750,17 +1743,16 @@ public class OperationsController {
         sharedData.vertices = new LinkedHashSet<>(graph.vertices);
         sharedData.isDirected = graph.isDirected;
         sharedData.isWeighted = graph.isWeighted;
-        
+
         for (Edge e : graph.edges) {
             SharedGraphData.SharedEdge sharedEdge = new SharedGraphData.SharedEdge(
                     e.source,
                     e.destination,
                     e.label,
-                    e.isSumEdge
-            );
+                    e.isSumEdge);
             sharedData.edges.add(sharedEdge);
         }
-        
+
         return sharedData;
     }
 
@@ -1769,14 +1761,14 @@ public class OperationsController {
         graph.edges.clear();
         graph.isDirected = sharedData.isDirected;
         graph.isWeighted = sharedData.isWeighted;
-        
+
         graph.vertices.addAll(sharedData.vertices);
-        
+
         for (SharedGraphData.SharedEdge sharedEdge : sharedData.edges) {
             try {
                 graph.addEdge(sharedEdge.source, sharedEdge.destination, sharedEdge.label, sharedEdge.isSumEdge);
             } catch (IllegalStateException ex) {
-                // Edge might already exist, skip
+
             }
         }
     }
@@ -1804,8 +1796,10 @@ public class OperationsController {
         }
 
         try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(file))) {
-            oos.writeObject(graphResultData.getState());
-            modificationText.setText("Grafo resultado guardado: " + file.getName());
+
+            SharedGraphData shared = convertToSharedGraphData(graphResultData);
+            oos.writeObject(shared);
+            modificationText.setText("Grafo resultado guardado (formato compartido): " + file.getName());
         } catch (Exception e) {
             modificationText.setText("Error al guardar resultado: " + e.getMessage());
             e.printStackTrace();
@@ -1914,7 +1908,7 @@ public class OperationsController {
     @FXML
     private void onIsomorfismoGraph1() {
         if (graph1Data == null || graph1Data.isEmpty()) {
-            showAlert("Isomorfismo", "Grafo 1 vacío");
+            showAlert("Isomorfismo", "Grafo 1 vacio");
             return;
         }
 
@@ -1927,7 +1921,7 @@ public class OperationsController {
     @FXML
     private void onIsomorfismoGraph2() {
         if (graph2Data == null || graph2Data.isEmpty()) {
-            showAlert("Isomorfismo", "Grafo 2 vacío");
+            showAlert("Isomorfismo", "Grafo 2 vacio");
             return;
         }
 
@@ -1940,7 +1934,7 @@ public class OperationsController {
     @FXML
     private void onIsomorfismoGraphResult() {
         if (graphResultData == null || graphResultData.isEmpty()) {
-            showAlert("Isomorfismo", "Grafo Resultante vacío");
+            showAlert("Isomorfismo", "Grafo Resultante vacio");
             return;
         }
 
@@ -2151,18 +2145,16 @@ public class OperationsController {
         centerGraphView(scrollPane);
     }
 
-        private void drawLoop(Pane canvas, Point2D vertex, double radius, boolean isDirected,
+    private void drawLoop(Pane canvas, Point2D vertex, double radius, boolean isDirected,
             boolean isSumEdge, String label, int loopIndex, int totalLoops, List<String> allLabels,
             List<EdgeLabelConnection> connections, List<javafx.scene.shape.Shape> allEdges) {
         Color[] loopColors = { Color.BLACK, Color.RED, Color.ORANGE, Color.GREEN };
         Color edgeColor = loopIndex < loopColors.length ? loopColors[loopIndex] : Color.BLACK;
         final Color hoverColor = getLighter(edgeColor);
 
-        // Anchor point on the left-middle of the vertex
         double anchorX = vertex.getX() - radius;
         double anchorY = vertex.getY() + (loopIndex - (totalLoops - 1) / 2.0) * (radius / 3.0);
 
-        // vertical offset for curve endpoints so they touch near the middle
         double deltaY = 8 + loopIndex * 4;
         double startX = anchorX;
         double startY = anchorY - deltaY;
@@ -2240,13 +2232,11 @@ public class OperationsController {
 
                 List<Color> textColors = Arrays.asList(loopColors);
 
-                // Associate the actual curve with the labels so hovering either updates both
                 allEdges.add(curve);
 
                 drawMultiColorText(canvas, labelX, labelY, nonEmptyLabels, textColors, isSumEdge, connections,
                         allEdges);
 
-                // Ensure hovering the curve updates all its associated label parts
                 final CubicCurve fc = curve;
                 fc.setOnMouseEntered(ev -> {
                     javafx.scene.paint.Color chosenHover = null;
@@ -2285,7 +2275,7 @@ public class OperationsController {
                 });
             }
         }
-            // no placeholder connection needed: drawMultiColorText will create connections for the curve
+
     }
 
     private void centerGraphView(ScrollPane scrollPane) {
@@ -2298,7 +2288,7 @@ public class OperationsController {
     }
 
     private void setupEdgeLabelConnections(List<EdgeLabelConnection> connections) {
-        // Group connections by edge so we can set a single pair of handlers per Shape
+
         Map<javafx.scene.shape.Shape, List<EdgeLabelConnection>> map = new HashMap<>();
         for (EdgeLabelConnection connection : connections) {
             if (connection.edge != null) {
@@ -2310,12 +2300,11 @@ public class OperationsController {
             javafx.scene.shape.Shape edge = entry.getKey();
             List<EdgeLabelConnection> conns = entry.getValue();
 
-            // capture original stroke and width to restore later
             final javafx.scene.paint.Paint originalStroke = edge.getStroke();
             final double originalWidth = edge.getStrokeWidth();
 
             edge.setOnMouseEntered(e -> {
-                // determine hover color per connection; pick first available normal color
+
                 javafx.scene.paint.Color chosenHover = null;
                 for (EdgeLabelConnection c : conns) {
                     if (c.normalTextColor instanceof javafx.scene.paint.Color) {
@@ -2373,7 +2362,7 @@ public class OperationsController {
                 continue;
 
             Color textColor = isSumEdge ? Color.BLUE : colors.get(i % colors.size());
-            // Use a lighter variant of the label color for hover
+
             final Color hoverColor = getLighter(textColor);
 
             Text textPart = new Text(currentX, y, label);
@@ -2412,7 +2401,7 @@ public class OperationsController {
                 if (i < associatedEdges.size()) {
                     edge = associatedEdges.get(i);
                 } else if (associatedEdges.size() == 1) {
-                    // single associated edge (e.g., loop) -> associate same shape to all label parts
+
                     edge = associatedEdges.get(0);
                 }
                 if (edge != null) {
@@ -2432,7 +2421,7 @@ public class OperationsController {
         }
     }
 
-        private void drawEdge(Pane canvas, Point2D source, Point2D target, String label,
+    private void drawEdge(Pane canvas, Point2D source, Point2D target, String label,
             boolean isDirected, double radius, boolean isSumEdge, int parallelIndex, int totalEdges,
             List<String> allLabels, List<EdgeLabelConnection> connections, List<javafx.scene.shape.Shape> allEdges) {
 
@@ -2447,7 +2436,7 @@ public class OperationsController {
 
         double offset = 0;
         if (totalEdges > 1) {
-            // Limit maxOffset so the perpendicular offset never exceeds the vertex radius
+
             double maxOffset = Math.min(12.0, Math.max(0, radius - 2));
             offset = (parallelIndex - (totalEdges - 1) / 2.0) * (maxOffset / Math.max(1, totalEdges - 1));
         }
@@ -2455,9 +2444,8 @@ public class OperationsController {
         double offsetX = -unitY * offset;
         double offsetY = unitX * offset;
 
-        // Center the edge between the two vertices instead of reaching to their extremes.
         double fullDist = distance;
-        double innerGap = Math.min(fullDist * 0.25, radius); // leave 25% gap at each side, up to radius
+        double innerGap = Math.min(fullDist * 0.25, radius);
 
         double adjustedSourceX = source.getX() + offsetX + unitX * innerGap;
         double adjustedSourceY = source.getY() + offsetY + unitY * innerGap;
@@ -2469,7 +2457,7 @@ public class OperationsController {
         final Color hoverColor = getLighter(edgeColor);
 
         Line line = new Line(adjustedSourceX, adjustedSourceY,
-            adjustedTargetX, adjustedTargetY);
+                adjustedTargetX, adjustedTargetY);
 
         if (isSumEdge) {
             line.getStrokeDashArray().addAll(5d, 5d);
@@ -2480,15 +2468,12 @@ public class OperationsController {
 
         line.setStrokeWidth(2);
 
-        // Hover behavior for line is handled centrally in setupEdgeLabelConnections (grouped per Shape)
-
         canvas.getChildren().add(line);
 
         if (allEdges != null) {
             allEdges.add(line);
         }
 
-        // Ensure hovering the line updates all its associated label parts
         line.setOnMouseEntered(e -> {
             javafx.scene.paint.Color chosenHover = null;
             for (EdgeLabelConnection c : connections) {

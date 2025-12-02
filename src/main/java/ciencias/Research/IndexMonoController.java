@@ -18,21 +18,32 @@ import java.util.*;
 
 public class IndexMonoController {
 
-    @FXML private TextField txtLongitudRegistro;
-    @FXML private TextField txtTamañoBloque;
-    @FXML private TextField txtCantidadRegistros;
-    @FXML private TextField txtLongitudCampoIndice;
-    @FXML private Button btnGenerar;
-    @FXML private Button btnLimpiar;
-    @FXML private Button btnGuardar;
-    @FXML private Button btnCargar;
-    @FXML private Canvas canvasFlechas;
-    @FXML private VBox vboxIndices;
-    @FXML private VBox vboxDatos;
+    @FXML
+    private TextField txtLongitudRegistro;
+    @FXML
+    private TextField txtTamañoBloque;
+    @FXML
+    private TextField txtCantidadRegistros;
+    @FXML
+    private TextField txtLongitudCampoIndice;
+    @FXML
+    private Button btnGenerar;
+    @FXML
+    private Button btnLimpiar;
+    @FXML
+    private Button btnGuardar;
+    @FXML
+    private Button btnCargar;
+    @FXML
+    private Canvas canvasFlechas;
+    @FXML
+    private VBox vboxIndices;
+    @FXML
+    private VBox vboxDatos;
 
     private ResearchController researchController;
     private boolean esPrimario = true;
-    
+
     private List<VBox> bloquesIndicesMostrados = new ArrayList<>();
     private List<VBox> bloquesDatosMostrados = new ArrayList<>();
 
@@ -51,47 +62,46 @@ public class IndexMonoController {
     @FXML
     public void generarEstructura() {
         try {
-             int longitudRegistro = Integer.parseInt(txtLongitudRegistro.getText());
-        int tamañoBloque = Integer.parseInt(txtTamañoBloque.getText());
-        int cantidadRegistros = Integer.parseInt(txtCantidadRegistros.getText());
-        int longitudCampoIndice = Integer.parseInt(txtLongitudCampoIndice.getText());
+            int longitudRegistro = Integer.parseInt(txtLongitudRegistro.getText());
+            int tamañoBloque = Integer.parseInt(txtTamañoBloque.getText());
+            int cantidadRegistros = Integer.parseInt(txtCantidadRegistros.getText());
+            int longitudCampoIndice = Integer.parseInt(txtLongitudCampoIndice.getText());
 
-        if (longitudRegistro > tamañoBloque) {
-            mostrarError("Longitud de registro no puede exceder tamaño de bloque");
-            return;
+            if (longitudRegistro > tamañoBloque) {
+                mostrarError("Longitud de registro no puede exceder tamaño de bloque");
+                return;
+            }
+
+            int registrosPorBloqueDatos = tamañoBloque / longitudRegistro;
+            int bloquesTotalesDatos = (int) Math.ceil((double) cantidadRegistros / registrosPorBloqueDatos);
+
+            int entradasPorBloqueIndice = tamañoBloque / longitudCampoIndice;
+            int totalRegistrosIndice = esPrimario ? bloquesTotalesDatos : cantidadRegistros;
+            int bloquesTotalesIndice = (int) Math.ceil((double) totalRegistrosIndice / entradasPorBloqueIndice);
+
+            bloquesIndicesMostrados.clear();
+            bloquesDatosMostrados.clear();
+
+            generarTablaIndices(bloquesTotalesIndice, entradasPorBloqueIndice, totalRegistrosIndice);
+            generarTablaDatos(bloquesTotalesDatos, registrosPorBloqueDatos, cantidadRegistros);
+
+            PauseTransition pause = new PauseTransition(Duration.millis(300));
+            pause.setOnFinished(event -> dibujarFlechasDinamicas());
+            pause.play();
+
+        } catch (NumberFormatException e) {
+            mostrarError("Ingrese valores numericos validos");
         }
-
-        int registrosPorBloqueDatos = tamañoBloque / longitudRegistro;
-        int bloquesTotalesDatos = (int) Math.ceil((double) cantidadRegistros / registrosPorBloqueDatos);
-
-        int entradasPorBloqueIndice = tamañoBloque / longitudCampoIndice;
-        int totalRegistrosIndice = esPrimario ? bloquesTotalesDatos : cantidadRegistros;
-        int bloquesTotalesIndice = (int) Math.ceil((double) totalRegistrosIndice / entradasPorBloqueIndice);
-
-        bloquesIndicesMostrados.clear();
-        bloquesDatosMostrados.clear();
-
-        generarTablaIndices(bloquesTotalesIndice, entradasPorBloqueIndice, totalRegistrosIndice);
-        generarTablaDatos(bloquesTotalesDatos, registrosPorBloqueDatos, cantidadRegistros);
-
-        // Esperar a que el layout esté completamente renderizado antes de dibujar las flechas
-        PauseTransition pause = new PauseTransition(Duration.millis(300));
-        pause.setOnFinished(event -> dibujarFlechasDinamicas());
-        pause.play();
-
-    } catch (NumberFormatException e) {
-        mostrarError("Ingrese valores numéricos válidos");
     }
-}
 
     private void generarTablaIndices(int bloquesTotales, int entradasPorBloque, int totalRegistros) {
         vboxIndices.getChildren().clear();
 
         Color[] coloresPasteles = {
-            Color.web("#D4E8F7"),
-            Color.web("#CCEEF5"),
-            Color.web("#C0E8F0"),
-            Color.web("#B3E0EB")
+                Color.web("#D4E8F7"),
+                Color.web("#CCEEF5"),
+                Color.web("#C0E8F0"),
+                Color.web("#B3E0EB")
         };
 
         List<Integer> bloquesAMostrar = obtenerBloquesAMostrar(bloquesTotales);
@@ -102,9 +112,10 @@ public class IndexMonoController {
 
             VBox bloqueBox = new VBox();
             bloqueBox.setStyle("-fx-border-color: #999999; -fx-border-width: 1; -fx-padding: 3;");
-            bloqueBox.setStyle(bloqueBox.getStyle() + " -fx-background-color: " + colorToHex(coloresPasteles[i % 4]) + ";");
+            bloqueBox.setStyle(
+                    bloqueBox.getStyle() + " -fx-background-color: " + colorToHex(coloresPasteles[i % 4]) + ";");
 
-            Label tituloBloque = new Label("Bloque Índice " + (numeroBloque + 1));
+            Label tituloBloque = new Label("Bloque indice " + (numeroBloque + 1));
             tituloBloque.setStyle("-fx-font-weight: bold; -fx-font-size: 7;");
             bloqueBox.getChildren().add(tituloBloque);
 
@@ -115,22 +126,21 @@ public class IndexMonoController {
             int registroFinal = (numeroBloque + 1) * entradasPorBloque;
             int ultimoRegistroLleno = Math.min(registroFinal, totalRegistros);
 
-            // PRIMER REGISTRO
             if (registroInicial <= totalRegistros) {
                 Label primeraFila = crearFilaIndice(registroInicial, esPrimario);
                 filasBox.getChildren().add(primeraFila);
             }
 
-            // REGISTRO DEL MEDIO O ÚLTIMO LLENO (especial para último bloque)
             if (esUltimoBloque) {
-                // En el último bloque: mostrar último registro lleno como "del medio"
+
                 if (ultimoRegistroLleno < registroFinal && ultimoRegistroLleno >= registroInicial) {
                     Label middleFila = crearFilaIndice(ultimoRegistroLleno, esPrimario);
                     filasBox.getChildren().add(middleFila);
                 }
             } else {
-                // En bloques normales: mostrar del medio como antes
-                int totalRegistrosBloque = Math.min(entradasPorBloque, Math.max(0, totalRegistros - registroInicial + 1));
+
+                int totalRegistrosBloque = Math.min(entradasPorBloque,
+                        Math.max(0, totalRegistros - registroInicial + 1));
                 if (totalRegistrosBloque > 2) {
                     int registroMedio = registroInicial + totalRegistrosBloque / 2;
                     if (registroMedio <= totalRegistros) {
@@ -140,7 +150,6 @@ public class IndexMonoController {
                 }
             }
 
-            // ÚLTIMO REGISTRO (teórico)
             Label ultimaFila;
             if (registroFinal <= totalRegistros) {
                 ultimaFila = crearFilaIndice(registroFinal, esPrimario);
@@ -159,10 +168,10 @@ public class IndexMonoController {
         vboxDatos.getChildren().clear();
 
         Color[] coloresPasteles = {
-            Color.web("#F0D9E8"),
-            Color.web("#EDD0E0"),
-            Color.web("#E8C7D8"),
-            Color.web("#E0BDD0")
+                Color.web("#F0D9E8"),
+                Color.web("#EDD0E0"),
+                Color.web("#E8C7D8"),
+                Color.web("#E0BDD0")
         };
 
         List<Integer> bloquesAMostrar = obtenerBloquesAMostrar(bloquesTotales);
@@ -173,7 +182,8 @@ public class IndexMonoController {
 
             VBox bloqueBox = new VBox();
             bloqueBox.setStyle("-fx-border-color: #999999; -fx-border-width: 1; -fx-padding: 3;");
-            bloqueBox.setStyle(bloqueBox.getStyle() + " -fx-background-color: " + colorToHex(coloresPasteles[i % 4]) + ";");
+            bloqueBox.setStyle(
+                    bloqueBox.getStyle() + " -fx-background-color: " + colorToHex(coloresPasteles[i % 4]) + ";");
 
             Label tituloBloque = new Label("Bloque Datos " + (numeroBloque + 1));
             tituloBloque.setStyle("-fx-font-weight: bold; -fx-font-size: 7;");
@@ -189,22 +199,21 @@ public class IndexMonoController {
             int registroFinal = (numeroBloque + 1) * registrosPorBloque;
             int ultimoRegistroLleno = Math.min(registroFinal, cantidadRegistros);
 
-            // PRIMER REGISTRO
             if (registroInicial <= cantidadRegistros) {
                 Label primeraFila = crearFilaDatos(registroInicial, numeroBloque + 1);
                 filasBox.getChildren().add(primeraFila);
             }
 
-            // REGISTRO DEL MEDIO O ÚLTIMO LLENO (especial para último bloque)
             if (esUltimoBloque) {
-                // En el último bloque: mostrar último registro lleno como "del medio"
+
                 if (ultimoRegistroLleno < registroFinal && ultimoRegistroLleno >= registroInicial) {
                     Label middleFila = crearFilaDatos(ultimoRegistroLleno, numeroBloque + 1);
                     filasBox.getChildren().add(middleFila);
                 }
             } else {
-                // En bloques normales: mostrar del medio como antes
-                int totalRegistrosBloque = Math.min(registrosPorBloque, Math.max(0, cantidadRegistros - registroInicial + 1));
+
+                int totalRegistrosBloque = Math.min(registrosPorBloque,
+                        Math.max(0, cantidadRegistros - registroInicial + 1));
                 if (totalRegistrosBloque > 2) {
                     int registroMedio = registroInicial + totalRegistrosBloque / 2;
                     if (registroMedio <= cantidadRegistros) {
@@ -214,7 +223,6 @@ public class IndexMonoController {
                 }
             }
 
-            // ÚLTIMO REGISTRO (teórico)
             Label ultimaFila;
             if (registroFinal <= cantidadRegistros) {
                 ultimaFila = crearFilaDatos(registroFinal, numeroBloque + 1);
@@ -243,7 +251,7 @@ public class IndexMonoController {
     }
 
     private Label crearFilaIndiceVacio(int numeroRegistro) {
-        Label l = new Label(numeroRegistro + " | ... | [vacío]");
+        Label l = new Label(numeroRegistro + " | ... | [vacio]");
         l.setFont(Font.font("Monospace", 11));
         l.setStyle("-fx-font-style: italic; -fx-text-fill: #000000; -fx-padding: 1;");
         return l;
@@ -258,7 +266,7 @@ public class IndexMonoController {
     }
 
     private Label crearFilaDatoVacio(int numeroRegistro, int numeroBloque) {
-        Label l = new Label(numeroRegistro + " | ... | [vacío] | " + numeroBloque);
+        Label l = new Label(numeroRegistro + " | ... | [vacio] | " + numeroBloque);
         l.setFont(Font.font("Monospace", 11));
         l.setStyle("-fx-font-style: italic; -fx-text-fill: #000000; -fx-padding: 1;");
         return l;
@@ -287,7 +295,7 @@ public class IndexMonoController {
     }
 
     private void dibujarFlechasDinamicas() {
-        // Validación robusta antes de dibujar
+
         if (canvasFlechas == null || vboxIndices == null || vboxDatos == null) {
             System.out.println("DEBUG - Componentes nulos");
             return;
@@ -299,7 +307,7 @@ public class IndexMonoController {
         }
 
         if (bloquesIndicesMostrados.isEmpty() || bloquesDatosMostrados.isEmpty()) {
-            System.out.println("DEBUG - Bloques vacíos");
+            System.out.println("DEBUG - Bloques vacios");
             return;
         }
 
@@ -307,7 +315,7 @@ public class IndexMonoController {
         gc.clearRect(0, 0, canvasFlechas.getWidth(), canvasFlechas.getHeight());
 
         try {
-            // FLECHA 1: Verde (Primer bloque)
+
             if (bloquesIndicesMostrados.size() > 0 && bloquesDatosMostrados.size() > 0) {
                 VBox indice1 = bloquesIndicesMostrados.get(0);
                 VBox datos1 = bloquesDatosMostrados.get(0);
@@ -316,7 +324,6 @@ public class IndexMonoController {
                 }
             }
 
-            // FLECHA 2: Azul (Bloque medio) - SOLO si hay más de 2 bloques
             if (bloquesIndicesMostrados.size() > 2 && bloquesDatosMostrados.size() > 2) {
                 int midIdx = bloquesIndicesMostrados.size() / 2;
                 int midDat = bloquesDatosMostrados.size() / 2;
@@ -327,7 +334,6 @@ public class IndexMonoController {
                 }
             }
 
-            // FLECHA 3: Rojo (Último bloque) - SOLO si hay más de 1 bloque
             if (bloquesIndicesMostrados.size() > 1 && bloquesDatosMostrados.size() > 1) {
                 int lastIdx = bloquesIndicesMostrados.size() - 1;
                 int lastDat = bloquesDatosMostrados.size() - 1;
@@ -350,19 +356,17 @@ public class IndexMonoController {
             Bounds boundsDatos = bloqueDatos.localToScene(bloqueDatos.getBoundsInLocal());
             Bounds canvasBounds = canvasFlechas.localToScene(canvasFlechas.getBoundsInLocal());
 
-            if (boundsIndice == null || boundsDatos == null || boundsIndice.isEmpty() || boundsDatos.isEmpty() || canvasBounds == null) {
+            if (boundsIndice == null || boundsDatos == null || boundsIndice.isEmpty() || boundsDatos.isEmpty()
+                    || canvasBounds == null) {
                 return;
             }
 
-            // Salida: lado derecho del bloque de índices
             double x1 = boundsIndice.getCenterX() + boundsIndice.getWidth() / 2 - canvasBounds.getMinX();
             double y1 = boundsIndice.getCenterY() - canvasBounds.getMinY();
 
-            // Entrada: lado izquierdo del bloque de datos
             double x2 = boundsDatos.getCenterX() - boundsDatos.getWidth() / 2 - canvasBounds.getMinX();
             double y2 = boundsDatos.getCenterY() - canvasBounds.getMinY();
 
-            // Validar coordenadas en rango del canvas
             if (x1 < 0 || x1 > canvasFlechas.getWidth() || y1 < 0 || y1 > canvasFlechas.getHeight()) {
                 return;
             }
@@ -374,18 +378,18 @@ public class IndexMonoController {
             gc.setLineWidth(2.5);
             gc.strokeLine(x1, y1, x2, y2);
 
-            // Punta de flecha
             double angle = Math.atan2(y2 - y1, x2 - x1);
             double arrowSize = 10;
             gc.setFill(color);
             gc.fillPolygon(
-                    new double[]{x2, x2 - arrowSize * Math.cos(angle - Math.PI / 6), x2 - arrowSize * Math.cos(angle + Math.PI / 6)},
-                    new double[]{y2, y2 - arrowSize * Math.sin(angle - Math.PI / 6), y2 - arrowSize * Math.sin(angle + Math.PI / 6)},
-                    3
-            );
+                    new double[] { x2, x2 - arrowSize * Math.cos(angle - Math.PI / 6),
+                            x2 - arrowSize * Math.cos(angle + Math.PI / 6) },
+                    new double[] { y2, y2 - arrowSize * Math.sin(angle - Math.PI / 6),
+                            y2 - arrowSize * Math.sin(angle + Math.PI / 6) },
+                    3);
 
         } catch (Exception e) {
-            // Silent - flecha fallida no arriba con error
+
         }
     }
 
@@ -414,7 +418,7 @@ public class IndexMonoController {
 
     private void mostrarExito(String mensaje) {
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setTitle("Éxito");
+        alert.setTitle("exito");
         alert.setContentText(mensaje);
         alert.showAndWait();
     }
@@ -422,26 +426,23 @@ public class IndexMonoController {
     @FXML
     public void guardarEstructura() {
         try {
-            // Validar que haya algo que guardar
+
             if (vboxIndices.getChildren().isEmpty() && vboxDatos.getChildren().isEmpty()) {
                 mostrarError("No hay estructura generada para guardar");
                 return;
             }
 
-            // Abrir diálogo de selección de archivo
             FileChooser fileChooser = new FileChooser();
-            fileChooser.setTitle("Guardar Estructura de Índices");
+            fileChooser.setTitle("Guardar Estructura de indices");
             fileChooser.getExtensionFilters().add(
-                new FileChooser.ExtensionFilter("Archivos de Índices (*.idx)", "*.idx")
-            );
+                    new FileChooser.ExtensionFilter("Archivos de indices (*.idx)", "*.idx"));
             fileChooser.setInitialFileName("estructura.idx");
 
             File archivoGuardar = fileChooser.showSaveDialog(btnGuardar.getScene().getWindow());
             if (archivoGuardar == null) {
-                return; // Usuario canceló
+                return;
             }
 
-            // Preparar datos para guardar
             EstructuraGuardada estructura = new EstructuraGuardada();
             estructura.longitudRegistro = Integer.parseInt(txtLongitudRegistro.getText());
             estructura.tamañoBloque = Integer.parseInt(txtTamañoBloque.getText());
@@ -449,7 +450,6 @@ public class IndexMonoController {
             estructura.longitudCampoIndice = Integer.parseInt(txtLongitudCampoIndice.getText());
             estructura.esPrimario = esPrimario;
 
-            // Serializar y guardar
             try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(archivoGuardar))) {
                 oos.writeObject(estructura);
                 oos.flush();
@@ -458,7 +458,7 @@ public class IndexMonoController {
             mostrarExito("Estructura guardada exitosamente en:\n" + archivoGuardar.getAbsolutePath());
 
         } catch (NumberFormatException e) {
-            mostrarError("Error: Ingrese valores numéricos válidos en los parámetros");
+            mostrarError("Error: Ingrese valores numericos validos en los parametros");
         } catch (IOException e) {
             mostrarError("Error al guardar archivo: " + e.getMessage());
         } catch (Exception e) {
@@ -469,37 +469,33 @@ public class IndexMonoController {
     @FXML
     public void cargarEstructura() {
         try {
-            // Abrir diálogo de selección de archivo
+
             FileChooser fileChooser = new FileChooser();
-            fileChooser.setTitle("Cargar Estructura de Índices");
+            fileChooser.setTitle("Cargar Estructura de indices");
             fileChooser.getExtensionFilters().add(
-                new FileChooser.ExtensionFilter("Archivos de Índices (*.idx)", "*.idx")
-            );
+                    new FileChooser.ExtensionFilter("Archivos de indices (*.idx)", "*.idx"));
 
             File archivoCargar = fileChooser.showOpenDialog(btnCargar.getScene().getWindow());
             if (archivoCargar == null) {
-                return; // Usuario canceló
+                return;
             }
 
-            // Deserializar
             EstructuraGuardada estructura;
             try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(archivoCargar))) {
                 estructura = (EstructuraGuardada) ois.readObject();
             }
 
-            // Cargar valores en los campos
             txtLongitudRegistro.setText(String.valueOf(estructura.longitudRegistro));
             txtTamañoBloque.setText(String.valueOf(estructura.tamañoBloque));
             txtCantidadRegistros.setText(String.valueOf(estructura.cantidadRegistros));
             txtLongitudCampoIndice.setText(String.valueOf(estructura.longitudCampoIndice));
             esPrimario = estructura.esPrimario;
 
-            // Generar la estructura automáticamente
             generarEstructura();
             mostrarExito("Estructura cargada exitosamente");
 
         } catch (ClassNotFoundException e) {
-            mostrarError("Error: Archivo de estructura inválido");
+            mostrarError("Error: Archivo de estructura invalido");
         } catch (IOException e) {
             mostrarError("Error al cargar archivo: " + e.getMessage());
         } catch (Exception e) {
@@ -507,10 +503,9 @@ public class IndexMonoController {
         }
     }
 
-    // Clase interna para serializar la estructura
     private static class EstructuraGuardada implements Serializable {
         private static final long serialVersionUID = 1L;
-        
+
         int longitudRegistro;
         int tamañoBloque;
         int cantidadRegistros;
@@ -518,12 +513,3 @@ public class IndexMonoController {
         boolean esPrimario;
     }
 }
-
-
-
-
-
-
-
-
-

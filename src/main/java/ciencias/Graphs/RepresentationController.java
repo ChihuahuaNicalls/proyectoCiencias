@@ -28,10 +28,6 @@ public class RepresentationController {
     @FXML
     private ScrollPane graph;
     @FXML
-    private ScrollPane medianaGraph;
-    @FXML
-    private ScrollPane centerGraph;
-    @FXML
     private MenuButton matrixOptions;
     @FXML
     private TabPane matrixTabPane;
@@ -50,8 +46,6 @@ public class RepresentationController {
     @FXML
     private TextField edgeDest;
     @FXML
-    private CheckBox edgeDirection;
-    @FXML
     private Button edgeAddButton;
     @FXML
     private Button edgeDeleteButton;
@@ -61,12 +55,6 @@ public class RepresentationController {
     private Text operationText;
     @FXML
     private Text modificationText;
-    @FXML
-    private TextField excText;
-    @FXML
-    private TextField radiusText;
-    @FXML
-    private TextField longText;
     @FXML
     private TextField distanceItem1;
     @FXML
@@ -251,46 +239,31 @@ public class RepresentationController {
 
         public void addEdge(String source, String destination, String label) {
 
-            boolean requestedDirected = edgeDirection.isSelected();
-            if (hasEdges) {
-                if (isDirected != requestedDirected) {
-                    throw new IllegalStateException(
-                            "No se pueden mezclar aristas dirigidas y no dirigidas en el mismo grafo");
-                }
-            } else {
-                isDirected = requestedDirected;
-                hasEdges = true;
+            List<Edge> between = getEdgesBetween(source, destination);
+            boolean isLoop = source.equals(destination);
+
+            int maxEdges = isLoop ? 2 : 3;
+
+            if (between.size() >= maxEdges) {
+                throw new IllegalStateException(
+                        "No se pueden tener mas de " + maxEdges + " aristas entre " + source + " y " + destination);
             }
 
-            if (source.equals(destination)) {
-                boolean existsLoop = edges.stream().anyMatch(e -> e.isLoop && e.source.equals(source));
-                if (existsLoop) {
-                    throw new IllegalStateException("Ya existe un bucle en el vertice " + source);
+            for (Edge e : between) {
+                if ((e.label == null && label == null) || (e.label != null && e.label.equals(label))) {
+                    throw new IllegalStateException(
+                            "Ya existe una arista con la misma etiqueta entre " + source + " y " + destination);
                 }
-                edges.add(new Edge(source, destination, label));
-                return;
             }
 
             if (!isDirected) {
-
                 String a = source.compareTo(destination) <= 0 ? source : destination;
                 String b = source.compareTo(destination) <= 0 ? destination : source;
-                boolean exists = edges.stream().anyMatch(e -> !e.isLoop &&
-                        ((e.source.equals(a) && e.destination.equals(b))
-                                || (e.source.equals(b) && e.destination.equals(a))));
-                if (exists) {
-                    throw new IllegalStateException("Ya existe una arista entre " + source + " y " + destination);
-                }
                 edges.add(new Edge(a, b, label));
             } else {
-
-                boolean exists = edges.stream()
-                        .anyMatch(e -> e.source.equals(source) && e.destination.equals(destination));
-                if (exists) {
-                    throw new IllegalStateException("Ya existe una arista dirigida de " + source + " a " + destination);
-                }
                 edges.add(new Edge(source, destination, label));
             }
+            hasEdges = !edges.isEmpty();
         }
 
         public void removeEdge(String source, String destination) {
@@ -402,8 +375,6 @@ public class RepresentationController {
         }
 
         setupZoomAndScroll(graph, "main");
-        setupZoomAndScroll(medianaGraph, "mediana");
-        setupZoomAndScroll(centerGraph, "center");
 
         updateMetrics();
     }
@@ -907,14 +878,6 @@ public class RepresentationController {
     }
 
     private void updateMetrics() {
-        if (graphData.isEmpty()) {
-            excText.setText("");
-            radiusText.setText("");
-            longText.setText("");
-            medianaGraph.setContent(new Pane());
-            centerGraph.setContent(new Pane());
-            return;
-        }
 
         double[][] distances = computeFloydWarshall();
 
@@ -946,12 +909,6 @@ public class RepresentationController {
             if (ecc > diameter)
                 diameter = ecc;
         }
-
-        excText.setText(eccentricities.toString());
-        radiusText.setText((radius == Double.POSITIVE_INFINITY ? "∞" : String.valueOf((int) radius)));
-        longText.setText((diameter == Double.POSITIVE_INFINITY ? "∞" : String.valueOf((int) diameter)));
-
-        updateMedianaAndCenter(eccentricities, radius, distances);
     }
 
     private double[][] computeFloydWarshall() {
@@ -1069,70 +1026,6 @@ public class RepresentationController {
         return dst;
     }
 
-    private void updateMedianaAndCenter(Map<String, Double> eccentricities, double radius, double[][] distances) {
-        List<String> vertices = new ArrayList<>(graphData.vertices);
-
-        Set<String> centerVertices = new HashSet<>();
-        for (Map.Entry<String, Double> entry : eccentricities.entrySet()) {
-            if (Math.abs(entry.getValue() - radius) < 1e-9) {
-                centerVertices.add(entry.getKey());
-            }
-        }
-
-        Map<String, Double> sumDistances = new HashMap<>();
-        Map<String, Integer> vertexIndex = new HashMap<>();
-        for (int i = 0; i < vertices.size(); i++) {
-            vertexIndex.put(vertices.get(i), i);
-        }
-
-        for (String vertex : vertices) {
-            double sum = 0;
-            int idx = vertexIndex.get(vertex);
-            boolean unreachable = false;
-            for (int j = 0; j < vertices.size(); j++) {
-                if (idx == j)
-                    continue;
-                if (distances[idx][j] == Double.POSITIVE_INFINITY) {
-                    unreachable = true;
-                    break;
-                }
-                sum += distances[idx][j];
-            }
-            if (unreachable)
-                sumDistances.put(vertex, Double.POSITIVE_INFINITY);
-            else
-                sumDistances.put(vertex, sum);
-        }
-
-        double minSum = Collections.min(sumDistances.values());
-        Set<String> medianaVertices = new HashSet<>();
-        for (Map.Entry<String, Double> entry : sumDistances.entrySet()) {
-            if (Math.abs(entry.getValue() - minSum) < 1e-9) {
-                medianaVertices.add(entry.getKey());
-            }
-        }
-
-        Graph centerSubgraph = createInducedSubgraph(centerVertices);
-        Graph medianaSubgraph = createInducedSubgraph(medianaVertices);
-
-        drawGraph(centerSubgraph, centerGraph, "center");
-        drawGraph(medianaSubgraph, medianaGraph, "mediana");
-    }
-
-    private Graph createInducedSubgraph(Set<String> vertices) {
-        Graph subgraph = new Graph();
-        subgraph.vertices.addAll(vertices);
-        subgraph.isDirected = graphData.isDirected;
-        subgraph.isWeighted = graphData.isWeighted;
-
-        for (Edge edge : graphData.edges) {
-            if (vertices.contains(edge.source) && vertices.contains(edge.destination)) {
-                subgraph.edges.add(edge);
-            }
-        }
-
-        return subgraph;
-    }
 
     @FXML
     private void operate() {
@@ -2911,7 +2804,6 @@ public class RepresentationController {
         }
     }
 
-    
     @FXML
     private void save() {
         FileChooser fileChooser = new FileChooser();
@@ -2926,7 +2818,7 @@ public class RepresentationController {
         }
 
         try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(file))) {
-            // Convert to SharedGraphData for cross-tab compatibility
+
             SharedGraphData sharedData = convertToSharedGraphData(graphData);
             oos.writeObject(sharedData);
             modificationText.setText("Grafo guardado: " + file.getName());
@@ -2950,17 +2842,17 @@ public class RepresentationController {
 
         try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(file))) {
             Object loadedObject = ois.readObject();
-            
+
             if (loadedObject instanceof SharedGraphData) {
-                // Load from shared format (compatible with other tabs)
+
                 SharedGraphData sharedData = (SharedGraphData) loadedObject;
                 convertFromSharedGraphData(graphData, sharedData);
             } else if (loadedObject instanceof GraphState) {
-                // Fallback: load from legacy format
+
                 GraphState loadedState = (GraphState) loadedObject;
                 graphData.setState(loadedState);
             }
-            
+
             layoutGraph.clear();
             history.clear();
             redoStack.clear();
@@ -2978,18 +2870,17 @@ public class RepresentationController {
         sharedData.vertices = new LinkedHashSet<>(graph.vertices);
         sharedData.isDirected = graph.isDirected;
         sharedData.isWeighted = graph.isWeighted;
-        
+
         for (Edge e : graph.edges) {
-            // RepresentationController.Edge doesn't have isSumEdge field
+
             SharedGraphData.SharedEdge sharedEdge = new SharedGraphData.SharedEdge(
                     e.source,
                     e.destination,
                     e.label,
-                    false  // RepresentationController doesn't use sum edges
-            );
+                    false);
             sharedData.edges.add(sharedEdge);
         }
-        
+
         return sharedData;
     }
 
@@ -2998,15 +2889,15 @@ public class RepresentationController {
         graph.edges.clear();
         graph.isDirected = sharedData.isDirected;
         graph.isWeighted = sharedData.isWeighted;
-        
+
         graph.vertices.addAll(sharedData.vertices);
-        
+
         for (SharedGraphData.SharedEdge sharedEdge : sharedData.edges) {
             try {
-                // RepresentationController.Graph only has addEdge(String, String, String)
+
                 graph.addEdge(sharedEdge.source, sharedEdge.destination, sharedEdge.label);
             } catch (IllegalStateException ex) {
-                // Edge might already exist, skip
+
             }
         }
     }

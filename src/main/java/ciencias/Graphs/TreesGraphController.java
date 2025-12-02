@@ -108,10 +108,10 @@ public class TreesGraphController {
     private Map<String, Point2D> layout1;
     private Map<String, Point2D> layout2;
 
-    private int selectedGraph = 0; // 0 = none, 1 = graph1, 2 = graph2
-    private int metricsGraph = 0; // 0 = none, 1 = graph1, 2 = graph2 (para métricas)
-    private int treeGraphSelected = 0; // which graph to take tree from
-    private int treeTypeSelected = 0; // 1 = minimum, 2 = maximum
+    private int selectedGraph = 0;
+    private int metricsGraph = 0;
+    private int treeGraphSelected = 0;
+    private int treeTypeSelected = 0;
 
     private static final double VERTEX_RADIUS = 20;
     private static final double CANVAS_WIDTH = 800;
@@ -135,7 +135,6 @@ public class TreesGraphController {
         vertNum.setValueFactory(valueFactory);
         vertNum.setEditable(true);
 
-        // setup MenuButton items to set selection and enable/disable controls
         for (MenuItem item : graphModify.getItems()) {
             item.setOnAction(e -> {
                 graphModify.setText(item.getText());
@@ -150,7 +149,6 @@ public class TreesGraphController {
             });
         }
 
-        // setup MenuButton1 items for metrics display
         for (MenuItem item : graphModify1.getItems()) {
             item.setOnAction(e -> {
                 graphModify1.setText(item.getText());
@@ -164,34 +162,37 @@ public class TreesGraphController {
             });
         }
 
-        // setup MenuButton2 items for selecting which graph to generate tree from
         if (graphModify2 != null) {
             for (MenuItem item : graphModify2.getItems()) {
                 item.setOnAction(e -> {
                     graphModify2.setText(item.getText());
-                    if ("Grafo 1".equals(item.getText())) treeGraphSelected = 1;
-                    else if ("Grafo 2".equals(item.getText())) treeGraphSelected = 2;
-                    else treeGraphSelected = 0;
+                    if ("Grafo 1".equals(item.getText()))
+                        treeGraphSelected = 1;
+                    else if ("Grafo 2".equals(item.getText()))
+                        treeGraphSelected = 2;
+                    else
+                        treeGraphSelected = 0;
                     updateTreeDisplayIfNeeded();
                 });
             }
         }
 
-        // setup SelectTree items for choosing minimum or maximum spanning tree
         if (SelectTree != null) {
             for (MenuItem item : SelectTree.getItems()) {
                 item.setOnAction(e -> {
                     SelectTree.setText(item.getText());
                     String lower = item.getText().toLowerCase();
-                    if (lower.contains("min") || lower.contains("mín")) treeTypeSelected = 1;
-                    else if (lower.contains("max") || lower.contains("máx")) treeTypeSelected = 2;
-                    else treeTypeSelected = 0;
+                    if (lower.contains("min") || lower.contains("min"))
+                        treeTypeSelected = 1;
+                    else if (lower.contains("max") || lower.contains("max"))
+                        treeTypeSelected = 2;
+                    else
+                        treeTypeSelected = 0;
                     updateTreeDisplayIfNeeded();
                 });
             }
         }
 
-        // start with controls disabled until a graph is selected
         updateControlsEnabled();
 
         setupZoomAndScroll(graph1);
@@ -328,7 +329,8 @@ public class TreesGraphController {
             modificationText.setText("Ingrese vertice origen");
             return;
         }
-        if (d.isEmpty()) d = s;
+        if (d.isEmpty())
+            d = s;
         if (!getActiveGraph().hasVertex(s) || !getActiveGraph().hasVertex(d)) {
             modificationText.setText("Los vertices deben existir");
             return;
@@ -370,7 +372,8 @@ public class TreesGraphController {
             modificationText.setText("Ingrese vertice origen");
             return;
         }
-        if (d.isEmpty()) d = s;
+        if (d.isEmpty())
+            d = s;
         String label = w.isEmpty() ? "1" : w;
         saveStateActive();
         getActiveGraph().removeEdge(s, d, label);
@@ -383,7 +386,8 @@ public class TreesGraphController {
 
     @FXML
     private void undo() {
-        if (selectedGraph == 0) return;
+        if (selectedGraph == 0)
+            return;
         Stack<GraphState> hist = getActiveHistory();
         Stack<GraphState> rd = getActiveRedo();
         if (hist.isEmpty()) {
@@ -399,7 +403,8 @@ public class TreesGraphController {
 
     @FXML
     private void redo() {
-        if (selectedGraph == 0) return;
+        if (selectedGraph == 0)
+            return;
         Stack<GraphState> hist = getActiveHistory();
         Stack<GraphState> rd = getActiveRedo();
         if (rd.isEmpty()) {
@@ -415,7 +420,8 @@ public class TreesGraphController {
 
     @FXML
     private void restart() {
-        if (selectedGraph == 0) return;
+        if (selectedGraph == 0)
+            return;
         saveStateActive();
         if (selectedGraph == 1) {
             graphData1 = new Graph();
@@ -434,15 +440,17 @@ public class TreesGraphController {
 
     @FXML
     private void save() {
-        if (selectedGraph == 0) return;
+        if (selectedGraph == 0)
+            return;
         FileChooser fc = new FileChooser();
         fc.setTitle("Guardar grafo");
         fc.getExtensionFilters().add(new FileChooser.ExtensionFilter("Graph Files", "*.graph"));
         Stage stage = (Stage) saveButton.getScene().getWindow();
         File file = fc.showSaveDialog(stage);
-        if (file == null) return;
+        if (file == null)
+            return;
         try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(file))) {
-            // Convert internal GraphState to SharedGraphData for cross-tab compatibility
+
             Graph activeGraph = getActiveGraph();
             SharedGraphData sharedData = convertToSharedGraphData(activeGraph);
             oos.writeObject(sharedData);
@@ -454,27 +462,29 @@ public class TreesGraphController {
 
     @FXML
     private void load() {
-        if (selectedGraph == 0) return;
+        if (selectedGraph == 0)
+            return;
         FileChooser fc = new FileChooser();
         fc.setTitle("Cargar grafo");
         fc.getExtensionFilters().add(new FileChooser.ExtensionFilter("Graph Files", "*.graph"));
         Stage stage = (Stage) loadButton.getScene().getWindow();
         File file = fc.showOpenDialog(stage);
-        if (file == null) return;
+        if (file == null)
+            return;
         try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(file))) {
             Object loadedObject = ois.readObject();
             Graph activeGraph = getActiveGraph();
-            
+
             if (loadedObject instanceof SharedGraphData) {
-                // Load from shared format (compatible with other tabs)
+
                 SharedGraphData sharedData = (SharedGraphData) loadedObject;
                 convertFromSharedGraphData(activeGraph, sharedData);
             } else if (loadedObject instanceof GraphState) {
-                // Fallback: load from legacy format
+
                 GraphState st = (GraphState) loadedObject;
                 activeGraph.setState(st);
             }
-            
+
             getActiveLayout().clear();
             getActiveHistory().clear();
             getActiveRedo().clear();
@@ -489,18 +499,17 @@ public class TreesGraphController {
         SharedGraphData sharedData = new SharedGraphData();
         sharedData.vertices = new LinkedHashSet<>(graph.vertices);
         sharedData.isDirected = graph.isDirected;
-        sharedData.isWeighted = true; // TreesGraphController always uses weighted graphs
-        
+        sharedData.isWeighted = true;
+
         for (Graph.Edge e : graph.edges) {
             SharedGraphData.SharedEdge sharedEdge = new SharedGraphData.SharedEdge(
                     e.source,
                     e.destination,
                     e.label,
-                    false // TreesGraphController doesn't use sum edges
-            );
+                    false);
             sharedData.edges.add(sharedEdge);
         }
-        
+
         return sharedData;
     }
 
@@ -508,14 +517,14 @@ public class TreesGraphController {
         graph.vertices.clear();
         graph.edges.clear();
         graph.isDirected = sharedData.isDirected;
-        
+
         graph.vertices.addAll(sharedData.vertices);
-        
+
         for (SharedGraphData.SharedEdge sharedEdge : sharedData.edges) {
             try {
                 graph.addEdge(sharedEdge.source, sharedEdge.destination, sharedEdge.label);
             } catch (IllegalStateException ex) {
-                // Edge might already exist, skip
+
             }
         }
     }
@@ -526,8 +535,10 @@ public class TreesGraphController {
     }
 
     private void updateDisplayForActive() {
-        if (selectedGraph == 1) drawGraph(graphData1, graph1, layout1);
-        else drawGraph(graphData2, graph2, layout2);
+        if (selectedGraph == 1)
+            drawGraph(graphData1, graph1, layout1);
+        else
+            drawGraph(graphData2, graph2, layout2);
         updateMetricsIfNeeded();
         updateTreeDisplayIfNeeded();
     }
@@ -561,17 +572,20 @@ public class TreesGraphController {
         for (Graph.Edge e : graph.edges) {
             if (e.isLoop) {
                 Point2D p = customLayout.get(e.source);
-                if (p != null) drawLoop(canvas, p.getX(), p.getY(), VERTEX_RADIUS);
+                if (p != null)
+                    drawLoop(canvas, p.getX(), p.getY(), VERTEX_RADIUS);
             } else {
                 Point2D s = customLayout.get(e.source);
                 Point2D t = customLayout.get(e.destination);
-                if (s != null && t != null) drawEdgeWithLabel(canvas, s.getX(), s.getY(), t.getX(), t.getY(), e.label);
+                if (s != null && t != null)
+                    drawEdgeWithLabel(canvas, s.getX(), s.getY(), t.getX(), t.getY(), e.label);
             }
         }
 
         for (String v : graph.vertices) {
             Point2D p = customLayout.get(v);
-            if (p != null) drawVertex(canvas, p.getX(), p.getY(), VERTEX_RADIUS, v);
+            if (p != null)
+                drawVertex(canvas, p.getX(), p.getY(), VERTEX_RADIUS, v);
         }
 
         scrollPane.setContent(canvas);
@@ -623,7 +637,8 @@ public class TreesGraphController {
     private Map<String, Point2D> calculateGraphLayout(Graph graph, double centerX, double centerY, double radius) {
         Map<String, Point2D> positions = new HashMap<>();
         List<String> vertices = new ArrayList<>(graph.vertices);
-        if (vertices.isEmpty()) return positions;
+        if (vertices.isEmpty())
+            return positions;
         int n = vertices.size();
         double layoutRadius = Math.min(250, Math.max(80, n * 25));
         for (int i = 0; i < n; i++) {
@@ -635,7 +650,6 @@ public class TreesGraphController {
         return positions;
     }
 
-    // --- Inner data classes and graph operations ---
     private static class GraphState implements Serializable {
         private static final long serialVersionUID = 1L;
         Set<String> vertices;
@@ -658,7 +672,8 @@ public class TreesGraphController {
         }
 
         void setState(GraphState s) {
-            if (s == null) return;
+            if (s == null)
+                return;
             vertices = new LinkedHashSet<>(s.vertices != null ? s.vertices : Collections.emptySet());
             edges = new ArrayList<>(s.edges != null ? s.edges : Collections.emptyList());
             isDirected = false;
@@ -681,20 +696,23 @@ public class TreesGraphController {
             isDirected = false;
             if (s.equals(d)) {
                 boolean exists = edges.stream().anyMatch(e -> e.isLoop && e.source.equals(s));
-                if (exists) throw new IllegalStateException("Ya existe bucle en " + s);
+                if (exists)
+                    throw new IllegalStateException("Ya existe bucle en " + s);
                 edges.add(new Edge(s, d, label));
                 return;
             }
             String a = s.compareTo(d) <= 0 ? s : d;
             String b = s.compareTo(d) <= 0 ? d : s;
             boolean exists = edges.stream().anyMatch(e -> !e.isLoop && e.source.equals(a) && e.destination.equals(b));
-            if (exists) throw new IllegalStateException("Ya existe arista entre " + s + " y " + d);
+            if (exists)
+                throw new IllegalStateException("Ya existe arista entre " + s + " y " + d);
             edges.add(new Edge(a, b, label));
         }
 
         void removeEdge(String s, String d, String label) {
             if (!isDirected) {
-                edges.removeIf(e -> ((e.source.equals(s) && e.destination.equals(d)) || (e.source.equals(d) && e.destination.equals(s))) && e.label.equals(label));
+                edges.removeIf(e -> ((e.source.equals(s) && e.destination.equals(d))
+                        || (e.source.equals(d) && e.destination.equals(s))) && e.label.equals(label));
             } else {
                 edges.removeIf(e -> e.source.equals(s) && e.destination.equals(d) && e.label.equals(label));
             }
@@ -705,21 +723,27 @@ public class TreesGraphController {
         }
 
         private String generateNextVertexName() {
-            if (vertices.isEmpty()) return "A";
+            if (vertices.isEmpty())
+                return "A";
             List<String> sorted = new ArrayList<>(vertices);
             sorted.sort((a, b) -> {
-                if (a.length() != b.length()) return a.length() - b.length();
+                if (a.length() != b.length())
+                    return a.length() - b.length();
                 return a.compareTo(b);
             });
             String last = sorted.get(sorted.size() - 1);
             if (last.length() == 1) {
                 char c = last.charAt(0);
-                if (c < 'Z') return String.valueOf((char)(c + 1));
+                if (c < 'Z')
+                    return String.valueOf((char) (c + 1));
                 return "AA";
             } else {
                 char[] cs = last.toCharArray();
                 for (int i = cs.length - 1; i >= 0; i--) {
-                    if (cs[i] < 'Z') { cs[i]++; return new String(cs); }
+                    if (cs[i] < 'Z') {
+                        cs[i]++;
+                        return new String(cs);
+                    }
                     cs[i] = 'A';
                 }
                 return last + "A";
@@ -732,7 +756,13 @@ public class TreesGraphController {
             String destination;
             String label;
             boolean isLoop;
-            Edge(String s, String d, String l) { source = s; destination = d; label = l; isLoop = s.equals(d); }
+
+            Edge(String s, String d, String l) {
+                source = s;
+                destination = d;
+                label = l;
+                isLoop = s.equals(d);
+            }
         }
     }
 
@@ -755,22 +785,26 @@ public class TreesGraphController {
             double maxDistance = 0;
             boolean unreachable = false;
             for (int j = 0; j < vertices.size(); j++) {
-                if (i == j) continue;
+                if (i == j)
+                    continue;
                 if (distances[i][j] == Double.POSITIVE_INFINITY) {
                     unreachable = true;
                     break;
                 }
                 maxDistance = Math.max(maxDistance, distances[i][j]);
             }
-            if (unreachable) maxDistance = Double.POSITIVE_INFINITY;
+            if (unreachable)
+                maxDistance = Double.POSITIVE_INFINITY;
             eccentricities.put(vertices.get(i), maxDistance);
         }
 
         double radius = Double.POSITIVE_INFINITY;
         double diameter = 0;
         for (double ecc : eccentricities.values()) {
-            if (ecc < radius) radius = ecc;
-            if (ecc > diameter) diameter = ecc;
+            if (ecc < radius)
+                radius = ecc;
+            if (ecc > diameter)
+                diameter = ecc;
         }
 
         excText.setText(eccentricities.toString());
@@ -827,7 +861,8 @@ public class TreesGraphController {
         }
     }
 
-    private void updateMedianaAndCenter(Graph graph, Map<String, Double> eccentricities, double radius, double[][] distances) {
+    private void updateMedianaAndCenter(Graph graph, Map<String, Double> eccentricities, double radius,
+            double[][] distances) {
         List<String> vertices = new ArrayList<>(graph.vertices);
 
         Set<String> centerVertices = new HashSet<>();
@@ -848,7 +883,8 @@ public class TreesGraphController {
             int idx = vertexIndex.get(vertex);
             boolean unreachable = false;
             for (int j = 0; j < vertices.size(); j++) {
-                if (idx == j) continue;
+                if (idx == j)
+                    continue;
                 if (distances[idx][j] == Double.POSITIVE_INFINITY) {
                     unreachable = true;
                     break;
@@ -890,46 +926,58 @@ public class TreesGraphController {
         return subgraph;
     }
 
-    // --- Spanning tree utilities ---
     private void updateTreeDisplayIfNeeded() {
         if (treeGraphSelected <= 0 || treeTypeSelected <= 0) {
-            if (Tree1 != null) Tree1.setContent(new Pane());
-            if (Complemento != null) Complemento.setContent(new Pane());
+            if (Tree1 != null)
+                Tree1.setContent(new Pane());
+            if (Complemento != null)
+                Complemento.setContent(new Pane());
             return;
         }
         Graph src = treeGraphSelected == 1 ? graphData1 : graphData2;
         if (src == null || src.isEmpty()) {
             modificationText.setText("Grafo seleccionado vacio");
-            if (Tree1 != null) Tree1.setContent(new Pane());
-            if (Complemento != null) Complemento.setContent(new Pane());
+            if (Tree1 != null)
+                Tree1.setContent(new Pane());
+            if (Complemento != null)
+                Complemento.setContent(new Pane());
             return;
         }
         if (!isUndirected(src)) {
             modificationText.setText("El grafo debe ser no dirigido para construir arboles de expansion");
-            if (Tree1 != null) Tree1.setContent(new Pane());
-            if (Complemento != null) Complemento.setContent(new Pane());
+            if (Tree1 != null)
+                Tree1.setContent(new Pane());
+            if (Complemento != null)
+                Complemento.setContent(new Pane());
             return;
         }
         if (!isWeighted(src)) {
             modificationText.setText("El grafo debe ser ponderado (todas las aristas con peso numerico)");
-            if (Tree1 != null) Tree1.setContent(new Pane());
-            if (Complemento != null) Complemento.setContent(new Pane());
+            if (Tree1 != null)
+                Tree1.setContent(new Pane());
+            if (Complemento != null)
+                Complemento.setContent(new Pane());
             return;
         }
         if (!isConnected(src)) {
             modificationText.setText("El grafo debe ser conexo para construir un arbol de expansion");
-            if (Tree1 != null) Tree1.setContent(new Pane());
-            if (Complemento != null) Complemento.setContent(new Pane());
+            if (Tree1 != null)
+                Tree1.setContent(new Pane());
+            if (Complemento != null)
+                Complemento.setContent(new Pane());
             return;
         }
 
         boolean minimum = treeTypeSelected == 1;
         Graph tree = computeSpanningTree(src, minimum);
         Graph complement = computeSpanningTreeComplement(src, tree);
-        
-        if (Tree1 != null) drawGraph(tree, Tree1, new HashMap<>());
-        if (Complemento != null) drawGraph(complement, Complemento, new HashMap<>());
-        modificationText.setText((minimum ? "Arbol de expansion minima" : "Arbol de expansion maxima") + " y complemento generados para Grafo " + treeGraphSelected);
+
+        if (Tree1 != null)
+            drawGraph(tree, Tree1, new HashMap<>());
+        if (Complemento != null)
+            drawGraph(complement, Complemento, new HashMap<>());
+        modificationText.setText((minimum ? "Arbol de expansion minima" : "Arbol de expansion maxima")
+                + " y complemento generados para Grafo " + treeGraphSelected);
     }
 
     private boolean isUndirected(Graph g) {
@@ -937,7 +985,8 @@ public class TreesGraphController {
     }
 
     private boolean isWeighted(Graph g) {
-        if (g == null) return false;
+        if (g == null)
+            return false;
         for (Graph.Edge e : g.edges) {
             try {
                 Double.parseDouble(e.label);
@@ -949,10 +998,13 @@ public class TreesGraphController {
     }
 
     private boolean isConnected(Graph g) {
-        if (g == null) return false;
-        if (g.vertices.isEmpty()) return false;
+        if (g == null)
+            return false;
+        if (g.vertices.isEmpty())
+            return false;
         Iterator<String> it = g.vertices.iterator();
-        if (!it.hasNext()) return false;
+        if (!it.hasNext())
+            return false;
         String start = it.next();
         Set<String> visited = new HashSet<>();
         Deque<String> stack = new ArrayDeque<>();
@@ -961,7 +1013,8 @@ public class TreesGraphController {
         while (!stack.isEmpty()) {
             String v = stack.pop();
             for (Graph.Edge e : g.edges) {
-                if (e.isLoop) continue;
+                if (e.isLoop)
+                    continue;
                 if (e.source.equals(v) && !visited.contains(e.destination)) {
                     visited.add(e.destination);
                     stack.push(e.destination);
@@ -977,11 +1030,16 @@ public class TreesGraphController {
     private Graph computeSpanningTree(Graph g, boolean minimum) {
         Graph tree = new Graph();
         tree.vertices.addAll(g.vertices);
-        // prepare edge list
-        class EInfo { String a,b; double w; String label; }
+
+        class EInfo {
+            String a, b;
+            double w;
+            String label;
+        }
         List<EInfo> list = new ArrayList<>();
         for (Graph.Edge e : g.edges) {
-            if (e.isLoop) continue; // skip loops in spanning tree
+            if (e.isLoop)
+                continue;
             EInfo ei = new EInfo();
             ei.a = e.source;
             ei.b = e.destination;
@@ -989,28 +1047,30 @@ public class TreesGraphController {
             ei.w = getWeight(e);
             list.add(ei);
         }
-        // sort
-        list.sort((x,y) -> {
+
+        list.sort((x, y) -> {
             int cmp = Double.compare(x.w, y.w);
             return minimum ? cmp : -cmp;
         });
 
-        // DSU map
         Map<String, String> parent = new HashMap<>();
-        for (String v : g.vertices) parent.put(v, v);
+        for (String v : g.vertices)
+            parent.put(v, v);
         Function<String, String> find = new Function<String, String>() {
             public String apply(String x) {
                 String p = parent.get(x);
-                if (p.equals(x)) return x;
+                if (p.equals(x))
+                    return x;
                 String r = apply(p);
                 parent.put(x, r);
                 return r;
             }
         };
-        BiConsumer<String, String> unite = (x,y) -> {
+        BiConsumer<String, String> unite = (x, y) -> {
             String rx = find.apply(x);
             String ry = find.apply(y);
-            if (!rx.equals(ry)) parent.put(rx, ry);
+            if (!rx.equals(ry))
+                parent.put(rx, ry);
         };
 
         for (EInfo ei : list) {
@@ -1020,7 +1080,8 @@ public class TreesGraphController {
                 tree.edges.add(new Graph.Edge(ei.a, ei.b, ei.label));
                 unite.accept(ei.a, ei.b);
             }
-            if (tree.edges.size() == Math.max(0, tree.vertices.size() - 1)) break;
+            if (tree.edges.size() == Math.max(0, tree.vertices.size() - 1))
+                break;
         }
 
         return tree;
@@ -1031,16 +1092,15 @@ public class TreesGraphController {
         complement.vertices.addAll(original.vertices);
         complement.isDirected = false;
 
-        // Create a set of edges in the spanning tree for fast lookup
         Set<String> treeEdgesSet = new HashSet<>();
         for (Graph.Edge e : spanningTree.edges) {
             String edgeKey = getEdgeKey(e.source, e.destination);
             treeEdgesSet.add(edgeKey);
         }
 
-        // Add all edges from original that are NOT in the spanning tree
         for (Graph.Edge e : original.edges) {
-            if (e.isLoop) continue; // skip loops
+            if (e.isLoop)
+                continue;
             String edgeKey = getEdgeKey(e.source, e.destination);
             if (!treeEdgesSet.contains(edgeKey)) {
                 complement.edges.add(new Graph.Edge(e.source, e.destination, e.label));
@@ -1051,7 +1111,7 @@ public class TreesGraphController {
     }
 
     private String getEdgeKey(String a, String b) {
-        // Create a canonical key for undirected edges
+
         String first = a.compareTo(b) <= 0 ? a : b;
         String second = a.compareTo(b) <= 0 ? b : a;
         return first + "-" + second;
@@ -1064,40 +1124,36 @@ public class TreesGraphController {
             distErrorFlow.setVisible(false);
         }
 
-        // Get minimum spanning trees for both graphs
         Graph mst1 = null;
         Graph mst2 = null;
         String error = null;
 
-        // Check and generate MST for graph 1
         if (graphData1 == null || graphData1.isEmpty()) {
-            error = "El Grafo 1 está vacío. No se puede calcular el árbol de expansión.";
+            error = "El Grafo 1 esta vacio. No se puede calcular el arbol de expansion.";
         } else if (!isUndirected(graphData1)) {
-            error = "El Grafo 1 debe ser no dirigido para calcular el árbol de expansión.";
+            error = "El Grafo 1 debe ser no dirigido para calcular el arbol de expansion.";
         } else if (!isWeighted(graphData1)) {
-            error = "El Grafo 1 debe ser ponderado (todas las aristas con peso numérico).";
+            error = "El Grafo 1 debe ser ponderado (todas las aristas con peso numerico).";
         } else if (!isConnected(graphData1)) {
-            error = "El Grafo 1 debe ser conexo para calcular el árbol de expansión.";
+            error = "El Grafo 1 debe ser conexo para calcular el arbol de expansion.";
         } else {
-            mst1 = computeSpanningTree(graphData1, true); // true = minimum
+            mst1 = computeSpanningTree(graphData1, true);
         }
 
-        // Check and generate MST for graph 2 if no error yet
         if (error == null) {
             if (graphData2 == null || graphData2.isEmpty()) {
-                error = "El Grafo 2 está vacío. No se puede calcular el árbol de expansión.";
+                error = "El Grafo 2 esta vacio. No se puede calcular el arbol de expansion.";
             } else if (!isUndirected(graphData2)) {
-                error = "El Grafo 2 debe ser no dirigido para calcular el árbol de expansión.";
+                error = "El Grafo 2 debe ser no dirigido para calcular el arbol de expansion.";
             } else if (!isWeighted(graphData2)) {
-                error = "El Grafo 2 debe ser ponderado (todas las aristas con peso numérico).";
+                error = "El Grafo 2 debe ser ponderado (todas las aristas con peso numerico).";
             } else if (!isConnected(graphData2)) {
-                error = "El Grafo 2 debe ser conexo para calcular el árbol de expansión.";
+                error = "El Grafo 2 debe ser conexo para calcular el arbol de expansion.";
             } else {
-                mst2 = computeSpanningTree(graphData2, true); // true = minimum
+                mst2 = computeSpanningTree(graphData2, true);
             }
         }
 
-        // If there's an error, display it
         if (error != null) {
             if (distErrorFlow != null) {
                 javafx.scene.text.Text errorText = new javafx.scene.text.Text(error);
@@ -1111,25 +1167,21 @@ public class TreesGraphController {
             return;
         }
 
-        // Calculate distance between the two MSTs
         double distance = calculateSpanningTreeDistance(mst1, mst2);
         if (distText != null) {
             distText.setText(String.format("%.2f", distance));
         }
-        modificationText.setText("Distancia entre árboles de expansión mínima calculada: " + String.format("%.2f", distance));
+        modificationText
+                .setText("Distancia entre arboles de expansion minima calculada: " + String.format("%.2f", distance));
     }
 
     private double calculateSpanningTreeDistance(Graph mst1, Graph mst2) {
-        // Formula: ((A1 union A2) - (A1 interseccion A2)) / 2
-        // Where A1 and A2 are the sets of weighted edges
 
-        // Create sets of edges with weights for both trees
         Set<String> edgeSet1 = new HashSet<>();
         Set<String> edgeSet2 = new HashSet<>();
         Map<String, Double> edgeWeights1 = new HashMap<>();
         Map<String, Double> edgeWeights2 = new HashMap<>();
 
-        // Add edges from MST1 with their canonical keys and weights
         for (Graph.Edge e : mst1.edges) {
             String edgeKey = getEdgeKey(e.source, e.destination);
             edgeSet1.add(edgeKey);
@@ -1137,7 +1189,6 @@ public class TreesGraphController {
             edgeWeights1.put(edgeKey, weight);
         }
 
-        // Add edges from MST2 with their canonical keys and weights
         for (Graph.Edge e : mst2.edges) {
             String edgeKey = getEdgeKey(e.source, e.destination);
             edgeSet2.add(edgeKey);
@@ -1145,26 +1196,21 @@ public class TreesGraphController {
             edgeWeights2.put(edgeKey, weight);
         }
 
-        // Calculate A1 union A2
         Set<String> unionSet = new HashSet<>(edgeSet1);
         unionSet.addAll(edgeSet2);
 
-        // Calculate A1 intersection A2
         Set<String> intersectionSet = new HashSet<>(edgeSet1);
         intersectionSet.retainAll(edgeSet2);
 
-        // Calculate (A1 union A2) - (A1 intersection A2)
         Set<String> symmetricDifference = new HashSet<>(unionSet);
         symmetricDifference.removeAll(intersectionSet);
 
-        // Sum the weights of edges in the symmetric difference
         double sumWeights = 0;
         for (String edgeKey : symmetricDifference) {
             double weight = edgeWeights1.containsKey(edgeKey) ? edgeWeights1.get(edgeKey) : edgeWeights2.get(edgeKey);
             sumWeights += weight;
         }
 
-        // Divide by 2
         return sumWeights / 2.0;
     }
 }

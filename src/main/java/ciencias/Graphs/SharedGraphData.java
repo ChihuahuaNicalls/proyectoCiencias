@@ -3,13 +3,6 @@ package ciencias.Graphs;
 import java.io.Serializable;
 import java.util.*;
 
-/**
- * Clase compartida para serialización de grafos entre las tres pestañas
- * de la aplicación (Operaciones, Árboles, Representación).
- * 
- * Esta clase permite que los grafos creados en una pestaña puedan ser
- * cargados en otra pestaña sin problemas de compatibilidad.
- */
 public class SharedGraphData implements Serializable {
     private static final long serialVersionUID = 1L;
 
@@ -42,10 +35,6 @@ public class SharedGraphData implements Serializable {
                 '}';
     }
 
-    /**
-     * Clase interna para representar una arista de forma serializable
-     * Compatible con las estructuras Edge de todos los controladores
-     */
     public static class SharedEdge implements Serializable {
         private static final long serialVersionUID = 1L;
 
@@ -88,8 +77,10 @@ public class SharedGraphData implements Serializable {
 
         @Override
         public boolean equals(Object obj) {
-            if (this == obj) return true;
-            if (obj == null || getClass() != obj.getClass()) return false;
+            if (this == obj)
+                return true;
+            if (obj == null || getClass() != obj.getClass())
+                return false;
             SharedEdge edge = (SharedEdge) obj;
             return source.equals(edge.source) &&
                     destination.equals(edge.destination) &&

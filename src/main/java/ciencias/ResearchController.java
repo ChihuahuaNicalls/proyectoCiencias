@@ -138,17 +138,17 @@ public class ResearchController {
                 menuButtonMono,
                 menuButtonMulti);
         panes = Arrays.asList(
-            paneHashInt,
-            paneBinariaInt,
-            paneSecuencialInt,
-            paneHashExt,
-            paneBinariaExt,
-            paneSecuencialExt,
-            paneDynamic,
-            paneTrees);
+                paneHashInt,
+                paneBinariaInt,
+                paneSecuencialInt,
+                paneHashExt,
+                paneBinariaExt,
+                paneSecuencialExt,
+                paneDynamic,
+                paneTrees);
         scrollPanes = Arrays.asList(
-            paneIndexMono,
-            paneIndexMulti);
+                paneIndexMono,
+                paneIndexMulti);
     }
 
     private void loadInitialContent() {
@@ -523,9 +523,11 @@ public class ResearchController {
             return null;
         String tipo = isMono ? "Mononivel" : "Multinivel";
         if ("Primaria".equals(option))
-            return tipo + " - indice Primario\nSe construyen sobre la clave primaria, manteniendo la secuencia fisica de los datos en disco. Proporcionan acceso directo y secuencial eficiente, con una estructura que refleja el orden de almacenamiento real de los registros en el archivo.";
+            return tipo
+                    + " - indice Primario\nSe construyen sobre la clave primaria, manteniendo la secuencia fisica de los datos en disco. Proporcionan acceso directo y secuencial eficiente, con una estructura que refleja el orden de almacenamiento real de los registros en el archivo.";
         if ("Secundaria".equals(option))
-            return tipo + " - indice Secundario\nSe crean sobre campos no ordenados fisicamente, permitiendo acceso eficiente por atributos distintos a la clave primaria. Mantienen un nivel adicional de indireccion mediante punteros a registros, independientes de la organizacion fisica, ideales para consultas por campos frecuentemente consultados pero no principales.";
+            return tipo
+                    + " - indice Secundario\nSe crean sobre campos no ordenados fisicamente, permitiendo acceso eficiente por atributos distintos a la clave primaria. Mantienen un nivel adicional de indireccion mediante punteros a registros, independientes de la organizacion fisica, ideales para consultas por campos frecuentemente consultados pero no principales.";
         return tipo + " - " + option;
     }
 
